@@ -62,9 +62,14 @@ exports.getSeries = function(req,res) {
             });
             result.on('end',function() {
                 xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                    var data = obj.StructureSpecificData.DataSet[0];
-                    var vTS = data.Series;
-                    res.send(buildHtml(vTS));
+                    if(err == null) {
+                        var data = obj.StructureSpecificData.DataSet[0];
+                        var vTS = data.Series;
+                        res.send(buildHtml(vTS));
+                    }
+                    else{
+                        res.send(err);
+                    }
                 });
             });
         }
