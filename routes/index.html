@@ -2,9 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>EViews + SDMX API</title>
+      <title>SDMX API for EViews</title>
 </head>
 <body>
-<p>API SDMX + EViews is working</p>    
+  <h1>SDMX API for EViews</h1>
+  <hr></hr>
+</br>
+  <p>This API allows you to retrieve <strong>INSEE</strong> series by it idbanks.</p>
+  <h2>How to use it ? </h2>
+  <p>Input : </p>
+  <code>https://sdmx.herokuapp.com/ </code><font color="blue">idbank</font><code> ?startPeriod </code><font color="blue">startPeriod</font>
+  <p>Example : </p><code>https://sdmx.herokuapp.com/000436387?startPeriod=2016</code>
+  <p>Output : </p>
+<table><thead><tr><th>Dates</th><th>000436387</th></tr><tr><th>&nbsp;</th><th>Démographie - Population au début du mois - France métropolitaine</th></tr></thead><tbody><tr><td>2016-01</td><td>64513</td></tr><tr><td>2016-02</td><td>64528</td></tr><tr><td>2016-03</td><td>64543</td></tr><tr><td>2016-04</td><td>64554</td></tr><tr><td>2016-05</td><td>64570</td></tr></tbody></table>
+
 </body>
 </html>

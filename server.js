@@ -19,3 +19,9 @@ app.get('/:series', fetcher.getSeries);
 app.listen(port, function() {
     console.log('Our app is running on port '+ port);
 });
+
+
+// Very dangerous
+process.on('uncaughtException', (err) => {
+    console.log(`Caught exception: ${err}`);
+});

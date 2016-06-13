@@ -7,6 +7,7 @@ var urlINSEE = "http://www.bdm.insee.fr/series/sdmx/data/SERIES_BDM/";
 var parser = new xml2js.Parser();
 
 
+
 function stripPrefix(str){
     var prefixMatch;
     prefixMatch = new RegExp(/(?!xmlns)^.*:/);
@@ -26,24 +27,33 @@ function buildHtml(vTS){
         theader2 = theader2 + '<th>' + item.TITLE[0] + '</th>';
         item.Obs.reverse().forEach( function(it,ind) {
             tbody = tbody + '<tr><td>' + it.TIME_PERIOD[0] + '</td>';
-            tbody = tbody + '<td>' + it.OBS_VALUE[0] + '</td></tr>';
+            tbody = tbody + '<td style="text-align:center">' + it.OBS_VALUE[0] + '</td></tr>';
         });
     });
 
     var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table>' + '<thead>'  + '<tr>' + theader1 + '</tr>' + '<tr>' + theader2 + '</tr>'  + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
-
+    
     return myHtml;
 }
     
 
 
 exports.getSeries = function(req,res) {
+    
     var arr = req.params.series.split('+');
     var series = req.params.series;
     var startPeriod = req.param('startPeriod');
+    var lastNObservations = req.param('lastNObservations');
+    var myPath = '';
 
-    var myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?startPeriod="+startPeriod;
-
+    if(startPeriod == null && lastNObservations == null){
+        myPath = "/series/sdmx/data/SERIES_BDM/"+series;
+    } else if (startPeriod!= null){
+        myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?startPeriod="+startPeriod;
+    } else {
+        myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?lastNObservations="+lastNObservations;
+    }
+    
     var options = {
         hostname: 'www.bdm.insee.fr',
         port: 80,
@@ -55,7 +65,7 @@ exports.getSeries = function(req,res) {
     };
     
     http.get(options, function(result) {
-        if (result.statusCode >= 200 || result.statusCode < 400) {
+        if (result.statusCode >= 200 && result.statusCode < 400) {
             var xml = '';
             result.on('data', function(chunk) {
                 xml += chunk;
