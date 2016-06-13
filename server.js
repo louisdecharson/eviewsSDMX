@@ -4,7 +4,6 @@ var express = require('express'),
 
 
 var app = express();
-// var router = express.Router();
 
 var port = process.env.PORT || 8080;
 
