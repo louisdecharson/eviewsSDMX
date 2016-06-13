@@ -1,14 +1,10 @@
 var xml2js = require('xml2js'),
     assert = require('assert'),
     concat = require('concat-stream'),
-    libxmljs = require("libxmljs"),
     http = require('http');
-
 
 var urlINSEE = "http://www.bdm.insee.fr/series/sdmx/data/SERIES_BDM/";
 var parser = new xml2js.Parser();
-
-// var data = '';
 
 
 function stripPrefix(str){
@@ -65,17 +61,9 @@ exports.getSeries = function(req,res) {
                 xml += chunk;
             });
             result.on('end',function() {
-                // parser.parseString(xml, function(err,resu){
                 xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                     var data = obj.StructureSpecificData.DataSet[0];
                     var vTS = data.Series;
-                    var myArray = new Array(1,2,3);
-                    // var idBank = ts.IDBANK[0];
-
-                    // var myJSON = JSON.stringify(data,null,4);                    
-                    // console.log(myJSON);
-                    // console.log(data);
-
                     res.send(buildHtml(vTS));
                 });
             });
