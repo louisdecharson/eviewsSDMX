@@ -6,6 +6,8 @@ var express = require('express'),
 var app = express();
 // var router = express.Router();
 
+var port = process.env.PORT || 8080;
+
 app.get('/', function(req,res) {
     res.sendFile(path.join(__dirname + '/routes/index.html'));
 });
@@ -14,5 +16,6 @@ app.get('/:series', fetcher.getSeries);
         
 
 
-app.listen(3000);
-console.log('Listening on port 3000...');
+app.listen(port, function() {
+    console.log('Our app is running on port '+ port);
+});
