@@ -121,6 +121,8 @@ exports.getSeries = function(req,res) {
 
 exports.getDataSet = function(req,res) {
 
+    
+
     var dataSet = req.params.dataset;
     var freq = req.param('freq');
     var startPeriod = req.param('startPeriod');
@@ -140,7 +142,6 @@ exports.getDataSet = function(req,res) {
             myPath += "?lastNObservations="+lastNObservations;
         }
         
-        console.log(myPath);
         var options = {
             hostname: 'www.bdm.insee.fr',
             port: 80,
@@ -150,7 +151,6 @@ exports.getDataSet = function(req,res) {
                 'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1'
             }
         };
-
         http.get(options, function(result) {
             if (result.statusCode >= 200 && result.statusCode < 400) {
                 var xml = '';
