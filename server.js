@@ -22,6 +22,6 @@ app.listen(port, function() {
 
 
 // Very dangerous
-// process.on('uncaughtException', (err) => {
-//     console.log(`Caught exception: ${err}`);
-// });
+process.on('uncaughtException', (err) => {
+     console.log(`Caught exception: ${err}`);
+});
