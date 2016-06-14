@@ -11,8 +11,9 @@ app.get('/', function(req,res) {
     res.sendFile(path.join(__dirname + '/routes/index.html'));
 });
 
-app.get('/:series', fetcher.getSeries);
-        
+app.get('/series/:series', fetcher.getSeries);
+app.get('/dataset/:dataset', fetcher.getDataSet);
+     
 
 
 app.listen(port, function() {
@@ -21,6 +22,6 @@ app.listen(port, function() {
 
 
 // Very dangerous
-process.on('uncaughtException', (err) => {
-    console.log(`Caught exception: ${err}`);
-});
+// process.on('uncaughtException', (err) => {
+//     console.log(`Caught exception: ${err}`);
+// });
