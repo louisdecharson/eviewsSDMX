@@ -176,24 +176,3 @@ exports.getDataSet = function(req,res) {
     }
 };
 
-function buildHtml_old(vTS){
-    var header = '';
-    var body = '';
-    var table ='';
-    var theader1 = '<th>Dates</th>';
-    var theader2 = '<th>&nbsp;</th>';
-    var tbody = '';
-
-    vTS.forEach( function(item, index) {
-        theader1 = theader1 + '<th>' + item.IDBANK[0] + '</th>';
-        theader2 = theader2 + '<th>' + item.TITLE[0] + '</th>';
-        item.Obs.reverse().forEach( function(it,ind) {
-            tbody = tbody + '<tr><td>' + it.TIME_PERIOD[0] + '</td>';
-            tbody = tbody + '<td style="text-align:center">' + it.OBS_VALUE[0] + '</td></tr>';
-        });
-    });
-
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table>' + '<thead>'  + '<tr>' + theader1 + '</tr>' + '<tr>' + theader2 + '</tr>'  + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
-    
-    return myHtml;
-}
