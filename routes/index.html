@@ -9,31 +9,43 @@
   <hr></hr>
 </br>
   <p>This API allows you to retrieve an <strong>INSEE</strong> series by its idbank or a dataset by its id.</p>
-  <h2>How to use it ? </h2>
-  <u><font color=red ><h3>For a Timeseries : </h3></font></u>
+  <h2>I. How to use it ? </h2>
+  <p>On <strong>EViews</strong>, write something like :</p>
+  <code>%url = "http://sdmx.herokuapp.com/series/000436387?startPeriod=2016"</code><br>
+  <code>wfopen(wf=ipch,type="html") %url colhead=2 namepos=first </code><br>
+  <p>The <code>%url</code> depends on wether you want to retrieve a <i>timeseries</i>, <i>multiple timeseries</i> or a <i>dataset</i>. See below for details.</p>
+
+ 
+  <h3><font color=darkRed >URLs</font></h3>
+  <ul>
+    <li><strong>for a timeseries : </strong><code>http://sdmx.herokuapp.com/series/</code><font color="blue">idbank</font></li>
+    <li><strong>for multiple timeseries : </strong><code>http://sdmx.herokuapp.com/series/</code><font color="green">idbank1</font>+<font color="blue ">idbank2</font></code></li>
+    <li><strong>for a dataset : </strong><code>http://sdmx.herokuapp.com/dataset/</code><font color="green">dataset_code</font><code>?freq=</code><font color="blue">frequency</font></li>
+  </ul>
+
+  <h3><font color=darkRed >Filters</font></h3>
+  You can filter your results :
+  <ul>
+    <li> By start period by adding <code>?startPeriod=</code><font color="blue">startPeriod</font></li>
+    <li> By number of last of observations <code>?lastNObservations=</code><font color="blue">lastNObservations</font></li>
+  </ul>
+
+  <h3><font color=darkRed >Example</font></h3>
   <h4><i>Input : </i></h4>
+  <code>%url = <font color=darkBlue>http://sdmx.herokuapp.com/series/000436387?startPeriod=2016</code></font><br>
+  <code>wfopen(wf=ipch,type="html") %url colhead=2 namepos=first </code>
+  <h4><i>HTML Output : </i></h4>
+  <font color=DarkSlateGray>
+  <table><thead><tr><th>Dates</th><th>000436387</th></tr><tr><th>&nbsp;</th><th>Démographie - Population au début du mois - France métropolitaine</th></tr></thead><tbody><tr><td>2016-01</td><td>64513</td></tr><tr><td>2016-02</td><td>64528</td></tr><tr><td>2016-03</td><td>64543</td></tr><tr><td>2016-04</td><td>64554</td></tr><tr><td>2016-05</td><td>64570</td></tr></tbody></table></font>
+  <h4><i>EViews Output : </i></h4>
+  <p>A workfile with a two series, one series named <code>num000436387</code> containing information from the timeseries with idbank <i>000436387</i> and a series <code>Dates</code>containing Dates from 2016M01 to 2016M05</p>
+  <h3><u><font color=red >Know Issues</font></u></h3>
   <ul>
-    <li><code>http://sdmx.herokuapp.com/series/</code><font color="blue">idbank</font><code>?startPeriod=</code><font color="blue">startPeriod</font></li>
-    <li><code>http://sdmx.herokuapp.com/series/</code><font color="blue">idbank</font><code>?lastNObservations=</code><font color="blue">lastNObservations</font></li>
+    <li> Using the filter <font color="darkCyan"><code>?lastNObservations=</code></font> when retrieving multiple series or a dataset is a <strong>bad</strong> idea if series do not belong to the same time period.</li>
+    <li> Currently, retreving IPC Dataset is not possible due to limitation on the timeout period on Heroku website.
   </ul>
-  Example : <code>http://sdmx.herokuapp.com/series/000436387?startPeriod=2016</code>
-  <h4><i>Output : </i></h4>
-  <table><thead><tr><th>Dates</th><th>000436387</th></tr><tr><th>&nbsp;</th><th>Démographie - Population au début du mois - France métropolitaine</th></tr></thead><tbody><tr><td>2016-01</td><td>64513</td></tr><tr><td>2016-02</td><td>64528</td></tr><tr><td>2016-03</td><td>64543</td></tr><tr><td>2016-04</td><td>64554</td></tr><tr><td>2016-05</td><td>64570</td></tr></tbody></table>
 
-  <h4><i>Multiple timeseries</i></h4>
-  <p>You can retrieve multiple timeseries at a time (they should have the same frequency though) by using :</p>
-  <code>http://sdmx.herokuapp.com/series/</code><font color="darkCyan">idbank1</font>+<font color="green ">idbank2</font><code>?startPeriod=</code><font color="darkBlue">startPeriod</font>
-<u><font color=red ><h3>For a DataSet : </h3></font></u>
-<h4><i>Input : </i></h4>
-  <ul>
-    <li><code>http://sdmx.herokuapp.com/dataset/</code><font color="blue">dataset_id</font><code>?freq=</code><font color="blue">frequency</font></li>
-  </ul>
- Example : <code>http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M</code>
-
- <u><font color=red ><h3>Know Issues </h3></font></u>
- <p> Using the filter <font color="darkCyan"><code>?lastNObservations=</code></font> when retrieving multiple series or a dataset is a <strong>bad</strong> idea if series do not belong to the same time period.
-
-<h2>Can I contribute ?</h2>
+<h2>II. Can I contribute ?</h2>
 <p><strong>YES !  </strong>You can do it <a href="https://github.com/louisdecharson/eviewsSDMX">HERE</a></p>
 </br>
 <hr></hr>
