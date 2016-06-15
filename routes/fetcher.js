@@ -14,6 +14,76 @@ function stripPrefix(str){
     return str.replace(prefixMatch, '');
 }
 
+function getDim(dataSet, callback) {
+    var nbDim = 0;
+    var arrDim = [];
+    
+    var myPath = "/series/sdmx/datastructure/FR1/" + dataSet;
+    var options = {
+            hostname: 'www.bdm.insee.fr',
+            port: 80,
+            path: myPath,
+            headers: {
+                'connection': 'keep-alive'
+            }
+    };
+    http.get(options, function(result) {
+        if (result.statusCode >=200 && result.statusCode < 400) {
+            var xml = '';
+            result.on('data', function(chunk) {
+                xml += chunk;
+            });
+            result.on('end',function() {
+                xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                    if(err == null) {
+                        var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
+                        nbDim = data.length;
+                        data.forEach(function(item,index) {
+                            arrDim.push(item['id'][0]);
+                        });
+                        callback([nbDim,arrDim]); 
+                    }
+                });
+            });
+        } 
+    });
+};
+
+
+function buildDataStruc(data,title) {
+    var header = '<title>SDMX API for EViews / '+ title +'</title>';
+    var body ='';
+
+    var Dim = '<p>Nb of dimensions : '+data.length+'</p>';
+    var listDim = 'Dimensions list : <ul> ';
+
+    data.forEach(function(item,index) {
+        listDim += '<li>'+ item['position'][0] + ". " + item['id'][0]+'</li>';
+    });
+    listDim += '</ul>';
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + Dim + listDim + '</body></html>';
+    return myHtml;
+    
+};
+
+function buildDataflows(data) {
+    var header = '<title>SDMX API for EViews / DATAFLOWS </title>';
+    var body = '',
+        table = '',
+        theader = '<th>Id</th><th>Description (FR)</th><th>Description (EN)</th>',
+        tbody = '';
+    
+    data.forEach(function(item,index){
+        tbody += '<tr><td>' + item.id + '</td><td>';
+        tbody += item.Name[0]['_'] + '</td><td>';
+        tbody += item.Name[1]['_'] + '</td><td>';
+    });
+
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table><col width="200"' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
+    return myHtml;
+};                 
+
+
 function buildHtml(vTS,title){
     var header = '<title>SDMX API for EViews / '+ title +'</title>';
     var body = '';
@@ -121,23 +191,34 @@ exports.getSeries = function(req,res) {
 
 exports.getDataSet = function(req,res) {
 
-    
-
-    var dataSet = req.params.dataset;
-    var freq = req.param('freq');
-    var startPeriod = req.param('startPeriod');
-    var lastNObservations =  req.param('lastNObservations');
+    // All keys to UpperCase
+    var key, keys = Object.keys(req.query);
+    var n = keys.length;
+    var reqParams={};
+    while (n--) {
+        key = keys[n];
+        reqParams[key.toUpperCase()] = req.query[key];
+    }
+    var dataSet = req.params.dataset.toUpperCase();
+    var startPeriod = reqParams['STARTPERIOD'];
+    var lastNObservations =  reqParams['LASTNOBSERVATIONS'];
     
     var myPath = "/series/sdmx/data/"+dataSet;
+    var userParams = '';
 
-    
-    if(freq == null){
-        res.send('Error -> you must filter by frequency.');
-    } else {
-        freq = getFreq(freq);
-        myPath += '/' + freq ;
+    getDim(dataSet, function(arr) {
+        var authParams = arr[1];
+        authParams.forEach(function(it,ind){
+            if(reqParams[it] != null) {
+                userParams += reqParams[it];
+            }
+            else {
+                userParams += '.';
+            }
+        });
+        myPath += '/' + userParams;
         if (startPeriod != null){
-        myPath += "?startPeriod="+startPeriod;
+            myPath += "?startPeriod="+startPeriod;
         } else if (lastNObservations != null) {
             myPath += "?lastNObservations="+lastNObservations;
         }
@@ -173,6 +254,154 @@ exports.getDataSet = function(req,res) {
                 res.send(result.statusCode);
             }
         });
-    }
+    });
 };
 
+exports.getDataFlow = function(req,res) {
+
+    var myPath = '/series/sdmx/dataflow';
+    var options = {
+            hostname: 'www.bdm.insee.fr',
+            port: 80,
+            path: myPath,
+            headers: {
+                'connection': 'keep-alive'
+            }
+    };
+    http.get(options, function(result) {
+        if (result.statusCode >=200 && result.statusCode < 400) {
+            var xml = '';
+            result.on('data', function(chunk) {
+                xml += chunk;
+            });
+
+            result.on('end',function() {
+                xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                    if(err == null) {
+                        var data = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'];
+                        res.send(buildDataflows(data));
+                    } else {
+                        res.send(err);
+                    }
+                });
+            });
+        } else {
+            res.send(result.statusCode);
+        }
+    });    
+};
+
+
+exports.getDataStruc = function(req,res) {
+
+    var dataSet = req.params.dataset;
+    var myPath = "/series/sdmx/datastructure/FR1/" + dataSet;
+    var options = {
+            hostname: 'www.bdm.insee.fr',
+            port: 80,
+            path: myPath,
+            headers: {
+                'connection': 'keep-alive'
+            }
+    };
+    http.get(options, function(result) {
+        if (result.statusCode >=200 && result.statusCode < 400) {
+            var xml = '';
+            result.on('data', function(chunk) {
+                xml += chunk;
+            });
+
+            result.on('end',function() {
+                xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                    if(err == null) {
+                        var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
+                        var nbDimension = data.length;
+                        res.send(buildDataStruc(data,dataSet));
+                    } else {
+                        res.send(err);
+                    }
+                });
+            });
+        } else {
+            res.send(result.statusCode);
+        }
+    });
+};
+
+
+// exports.getDataSet = function(req,res) {
+
+//     // All keys to UpperCase
+//     var key, keys = Object.keys(req.query);
+//     var n = keys.length;
+//     var reqParams={};
+//     while (n--) {
+//         key = keys[n];
+//         reqParams[key.toUpperCase()] = req.query[key];
+//     }
+    
+//     var dataSet = req.params.dataset.toUpperCase();
+//     var freq = req.param('FREQ');
+//     var startPeriod = req.param('startPeriod');
+//     var lastNObservations =  req.param('lastNObservations');
+    
+//     var myPath = "/series/sdmx/data/"+dataSet;
+//     var userParams = '';
+//     getDim(dataSet, function(arr) {
+//         var authParams = arr[1];
+//         authParams.forEach(function(it,ind){
+//             console.log(it);
+//             if(reqParams[it] != null) {
+//                 userParams += req.param(it);
+//             }
+//             else {
+//                 userParams += '.';
+//             }
+//             console.log(userParams);
+//         });
+//     });
+    
+//     if(freq == null){
+//         res.send('Error -> you must filter by frequency.');
+//     } else {
+//         freq = getFreq(freq);
+//         myPath += '/' + freq ;
+//         if (startPeriod != null){
+//         myPath += "?startPeriod="+startPeriod;
+//         } else if (lastNObservations != null) {
+//             myPath += "?lastNObservations="+lastNObservations;
+//         }
+        
+//         var options = {
+//             hostname: 'www.bdm.insee.fr',
+//             port: 80,
+//             path: myPath,
+//             headers: {
+//                 'connection': 'keep-alive',
+//                 'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1'
+//             }
+//         };
+//         http.get(options, function(result) {
+//             if (result.statusCode >= 200 && result.statusCode < 400) {
+//                 var xml = '';
+//                 result.on('data', function(chunk) {
+//                     xml += chunk;
+//                 });
+
+//                 result.on('end',function() {
+//                     xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+//                         if(err == null) {
+//                             var data = obj.StructureSpecificData.DataSet[0];
+//                             var vTS = data.Series;
+//                             res.send(buildHtml(vTS,dataSet));
+//                         } else {
+//                             res.send(err);
+//                         }
+//                     });
+//                 });
+//             } else {
+//                 res.send(result.statusCode);
+//             }
+//         });
+//     }
+// };
