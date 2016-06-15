@@ -210,7 +210,11 @@ exports.getDataSet = function(req,res) {
         var authParams = arr[1];
         authParams.forEach(function(it,ind){
             if(reqParams[it] != null) {
-                userParams += reqParams[it];
+                if(ind<arr[0]-1) {
+                    userParams += reqParams[it]+'.';
+                } else {
+                    userParams += reqParams[it];
+                }
             }
             else {
                 userParams += '.';
