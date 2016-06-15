@@ -24,6 +24,7 @@ For instance, the url for French HICP dataset is :
 Thus, some EViews code retrieving the series will look like this :
 
 `%url = http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M`
+
 `wfopen(wf=ipch,type="html") %url colhead=2 namepos=first`
 
 With an url you can retrieve :
@@ -71,6 +72,7 @@ Input : `http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M`
 
 ### KNOWN ISSUES
 Since the app output is an html table, an obvious limitations is that a request cannot be done along multiple dimensions.
-
+* Using the filter ?lastNObservations when retrieving multiple series or a dataset is a **bad** idea if series do not belong to the same time period.
+* Currently, retreving **IPC Dataset** is NOT possible due to limitation on the timeout period on Heroku website.
 
 
