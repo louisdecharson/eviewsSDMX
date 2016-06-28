@@ -506,9 +506,10 @@ function buildForm(vecEv) {
     
 
     
-    var body = '<h2>Importez les dates de publications de l\'Insee dans votre calendrier</h2>';
+    var body = '<h2>Importez les dates des publications de l\'Insee dans votre calendrier</h2>';
     body += '<ul><li>(i) Sélectionnez les publications pour lesquels vous souhaitez créer un événement</li>';
-    body += '<li>(ii) Ajoutez une alerte </li></ul>';
+    body += '<li>(ii) Ajoutez une alerte (facultatif) </li>';
+    body += '<li>(iii) Créer le calendrier correspondant ou générez une URL vers ce calendrier </li></ul>';
     body += '<strong>Sélectionnez les publications : </strong><br>';
     var form = '<form action="createCal" method="POST">';
 
