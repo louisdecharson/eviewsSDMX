@@ -438,6 +438,7 @@ exports.getCals = function(req,res) {
                     var vectDate = $(this).children().next().text().split(" ");
                     vecEv.push([ev,vectDate]);
                 });
+                res.setHeader("Content-Type", 'text/calendar');
                 res.send(buildCal(vecEv));
             } else {
                 cals.forEach(function(it,ind){
@@ -447,7 +448,8 @@ exports.getCals = function(req,res) {
                         var vectDate = $(this).parent().next().text().split(" ");
                         vecEv.push([ev,vectDate]);
                     });
-                });   
+                });
+                res.setHeader("Content-Type", 'text/calendar');
                 res.send(buildCal(vecEv));
             }
         } else {
