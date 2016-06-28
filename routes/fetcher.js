@@ -511,7 +511,7 @@ exports.getFormCal = function(req,res) {
 
 exports.sendCal = function(req,res) {
     var params = req.param('cal');
-    if (params.isArray && params.length > 1) {
+    if (Array.isArray(params) && params.length > 1) {
         params = params.join("+");
     };
     var route = "/cal/" + params;
