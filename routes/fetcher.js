@@ -1,7 +1,12 @@
 var xml2js = require('xml2js'),
     assert = require('assert'),
     concat = require('concat-stream'),
+    request = require('request'),
+    cheerio = require('cheerio'),
+    iconv = require('iconv-lite'),
+    ical = require('ical-generator'),
     http = require('http');
+
 
 var urlINSEE = "http://www.bdm.insee.fr/series/sdmx/data/SERIES_BDM/";
 var parser = new xml2js.Parser();
@@ -332,6 +337,122 @@ exports.getDataStruc = function(req,res) {
     });
 };
 
+
+function getMonth(mois) {
+    if (mois == "janvier") {
+        return "01";
+    } else if (mois == "février") {
+        return "02";
+    } else if (mois == "mars") {
+        return "03";
+    } else if (mois == "avril") {
+        return "04";
+    } else if (mois == "mai") {
+        return "05";
+    } else if (mois == "juin") {
+        return "06";
+    } else if (mois == "juillet") {
+        return "07";
+    } else if (mois == "août") {
+        return "08";
+    } else if (mois == "septembre") {
+        return "09";
+    } else if (mois == "octobre") {
+        return "10";
+    } else if (mois == "novembre") {
+        return "11";
+    } else if (mois == "décembre") {
+        return "12";
+    } else {
+        return "00";
+    }
+};
+
+function getHour(heure) {
+    var v = heure.split("h");
+    var ret = "";
+    if (v[0].length < 2) {
+        v[0] = "0"+v[0];
+        ret = v[0]+":"+v[1]+":00";
+        return ret;
+    } else {
+        ret = v[0]+":"+v[1]+":00";
+        return ret;
+    }
+};
+
+function getDay(jour){
+    var ret = "";
+    if (jour.length < 2) {
+        ret = "0"+jour;
+        return ret;
+    } else {
+        ret = jour;
+        return ret;
+    }
+}
+
+function buildCal(vecEv) {
+    var cal = ical({
+        domain: 'sdmx.herokuapp.com',
+        name: 'Calendrier des publications Insee'
+    });
+    vecEv.forEach(function(it,ind){
+        var myDate = it[1][2]+"-"+getMonth(it[1][1])+"-"+getDay(it[1][0])+"T"+getHour(it[1][4]);
+        var startDate = new Date(myDate);
+        startDate = new Date(startDate.getTime() + (startDate.getTimezoneOffset() * 60000));
+        var endDate = new Date(startDate.getTime()+3600000);
+        cal.createEvent({
+            start: startDate,
+            end: endDate,
+            summary: it[0],
+            description: '',
+            organizer: 'Insee <contact@insee.fr>'
+        }); 
+    });
+    return cal.toString();
+};
+
+
+exports.getCals = function(req,res) {
+
+    var cals = req.params.cals.split('+');
+    var myPath = "http://www.insee.fr/fr/service/agendas/agenda.asp?page=agenda_indic.htm";
+    var options = {
+        encoding: null,
+        method: "GET",
+        uri: myPath       
+    };
+    request(options, function(err, response, html) {
+        if (!err && response.statusCode == 200) {
+            var htmldecode = iconv.decode(new Buffer(html), "ISO-8859-1");
+            var $ =  cheerio.load(htmldecode);
+            var vecEv = [];
+            if (cals.length == 1 && cals[0]== "all") {
+                var myUrl = 'li[class="princ-ind"]';
+                $(myUrl).each(function(i,element){
+                    var ev = $(this).children().children().text().trim().replace('/+\t+/gm', '');
+                    var vectDate = $(this).children().next().text().split(" ");
+                    vecEv.push([ev,vectDate]);
+                });
+                res.send(buildCal(vecEv));
+            } else {
+                cals.forEach(function(it,ind){
+                    var myUrl = 'a[href="/fr/themes/indicateur.asp?id='+it.toString()+'"]';
+                    $(myUrl).each(function(i,element){
+                        var ev = $(this).text().trim().replace('/+\t+/gm', '');
+                        var vectDate = $(this).parent().next().text().split(" ");
+                        vecEv.push([ev,vectDate]);
+                    });
+                });   
+                res.send(buildCal(vecEv));
+            }
+        } else {
+            res.send(err);
+            console.log(err);
+        }
+    });
+};
 
 // exports.getDataSet = function(req,res) {
 
