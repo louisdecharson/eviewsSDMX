@@ -397,8 +397,7 @@ function getDay(jour){
 function buildCal(vecEv) {
     var cal = ical({
         domain: 'sdmx.herokuapp.com',
-        name: 'Calendrier des publications Insee',
-        timezone: 'Europe/Paris'
+        name: 'Calendrier des publications Insee'
     });
     vecEv.forEach(function(it,ind){
         var myDate = it[1][2]+"-"+getMonth(it[1][1])+"-"+getDay(it[1][0])+"T"+getHour(it[1][4]);
