@@ -6,6 +6,8 @@ var xml2js = require('xml2js'),
     iconv = require('iconv-lite'),
     ical = require('ical-generator'),
     moment = require('moment-timezone'),
+    forms = require('forms'),
+    bodyParser = require('body-parser'),
     http = require('http');
 
 
@@ -444,7 +446,7 @@ exports.getCals = function(req,res) {
                 cals.forEach(function(it,ind){
                     var myUrl = 'a[href="/fr/themes/indicateur.asp?id='+it.toString()+'"]';
                     $(myUrl).each(function(i,element){
-                        var ev = $(this).text().trim().replace('/+\t+/gm', '');
+                        var ev = $(this).text().trim().toString().replace('/+\t+/gm', '');
                         var vectDate = $(this).parent().next().text().split(" ");
                         vecEv.push([ev,vectDate]);
                     });
@@ -457,6 +459,64 @@ exports.getCals = function(req,res) {
             console.log(err);
         }
     });
+};
+
+
+function buildForm(vecEv) {
+
+    var header = '<title>Calendrier de l\'Insee</title>';
+    var bootstrap = '<link rel="stylesheet" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap.css" integrity="sha384-XXXXXXXX" crossorigin="anonymous"><script src="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/js/bootstrap.js" integrity="sha384-XXXXXXXX" crossorigin="anonymous"></script>';
+    var body = '<h2>Importez les dates de publications de l\'Insee dans votre calendrier</h2><p><strong>Choissisez les événements auquels vous souhaitez vous abonner</strong></p>';
+    var css = '<style>h2,form,p {margin-left:10px} </style>';
+    var form = '<form action="createCal" method="POST">';
+    vecEv.forEach(function(it,ind) {
+        if (ind==0){
+            form += '<input type="checkbox" name="cal" value="all"><strong>Tous les événements</strong><br><i>ou</i><br>';
+        } else {
+            form += '<input type="checkbox" name="cal" value="'+ it[0] + '"> '+ it[1]  +'<br>';
+        };
+    });
+    form += '<br><input type="submit" value="Créer calendrier"></form>';
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + css + '</header><body>' + body + form + '</body></html>';
+    return myHtml;
+    
+};
+
+exports.getFormCal = function(req,res) {
+    var myPath = "http://www.insee.fr/fr/service/agendas/agenda.asp?page=agenda_indic.htm";
+    var options = {
+        encoding: null,
+        method: 'GET',
+        uri: myPath
+    };
+    request(options, function(err,response,html) {
+        if (!err && response.statusCode == 200) {
+            var htmldecode = iconv.decode(new Buffer(html), "ISO-8859-1");
+            var $ = cheerio.load(htmldecode);
+            var vecEv = [];
+            var maClasse = 'select[id="indic"]';
+            $(maClasse).children().each(function(i,element) {
+                var id = $(this).attr('value');
+                var nom = $(this).attr('title');
+                vecEv.push([id,nom]);
+            });
+            res.send(buildForm(vecEv));
+        }
+        else {
+            res.send(err);
+            console.log(err);
+        }
+    });
+};
+
+exports.sendCal = function(req,res) {
+    var params = req.param('cal');
+    if (params.isArray && params.length > 1) {
+        params = params.join("+");
+    };
+    var route = "/cal/" + params;
+    var url = "webcal://sdmx.herokuapp.com/"+route;
+    res.redirect(route);
 };
 
 // exports.getDataSet = function(req,res) {
