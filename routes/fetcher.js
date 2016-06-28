@@ -429,7 +429,7 @@ exports.getCals = function(req,res) {
     };
     request(options, function(err, response, html) {
         if (!err && response.statusCode == 200) {
-            var htmldecode = iconv.decode(new Buffer(html), "utf8");
+            var htmldecode = iconv.decode(new Buffer(html), "ISO-8859-1");
             var $ =  cheerio.load(htmldecode);
             var vecEv = [];
             if (cals.length == 1 && cals[0]== "all") {
