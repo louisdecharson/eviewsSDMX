@@ -474,8 +474,10 @@ function buildForm(vecEv) {
 
     var header = '<title>Calendrier de l\'Insee</title>';
     var bootstrap = '<link rel="stylesheet" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap.css" integrity="sha384-XXXXXXXX" crossorigin="anonymous"><script src="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/js/bootstrap.js" integrity="sha384-XXXXXXXX" crossorigin="anonymous"></script>';
-    var css = '<style>h2,form,p {margin-left:10px;} input[type=submit]{width: 10em; font-size: 15px; padding: 6px 12px; vertical-align: middle; color: #fff; background-color: #337ab7; border-color: #2e6da4;}</style>';
-
+    var css = '<style>h2,form,p {margin-left:10px;} input[type=submit]{width: 10em; font-size: 15px; padding: 6px 12px; vertical-align: middle; color: #fff; background-color: #337ab7; border-color: #2e6da4; border: 1px solid transparent; border-radius: 4px;}</style>';
+    var githubRibbon = '<a href="https://github.com/louisdecharson/eviewsSDMX"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"></a>';
+    var footer = '</br><hr></hr><font size="2"><p>Credits : <a href="https://github.com/louisdecharson/">https://github.com/louisdecharson/</a></p></font>';
+    
     var body = '<h2>Importez les dates de publications de l\'Insee dans votre calendrier</h2>';
     body += '<ul><li>(i) Sélectionnez les publications pour lesquels vous souhaitez créer un événement</li>';
     body += '<li>(ii) Ajoutez une alerte </li></ul>';
@@ -494,7 +496,7 @@ function buildForm(vecEv) {
     form += '<input type="checkbox" name="alarm" value="3600"> 1 jour avant<br>';
     form += '<input type="checkbox" name="alarm" value="7200"> 2 jours avant<br>';
     form += '<br><input type="submit" value="Créer calendrier"></form>';
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + css + '</header><body>' + body + form + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + css + '</header><body>' + githubRibbon + body + form + footer + '</body></html>';
     return myHtml;
     
 };
