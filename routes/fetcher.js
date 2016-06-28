@@ -418,9 +418,9 @@ function buildCal(vecEv,alarms) {
             alarms.forEach(function(item,index){
                 event.createAlarm({type: 'display', trigger: item*60});
             });
-        } else {
+        } else if (typeof alarms != 'undefined') {
             event.createAlarm({type: 'display', trigger: alarms*60});
-        }   
+        }
     });
     return cal.toString();
 };
@@ -531,14 +531,19 @@ exports.getFormCal = function(req,res) {
 exports.sendCal = function(req,res) {
     var cals = req.param('cal');
     var alarms = req.param('alarm');
+    var route = '';
+
     if (Array.isArray(cals) && cals.length > 1) {
         cals = cals.join("+");
     };
     if (Array.isArray(alarms) && alarms.length > 1) {
         alarms = alarms.join("&alarm=");
     };
-    var route = "/cal/" + cals + '?alarm=' + alarms;
-    var url = "webcal://sdmx.herokuapp.com/"+route + '?alarm=' + alarms;
+    if (typeof alarms != 'undefined') {
+        route = "/cal/" + cals + '?alarm=' + alarms;
+    } else {
+        route = "/cal/" + cals;
+    }
     res.redirect(route);
 };
 
