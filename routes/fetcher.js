@@ -396,7 +396,7 @@ function getDay(jour){
     }
 }
 
-function buildCal(vecEv) {
+function buildCal(vecEv,alarms) {
     var cal = ical({
         domain: 'sdmx.herokuapp.com',
         name: 'Calendrier des publications Insee'
@@ -407,13 +407,20 @@ function buildCal(vecEv) {
         var startDate = new Date(moment.tz(myDate,"Europe/Paris").format());
         // console.log(startDate);
         var endDate = new Date(startDate.getTime()+3600000);
-        cal.createEvent({
+        var event = cal.createEvent({
             start: startDate,
             end: endDate,
             summary: it[0],
             description: '',
             organizer: 'Insee <contact@insee.fr>'
-        }); 
+        });
+        if (Array.isArray(alarms)) {
+            alarms.forEach(function(item,index){
+                event.createAlarm({type: 'display', trigger: item*60});
+            });
+        } else {
+            event.createAlarm({type: 'display', trigger: alarms*60});
+        }   
     });
     return cal.toString();
 };
@@ -422,6 +429,7 @@ function buildCal(vecEv) {
 exports.getCals = function(req,res) {
 
     var cals = req.params.cals.split('+');
+    var alarms = req.query.alarm;
     var myPath = "http://www.insee.fr/fr/service/agendas/agenda.asp?page=agenda_indic.htm";
     var options = {
         encoding: null,
@@ -441,7 +449,7 @@ exports.getCals = function(req,res) {
                     vecEv.push([ev,vectDate]);
                 });
                 res.setHeader("Content-Type", 'text/calendar');
-                res.send(buildCal(vecEv));
+                res.send(buildCal(vecEv,alarms));
             } else {
                 cals.forEach(function(it,ind){
                     var myUrl = 'a[href="/fr/themes/indicateur.asp?id='+it.toString()+'"]';
@@ -452,7 +460,7 @@ exports.getCals = function(req,res) {
                     });
                 });
                 res.setHeader("Content-Type", 'text/calendar');
-                res.send(buildCal(vecEv));
+                res.send(buildCal(vecEv,alarms));
             }
         } else {
             res.send(err);
@@ -466,9 +474,14 @@ function buildForm(vecEv) {
 
     var header = '<title>Calendrier de l\'Insee</title>';
     var bootstrap = '<link rel="stylesheet" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap.css" integrity="sha384-XXXXXXXX" crossorigin="anonymous"><script src="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/js/bootstrap.js" integrity="sha384-XXXXXXXX" crossorigin="anonymous"></script>';
-    var body = '<h2>Importez les dates de publications de l\'Insee dans votre calendrier</h2><p><strong>Choissisez les événements auquels vous souhaitez vous abonner</strong></p>';
-    var css = '<style>h2,form,p {margin-left:10px} </style>';
+    var css = '<style>h2,form,p {margin-left:10px;} input[type=submit]{width: 10em; font-size: 15px; padding: 6px 12px; vertical-align: middle; color: #fff; background-color: #337ab7; border-color: #2e6da4;}</style>';
+
+    var body = '<h2>Importez les dates de publications de l\'Insee dans votre calendrier</h2>';
+    body += '<ul><li>(i) Sélectionnez les publications pour lesquels vous souhaitez créer un événement</li>';
+    body += '<li>(ii) Ajoutez une alerte </li></ul>';
+    body += '<strong>Sélectionnez les publications : </strong><br>';
     var form = '<form action="createCal" method="POST">';
+
     vecEv.forEach(function(it,ind) {
         if (ind==0){
             form += '<input type="checkbox" name="cal" value="all"><strong>Tous les événements</strong><br><i>ou</i><br>';
@@ -476,6 +489,10 @@ function buildForm(vecEv) {
             form += '<input type="checkbox" name="cal" value="'+ it[0] + '"> '+ it[1]  +'<br>';
         };
     });
+    form += '<br><strong>Ajoutez une alarme</strong><br><input type="checkbox" name="alarm" value="15"> 15mn avant<br>';
+    form += '<input type="checkbox" name="alarm" value="60"> 1 heure avant<br>';
+    form += '<input type="checkbox" name="alarm" value="3600"> 1 jour avant<br>';
+    form += '<input type="checkbox" name="alarm" value="7200"> 2 jours avant<br>';
     form += '<br><input type="submit" value="Créer calendrier"></form>';
     var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + css + '</header><body>' + body + form + '</body></html>';
     return myHtml;
@@ -510,12 +527,16 @@ exports.getFormCal = function(req,res) {
 };
 
 exports.sendCal = function(req,res) {
-    var params = req.param('cal');
-    if (Array.isArray(params) && params.length > 1) {
-        params = params.join("+");
+    var cals = req.param('cal');
+    var alarms = req.param('alarm');
+    if (Array.isArray(cals) && cals.length > 1) {
+        cals = cals.join("+");
     };
-    var route = "/cal/" + params;
-    var url = "webcal://sdmx.herokuapp.com/"+route;
+    if (Array.isArray(alarms) && alarms.length > 1) {
+        alarms = alarms.join("&alarm=");
+    };
+    var route = "/cal/" + cals + '?alarm=' + alarms;
+    var url = "webcal://sdmx.herokuapp.com/"+route + '?alarm=' + alarms;
     res.redirect(route);
 };
 
