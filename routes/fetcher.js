@@ -469,14 +469,42 @@ exports.getCals = function(req,res) {
     });
 };
 
+// function getUrl() {
+//     var elementsCal = document.getElementsByName('cal');
+//     var cals = [];
+//     for(var i=0; i<elementsCal.length; i++) {
+//         if (elementsCal[i].checked) {
+//             cals.push(elementsCal[i].value);
+//         }
+//     }
+//     cals = cals.join('+');
+//     var alarms = [];
+//     var elementsAlarm = document.getElementsByName('cal');
+//     for(var i=0; i<elementsAlarm.length; i++) {
+//         if (elementsAlarm[i].checked) {
+//             alarms.push(elementsAlarm[i].value);
+//         }
+//     }
+//     alarms = alarms.join('&alarm=');
+//     var route = 'webcal://sdmx.herokuapp.com/cal' + cals ;
+//     if (alarms.length > 0) {
+//         route = route + '?alarm=' + alarms ;
+//     }
+//     document.getElementById('myUrl').innerHTML = route;
+// }
+ 
 
 function buildForm(vecEv) {
 
     var header = '<title>Calendrier de l\'Insee</title>';
     var bootstrap = '<link rel="stylesheet" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap.css" integrity="sha384-XXXXXXXX" crossorigin="anonymous"><script src="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/js/bootstrap.js" integrity="sha384-XXXXXXXX" crossorigin="anonymous"></script>';
-    var css = '<style>h2,form,p {margin-left:10px;} input[type=submit]{width: 10em; font-size: 15px; padding: 6px 12px; vertical-align: middle; color: #fff; background-color: #337ab7; border-color: #2e6da4; border: 1px solid transparent; border-radius: 4px;}</style>';
+    var css = '<style>h2,form,p {margin-left:10px;} input[type=submit]{width: 10em; font-size: 15px; padding: 6px 12px; vertical-align: middle; color: #fff; background-color: #337ab7; border-color: #2e6da4; border: 1px solid transparent; border-radius: 4px;} input[type=button]{width: 10em; font-size: 15px; padding: 6px 12px; vertical-align: middle; color: #fff; background-color: #669999; border-color: #2e6da4; border: 1px solid transparent; border-radius: 4px;} #myUrl {background-color: #e0e0eb; border: 1px solid transparent; border-radius: 4px; padding: 6px 12px; vertical-align: middle; display:inline-block;}</style>';
+    var script = "<script>function getUrl() { var elementsCal = document.getElementsByName('cal'); var cals = []; for(var i=0; i<elementsCal.length; i++) { if (elementsCal[i].checked) { cals.push(elementsCal[i].value); } } cals = cals.join('+'); var alarms = []; var elementsAlarm = document.getElementsByName('alarm'); for(var i=0; i<elementsAlarm.length; i++) { if (elementsAlarm[i].checked) { alarms.push(elementsAlarm[i].value); } } alarms = alarms.join('&alarm='); var route = 'webcal://sdmx.herokuapp.com/cal/' + cals ; if (alarms.length > 0) { route = route + '?alarm=' + alarms ; } document.getElementById('myUrl').innerHTML = route; }</script>";
+    
     var githubRibbon = '<a href="https://github.com/louisdecharson/eviewsSDMX"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"></a>';
     var footer = '</br><hr></hr><font size="2"><p>Credits : <a href="https://github.com/louisdecharson/">https://github.com/louisdecharson/</a></p></font>';
+    
+
     
     var body = '<h2>Importez les dates de publications de l\'Insee dans votre calendrier</h2>';
     body += '<ul><li>(i) Sélectionnez les publications pour lesquels vous souhaitez créer un événement</li>';
@@ -493,10 +521,12 @@ function buildForm(vecEv) {
     });
     form += '<br><strong>Ajoutez une alarme</strong><br><input type="checkbox" name="alarm" value="15"> 15mn avant<br>';
     form += '<input type="checkbox" name="alarm" value="60"> 1 heure avant<br>';
-    form += '<input type="checkbox" name="alarm" value="3600"> 1 jour avant<br>';
-    form += '<input type="checkbox" name="alarm" value="7200"> 2 jours avant<br>';
-    form += '<br><input type="submit" value="Créer calendrier"></form>';
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + css + '</header><body>' + githubRibbon + body + form + footer + '</body></html>';
+    form += '<input type="checkbox" name="alarm" value="1440"> 1 jour avant<br>';
+    form += '<input type="checkbox" name="alarm" value="2880"> 2 jours avant<br>';
+    form += '<br><input type="submit" name="createCal" value="Créer calendrier">';
+    form += ' <input type="button" onclick="getUrl()" value="Obtenir l\'url"></form>';
+    form += '<p id="myUrl"></p>';
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + css + script + '</header><body>' + githubRibbon + body + form + footer + '</body></html>';
     return myHtml;
     
 };
