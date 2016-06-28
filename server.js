@@ -23,7 +23,7 @@ app.get('/dataflow',fetcher.getDataFlow);
 app.get('/cal/:cals', fetcher.getCals);
 app.get('/cal',fetcher.getFormCal);
 app.post('/createCal',fetcher.sendCal);
-
+app.post('/cal/createCal',fetcher.sendCal);
 
 app.listen(port, function() {
     console.log('Our app is running on port '+ port);
