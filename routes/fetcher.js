@@ -5,7 +5,9 @@ var xml2js = require('xml2js'),
     cheerio = require('cheerio'),
     iconv = require('iconv-lite'),
     ical = require('ical-generator'),
+    moment = require('moment-timezone'),
     http = require('http');
+
 
 
 var urlINSEE = "http://www.bdm.insee.fr/series/sdmx/data/SERIES_BDM/";
@@ -399,8 +401,9 @@ function buildCal(vecEv) {
     });
     vecEv.forEach(function(it,ind){
         var myDate = it[1][2]+"-"+getMonth(it[1][1])+"-"+getDay(it[1][0])+"T"+getHour(it[1][4]);
-        var startDate = new Date(myDate);
-        startDate = new Date(startDate.getTime() + (startDate.getTimezoneOffset() * 60000));
+        // var startDate = new Date(myDate);
+        var startDate = new Date(moment.tz(myDate,"Europe/Paris").format());
+        // console.log(startDate);
         var endDate = new Date(startDate.getTime()+3600000);
         cal.createEvent({
             start: startDate,
