@@ -209,7 +209,6 @@ exports.getDataSet = function(req,res) {
         if (key.toUpperCase() == "FREQUENCY") {
             key = "FREQ";
         }
-        console.log(key);
         reqParams[key.toUpperCase()] = req.query[key];
     }
     var dataSet = req.params.dataset.toUpperCase();
