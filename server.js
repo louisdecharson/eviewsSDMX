@@ -20,6 +20,8 @@ app.get('/series/:series', fetcher.getSeries);
 app.get('/dataset/:dataset', fetcher.getDataSet);
 app.get('/datastructure/:dataset', fetcher.getDataStruc);
 app.get('/dataflow',fetcher.getDataFlow);
+app.get('/dataflow/:dataset', fetcher.getListIdBanks); // donne la liste des idbanks contenue dans un dataset
+// Calendrier
 app.get('/cal/:cals', fetcher.getCals);
 app.get('/cal',fetcher.getFormCal);
 app.post('/createCal',fetcher.sendCal);

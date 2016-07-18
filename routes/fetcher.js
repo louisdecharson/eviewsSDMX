@@ -83,7 +83,8 @@ function buildDataflows(data) {
         tbody = '';
     
     data.forEach(function(item,index){
-        tbody += '<tr><td>' + item.id + '</td><td>';
+        // tbody += '<tr><td>' + item.id + '</td><td>';
+        tbody += '<tr><td><a href="/dataflow/' + item.id + '">' + item.id + '</a>' + '</td><td>';
         tbody += item.Name[0]['_'] + '</td><td>';
         tbody += item.Name[1]['_'] + '</td><td>';
     });
@@ -141,6 +142,26 @@ function buildHtml(vTS,title){
     return myHtml;
 }
 
+
+
+function buildHtmlnoData(vTS,title){
+    var header = '<title>SDMX API for EViews / '+ title +'</title>';
+    var body = '';
+    var table ='';
+    var theader = '<th>IdBank</th><th>Title</th><th>Last update</th>';
+    var tbody = '';
+
+    vTS.forEach(function(item,index){
+        tbody += '<tr><td>' + item.IDBANK[0] + '</td><td>';
+        tbody += item.TITLE[0] + '</td><td>';
+        tbody += item.LAST_UPDATE[0] + '</td><td>';
+    });
+                 
+    
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table cellpadding="4" rules="cols">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
+    
+    return myHtml;
+}
 
 
 function getFreq(freq){
@@ -344,6 +365,51 @@ exports.getDataStruc = function(req,res) {
         }
     });
 };
+
+
+exports.getListIdBanks = function(req,res) {
+
+    var dataSet = req.params.dataset.toUpperCase();
+
+    var myPath = "/series/sdmx/data/"+dataSet+"?detail=nodata";
+    
+    var options = {
+            hostname: 'www.bdm.insee.fr',
+            port: 80,
+            path: myPath,
+            headers: {
+                'connection': 'keep-alive',
+                'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1'
+            }
+    };
+    http.get(options, function(result) {
+            if (result.statusCode >= 200 && result.statusCode < 400) {
+                var xml = '';
+                result.on('data', function(chunk) {
+                    xml += chunk;
+                });
+
+                result.on('end',function() {
+                    xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                        if(err == null) {
+                            var data = obj.StructureSpecificData.DataSet[0];
+                            var vTS = data.Series;
+                            res.send(buildHtmlnoData(vTS,dataSet));
+                        } else {
+                            res.send(err);
+                        }
+                    });
+                });
+            } else {
+                res.send(result.statusCode);
+            }
+        });
+    
+};
+
+
+// CALENDRIER
+// ==========
 
 
 function getMonth(mois) {
