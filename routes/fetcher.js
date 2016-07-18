@@ -83,7 +83,6 @@ function buildDataflows(data) {
         tbody = '';
     
     data.forEach(function(item,index){
-        // tbody += '<tr><td>' + item.id + '</td><td>';
         tbody += '<tr><td><a href="/dataflow/' + item.id + '">' + item.id + '</a>' + '</td><td>';
         tbody += item.Name[0]['_'] + '</td><td>';
         tbody += item.Name[1]['_'] + '</td><td>';
@@ -152,7 +151,7 @@ function buildHtmlnoData(vTS,title){
     var tbody = '';
 
     vTS.forEach(function(item,index){
-        tbody += '<tr><td>' + item.IDBANK[0] + '</td><td>';
+        tbody += '<tr><td><a href="/series/' + item.IDBANK[0] + '">' + item.IDBANK[0] +'</a></td><td>';
         tbody += item.TITLE[0] + '</td><td>';
         tbody += item.LAST_UPDATE[0] + '</td><td>';
     });
