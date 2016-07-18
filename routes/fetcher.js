@@ -101,9 +101,9 @@ function buildHtml(vTS,title){
     var theader2 = '<th>&nbsp;</th>';
     var tbody = '';
 
-    var vTsSorted = vTS.sort(function(a,b) { return b.Obs.length-a.Obs.length;});
+    var vTsSorted = vTS.sort(function(a,b) { return b.Obs.length-a.Obs.length;}); // vector of timeseries
     var nbObs = vTsSorted[0].Obs.length;
-    var vInd = new Array(vTS.length).fill(0);
+    var vInd = new Array(vTS.length).fill(0); // vector of cursors
 
     var vTsSR = [];
     
@@ -111,14 +111,15 @@ function buildHtml(vTS,title){
     for(var kk=0; kk<vTsSorted.length; kk++) {
         theader1 += '<th>' + vTsSorted[kk].IDBANK[0] + '</th>';
         theader2 += '<th>' + vTsSorted[kk].TITLE[0] + '</th>';
-        vTsSR.push(vTsSorted[kk].Obs.reverse());
+        vTsSR.push(vTsSorted[kk].Obs.reverse()); // sorted vector of timeseries
     }
     
     // BODY
     var i = 0;
 
     while (i < nbObs) {
-        tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0] + '</td>';
+        // tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0] + '</td>';
+        tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0].replace('-Q','Q') + '</td>';
         tbody += '<td style="text-align:center">' + vTsSR[0][i].OBS_VALUE[0] + '</td>';
         for(var k=1; k<vTsSR.length; k++) {
             if(vInd[k] < vTsSR[k].length) {
