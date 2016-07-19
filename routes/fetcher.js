@@ -83,7 +83,11 @@ function buildDataflows(data) {
     data.forEach(function(item,index){
         tbody += '<tr><td><a href="/dataflow/' + item.id + '">' + item.id + '</a>' + '</td><td>';
         tbody += item.Name[0]['_'] + '</td><td>';
-        tbody += item.Name[1]['_'] + '</td><td>';
+        if (item.Name.length > 1) {
+            tbody += item.Name[1]['_'] + '</td><td>';
+        } else {
+            tbody += '&nbsp;</td><td>';
+        }
     });
 
     var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table><col width="200"' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
