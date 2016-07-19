@@ -65,13 +65,37 @@ function buildDataStruc(data,title) {
     var listDim = 'Dimensions list : <ul> ';
 
     data.forEach(function(item,index) {
-        listDim += '<li>'+ item['position'][0] + ". " + item['id'][0]+'</li>';
+        var code = item['LocalRepresentation'][0]['Enumeration'][0]['Ref'][0]['id'][0];
+        listDim += '<li>'+ item['position'][0] + ". " + '<a href=/codelist/'+ code + '>' +item['id'][0]+'</a></li>';
+
     });
     listDim += '</ul>';
     var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + Dim + listDim + '</body></html>';
     return myHtml;
     
 };
+
+
+
+function buildCodeList(codes,title_dim) {
+    var header = '<title>SDMX API for EViews / Codelist for '+ title_dim +'</title>';
+    var body ='',
+        table = '',
+        theader = '<th>Id</th><th>Description</th>',
+        tbody = '<h2>List of codes potentially available for the dimension ' + title_dim  + '</h2>';
+
+
+    codes.forEach(function(item,index) {
+        tbody += '<tr><td style="min-width:50px">' + item['id'][0]  + '</td>';
+        tbody += '<td style="min-width:100px">' + item['Name'][item['Name'].length-1]['_']+'</td></tr>';
+        
+    });
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table cellpadding="4" rules="cols">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
+    return myHtml;
+};
+
+
+
 
 function buildDataflows(data) {
     var header = '<title>SDMX API for EViews / DATAFLOWS </title>';
@@ -365,6 +389,44 @@ exports.getDataStruc = function(req,res) {
             res.send(result.statusCode);
         }
     });
+};
+
+exports.getCodeList = function(req,res) {
+
+    var dim = req.params.codelist;
+    var myPath = "/series/sdmx/codelist/FR1/" + dim;
+    var options = {
+            hostname: 'www.bdm.insee.fr',
+            port: 80,
+            path: myPath,
+            headers: {
+                'connection': 'keep-alive'
+            }
+    };
+    http.get(options, function(result) {
+        if (result.statusCode >=200 && result.statusCode < 400) {
+            var xml = '';
+            result.on('data', function(chunk) {
+                xml += chunk;
+            });
+
+            result.on('end',function() {
+                xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                    if(err == null) {
+                        var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'][0];
+                        var title_dim = data['id'][0];
+                        var codes = data['Code'];
+                        res.send(buildCodeList(codes,title_dim));
+                    } else {
+                        res.send(err);
+                    }
+                });
+            });
+        } else {
+            res.send(result.statusCode);
+        }
+    });
+
 };
 
 

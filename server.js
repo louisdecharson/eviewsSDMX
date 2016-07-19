@@ -25,6 +25,7 @@ app.get('/dataset/:dataset', fetcher.getDataSet);
 app.get('/datastructure/:dataset', fetcher.getDataStruc);
 app.get('/dataflow',fetcher.getDataFlow);
 app.get('/dataflow/:dataset', fetcher.getListIdBanks); // donne la liste des idbanks contenue dans un dataset
+app.get('/codelist/:codelist', fetcher.getCodeList); // donne la liste des codes disponibles pour chaque dimension
 
 // Calendrier
 app.get('/cal/:cals', cal.getCals);
