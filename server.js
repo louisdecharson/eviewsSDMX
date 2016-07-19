@@ -2,8 +2,8 @@ var express = require('express'),
     path = require('path'),
     bodyParser = require('body-parser'),
     fetcher = require('./routes/fetcher'),
-    cal = require('./routes/cal'),
-    search = require('./routes/search');
+    cal = require('./routes/cal');
+    // search = require('./routes/search');
 
 
 
@@ -32,7 +32,7 @@ app.post('/createCal',cal.sendCal);
 app.post('/cal/createCal',cal.sendCal);
 
 // Search Engine
-app.get('/search/all', search.getAllId);
+// app.get('/search/all', search.getAllId);
 
 
 app.listen(port, function() {
