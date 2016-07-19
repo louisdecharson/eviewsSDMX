@@ -123,13 +123,13 @@
 
 <a name="howitworks"></a>
 
-<h2>I. How it works ?</h2>
+<h2>I. How does it work ?</h2>
 
-<p>The app is transforming SDMX flows from Insee website in a html table that can be read by EViews. The app provides you with a stable URL that you can use in your EViews code.</p>
-<p>For instance, the url for French HICP dataset is :
+<p>The app is transforming SDMX flows from Insee website in an HTML table that can be read by EViews. The app provides you with a stable URL that you can use in your EViews code.</p>
+<p>For instance, the url for the French HICP dataset is :
 <code>http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M</code></p>
 
-<p>Thus, some EViews code retrieving the series will look like this :</p>
+<p>Thus, some EViews code for retrieving the series will look like this :</p>
 
 <pre>%url = http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M
 wfopen(wf=ipch,type="html") %url colhead=2 namepos=first</pre>
@@ -154,28 +154,25 @@ You can filter the results and limit the number of observations by either :
   <li>fixing the starting period with the filter : <code>startPeriod</code></li>
 </ul>
 
-<strong>Example :</strong><br>
-<font color=darkBlue>
-<code>%url = "http://sdmx.herokuapp.com/series/000436387?startPeriod=2010"</code>
-</font>
+<strong>Example :</strong><code>%url = "http://sdmx.herokuapp.com/series/000436387?startPeriod=2010"</code>
 
 <br></br>
+
 <a name="multtimeseries"></a>
 <h3>B. Get multiple Timeseries</h3>
 
-<p>You could add multiple idbanks to your request with '+' : <code>http://sdmx.herokuapp.com/series/idbank1+idbank2+idbank3</code></p>
+<p>You could add multiple idbanks to your request by separating each idbank by a '+' : <code>http://sdmx.herokuapp.com/series/idbank1+idbank2+idbank3</code></p>
 
-<strong>Example : </strong>
-<code>http://sdmx.herokuapp.com/series/001762151+001762152+001762153?startPeriod=2010</code>
+<strong>Example : </strong><code>http://sdmx.herokuapp.com/series/001762151+001762152+001762153?startPeriod=2010</code>
 <br></br>
 <div class="alert alert-warning">
-  <strong>Be cautious!</strong> previous filters still work but you have to ensure that the timeseries share the same time period. Otherwise, some values can be missing.
+  <strong>Be cautious !</strong> Previous filters still work but you have to ensure that all the timeseries share the same time period. Otherwise, some values can be missing.
 </div>
 
 <a name="datasets"></a>
 <h3>C. Get a Dataset</h3>
 
-<p>To get a dataset, you should know its id. You can get an exhaustive list here : <a href="http://sdmx.herokuapp.com/dataflow">http://sdmx.herokuapp.com/dataflow</a></p>
+<p>To get a dataset, you should know its id. An exhaustive list is available here : <a href="http://sdmx.herokuapp.com/dataflow">http://sdmx.herokuapp.com/dataflow</a></p>
 
 <p>Then, the url for the dataset data is :
 <code>http://sdmx.herokuapp.com/dataset/id_dataset</code></p>
@@ -184,16 +181,14 @@ You can filter the results and limit the number of observations by either :
 An exhaustive dimensions lists can be found here : <code>http://sdmx.herokuapp.com/datastructure/id_dataset</code></p>
 
 <p>You can then use it as a standard filter.</p>
-
-<p><strong>Example : </strong>
-<code>http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M</code>
+<p><strong>Example : </strong><code>http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M</code>
 <br></br>
 
 <a name="skim"></a>
 <h3>Skim Data</h3>
-<p>The website allows you to skim through the datasets and timeseries available. 
-All the datasets are available here : <a href="http://sdmx.herokuapp.com/dataflow">http://sdmx.herokuapp.com/dataflow</a></p>
-<p>And the exhaustive of timeseries available in each dataset is at http://sdmx.herokuapp.com/dataflow/id_dataset.</p>
+<p>The app allows you to skim through the available datasets and timeseries. 
+A list of all the available datasets can be found here : <a href="http://sdmx.herokuapp.com/dataflow">http://sdmx.herokuapp.com/dataflow</a></p>
+<p>And an exhaustive of timeseries available in each dataset is at http://sdmx.herokuapp.com/dataflow/id_dataset (change 'id_dataset' by the name of the dataset).</p>
 
 <hr></hr>
 <h2>Example</h2>
@@ -217,10 +212,11 @@ wfopen(wf=ipch,type="html") %url colhead=2 namepos=first
 <font color=darkRed>
 <h2>Known Issues</h2>
 </font>
-<p>Since the app output is an html table, an obvious limitations is that a request cannot be done along multiple dimensions.</p>
+<p>Since the app output is an html table, an obvious limitation is that a request cannot be done along multiple time dimensions. You cannot retrieve in the same request monthly and quaterly data.</p>
+Moreover :
 <ul>
     <li> Using the filter <code>?lastNObservations=</code> when retrieving multiple series or a dataset is a <strong>bad</strong> idea if series do not belong to the same time period.</li>
-    <li> Currently, retreiving entire datasets in one instance is not possible due to limitation on the timeout period on Heroku website. However, you can filter results in ordrer to retrieve the datasets in multiple instances.
+    <li> Currently, retreiving some entire datasets in one instance is not possible due to limitation on the timeout period on Heroku website. However, you can filter results in ordrer to retrieve the datasets in multiple instances.
 </ul>
 <strong>New Issues</strong>
 <p>You can raise new issues <a href="https://github.com/louisdecharson/eviewsSDMX/issues/new">here</a></p>
