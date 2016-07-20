@@ -11,10 +11,11 @@ The app is transforming SDMX flows from Insee website in an HTML table that can 
 For instance, the url for the French HICP dataset is : `http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M`
  
 Thus, some EViews code for retrieving the series will look like this :
- 
-`%url = http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M`
-`wfopen(wf=ipch,type="html") %url colhead=2 namepos=first`
- 
+
+```
+%url = http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M
+wfopen(wf=ipch,type="html") %url colhead=2 namepos=first
+```
 
 With an url you can retrieve :
  
@@ -70,10 +71,11 @@ And an exhaustive of timeseries available in each dataset is at http://sdmx.hero
  
 #### _EViews Input :_
  
-<pre>%url = http://sdmx.herokuapp.com/series/000436387?startPeriod=2016
+ ```
+%url = http://sdmx.herokuapp.com/series/000436387?startPeriod=2016
 wfopen(wf=ipch,type="html") %url colhead=2 namepos=first
-</pre>
- 
+```
+
 #### _EViews Output :_
  
 A workfile with a two series, one series named `num000436387` containing information from the timeseries with idbank _000436387_ and a series `Dates`containing Dates from 2016M01 to 2016M05
