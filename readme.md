@@ -15,13 +15,13 @@ Thus, some EViews code for retrieving the series will look like this :
 <pre>%url = http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M
 wfopen(wf=ipch,type="html") %url colhead=2 namepos=first</pre>
  
+
 With an url you can retrieve :
  
 *   a timeseries
 *   multiple timeseries
 *   a dataset
  
-<a name="timeseries"></a>
  
 ### A. Get a Timeseries
  
@@ -34,7 +34,6 @@ You can filter the results and limit the number of observations by either :
  
 **Example :**`%url = "http://sdmx.herokuapp.com/series/000436387?startPeriod=2010"`
  
-<a name="multtimeseries"></a>
  
 ### B. Get multiple Timeseries
  
@@ -44,7 +43,6 @@ You could add multiple idbanks to your request by separating each idbank by a '+
  
 **Be cautious !** :  Previous filters still work but you have to ensure that all the timeseries share the same time period. Otherwise, some values can be missing.
  
-<a name="datasets"></a>
  
 ### C. Get a Dataset
  
@@ -59,7 +57,6 @@ You can then use it as a standard filter.
  
 **Example :** `http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M`
  
-<a name="skim"></a>
  
 ### Skim Data
  
