@@ -12,8 +12,8 @@ For instance, the url for the French HICP dataset is : `http://sdmx.herokuapp.co
  
 Thus, some EViews code for retrieving the series will look like this :
  
-<pre>%url = http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M
-wfopen(wf=ipch,type="html") %url colhead=2 namepos=first</pre>
+`%url = http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M`
+`wfopen(wf=ipch,type="html") %url colhead=2 namepos=first`
  
 
 With an url you can retrieve :
