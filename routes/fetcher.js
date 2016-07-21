@@ -204,19 +204,18 @@ exports.getSeries = function(req,res) {
         endPeriod = req.param('endPeriod'),
         firstNObservations = req.param('firstNObservations');
     
-    var myPath = '';
+    var myPath = '/series/sdmx/data/SERIES_BDM/'+series;
 
-    if(startPeriod == null && lastNObservations == null){
-        myPath = "/series/sdmx/data/SERIES_BDM/"+series;
-    } else if (startPeriod!= null) {
-        myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?startPeriod="+startPeriod;
+    if (startPeriod!= null) {
+        myPath += "?startPeriod="+startPeriod;
     } else if (lastNObservations != null) {
-        myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?lastNObservations="+lastNObservations;
+        myPath += "?lastNObservations="+lastNObservations;
     } else if (firstNObservations != null) {
-        myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?firstNObservations="+firstNObservations;
+        myPath += "?firstNObservations="+firstNObservations;
     } else if (endPeriod != null) {
-        myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?endPeriod="+endPeriod;        
+        myPath += "?endPeriod="+endPeriod;        
     }
+    console.log(myPath);
 
     
     var options = {
@@ -267,9 +266,7 @@ exports.getDataSet = function(req,res) {
              key = "FREQ";
         }       
         reqParams[key.toUpperCase()] = req.query[kkey];
-        console.log(key);
     }
-    console.log(reqParams);
     var dataSet = req.params.dataset.toUpperCase();
     var startPeriod = reqParams['STARTPERIOD'],
         firstNObservations = reqParams['FIRSTNOBSERVATIONS'],
