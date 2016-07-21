@@ -203,19 +203,26 @@ exports.getSeries = function(req,res) {
         lastNObservations = req.param('lastNObservations'),
         endPeriod = req.param('endPeriod'),
         firstNObservations = req.param('firstNObservations');
-    
-    var myPath = '/series/sdmx/data/SERIES_BDM/'+series;
 
-    if (startPeriod!= null) {
-        myPath += "?startPeriod="+startPeriod;
-    } else if (lastNObservations != null) {
-        myPath += "?lastNObservations="+lastNObservations;
-    } else if (firstNObservations != null) {
-        myPath += "?firstNObservations="+firstNObservations;
-    } else if (endPeriod != null) {
-        myPath += "?endPeriod="+endPeriod;        
-    }
-    console.log(myPath);
+    var keys = Object.keys(req.query);
+    var params = "?";
+    keys.forEach(function(it,ind,arr) {
+        params += it.toString() + "=" + req.query[it] ;
+        if (ind<arr.length-1) {
+            params += "&";
+        }
+    });    
+    var myPath = '/series/sdmx/data/SERIES_BDM/'+series+params;
+
+    // if (startPeriod!= null) {
+    //     myPath += "?startPeriod="+startPeriod;
+    // } else if (lastNObservations != null) {
+    //     myPath += "?lastNObservations="+lastNObservations;
+    // } else if (firstNObservations != null) {
+    //     myPath += "?firstNObservations="+firstNObservations;
+    // } else if (endPeriod != null) {
+    //     myPath += "?endPeriod="+endPeriod;        
+    // }
 
     
     var options = {
