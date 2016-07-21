@@ -198,17 +198,26 @@ exports.getSeries = function(req,res) {
     
     var arr = req.params.series.split('+');
     var series = req.params.series;
-    var startPeriod = req.param('startPeriod');
-    var lastNObservations = req.param('lastNObservations');
+    
+    var startPeriod = req.param('startPeriod'),
+        lastNObservations = req.param('lastNObservations'),
+        endPeriod = req.param('endPeriod'),
+        firstNObservations = req.param('firstNObservations');
+    
     var myPath = '';
 
     if(startPeriod == null && lastNObservations == null){
         myPath = "/series/sdmx/data/SERIES_BDM/"+series;
-    } else if (startPeriod!= null){
+    } else if (startPeriod!= null) {
         myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?startPeriod="+startPeriod;
-    } else {
+    } else if (lastNObservations != null) {
         myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?lastNObservations="+lastNObservations;
+    } else if (firstNObservations != null) {
+        myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?firstNObservations="+firstNObservations;
+    } else if (endPeriod != null) {
+        myPath = "/series/sdmx/data/SERIES_BDM/"+series+"?endPeriod="+endPeriod;        
     }
+
     
     var options = {
         hostname: 'www.bdm.insee.fr',
@@ -253,14 +262,19 @@ exports.getDataSet = function(req,res) {
     var reqParams={};
     while (n--) {
         key = keys[n];
+        var kkey = key; // name of the key before it get changed below
         if (key.toUpperCase() == "FREQUENCY") {
-            key = "FREQ";
-        }
-        reqParams[key.toUpperCase()] = req.query[key];
+             key = "FREQ";
+        }       
+        reqParams[key.toUpperCase()] = req.query[kkey];
+        console.log(key);
     }
+    console.log(reqParams);
     var dataSet = req.params.dataset.toUpperCase();
-    var startPeriod = reqParams['STARTPERIOD'];
-    var lastNObservations =  reqParams['LASTNOBSERVATIONS'];
+    var startPeriod = reqParams['STARTPERIOD'],
+        firstNObservations = reqParams['FIRSTNOBSERVATIONS'],
+        lastNObservations =  reqParams['LASTNOBSERVATIONS'],
+        endPeriod = reqParams['ENDPERIOD'];
     
     var myPath = "/series/sdmx/data/"+dataSet;
     var userParams = '';
@@ -284,7 +298,12 @@ exports.getDataSet = function(req,res) {
             myPath += "?startPeriod="+startPeriod;
         } else if (lastNObservations != null) {
             myPath += "?lastNObservations="+lastNObservations;
+        } else if (endPeriod != null) {
+            myPath += "?endPeriod="+endPeriod;
+        } else if (firstNObservations != null) {
+            myPath += "?firstNObservations="+firstNObservations;
         }
+            
         
         var options = {
             hostname: 'www.bdm.insee.fr',
