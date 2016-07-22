@@ -2,7 +2,8 @@ var express = require('express'),
     path = require('path'),
     bodyParser = require('body-parser'),
     fetcher = require('./routes/fetcher'),
-    cal = require('./routes/cal');
+    cal = require('./routes/cal'),
+    fetcher2 = require('./routes/fetcher2');
     // search = require('./routes/search');
 
 
@@ -19,13 +20,19 @@ app.get('/', function(req,res) {
     res.sendFile(path.join(__dirname + '/routes/index.html'));
 });
 
-// TimeSeries
+// TimeSeries for Insee
 app.get('/series/:series', fetcher.getSeries);
 app.get('/dataset/:dataset', fetcher.getDataSet);
 app.get('/datastructure/:dataset', fetcher.getDataStruc);
 app.get('/dataflow',fetcher.getDataFlow);
 app.get('/dataflow/:dataset', fetcher.getListIdBanks); // donne la liste des idbanks contenue dans un dataset
 app.get('/codelist/:codelist', fetcher.getCodeList); // donne la liste des codes disponibles pour chaque dimension
+
+// Timeseries for ECB
+app.get('/:service/dataflow', fetcher2.getAllDataFlow);
+app.get('/:service/dataflow/:dataset', fetcher2.getDataFlow);
+app.get('/:service/dataset/:dataset',fetcher2.getDataSet);
+app.get('/:service/series/:series',fetcher2.getSeries);
 
 // Calendrier
 app.get('/cal/:cals', cal.getCals);

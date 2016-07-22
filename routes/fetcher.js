@@ -21,6 +21,15 @@ function stripPrefix(str){
     return str.replace(prefixMatch, '');
 }
 
+function sliceCL(str) {
+    if (str.substring(0,3) == "CL_") {
+        str = str.slice(3);
+        return str;
+    } else {
+        return str;
+    }
+}
+
 function getDim(dataSet, callback) {
     var nbDim = 0;
     var arrDim = [];
@@ -48,7 +57,7 @@ function getDim(dataSet, callback) {
                         data.forEach(function(item,index) {
                             arrDim.push(item['id'][0]);
                         });
-                        callback([nbDim,arrDim]); 
+                        callback([nbDim,arrDim,data]); 
                     }
                 });
             });
@@ -78,14 +87,7 @@ function buildDataStruc(data,title) {
 
 
 function buildCodeList(codes,title_dim) {
-    function sliceCL(str) {
-        if (str.substring(0,3) == "CL_") {
-            str = str.slice(3);
-            return str;
-        } else {
-            return str;
-        }
-    }
+
     var header = '<title>SDMX API for EViews / Codelist for '+ sliceCL(title_dim) +'</title>';
     var body ='',
         table = '',
@@ -184,8 +186,10 @@ function buildHtmlnoData(vTS,title,arr){
     body += '<h3> 1. Dimensions of the data </h3>';
     body += 'Dataset has ' + arr[0] + ' dimensions :';
     body += '<ul>';
-    arr[1].forEach(function(it,ind) {
-        body += '<li>' + it  +'</li>';
+    arr[2].forEach(function(it,ind) {
+        var code = it['LocalRepresentation'][0]['Enumeration'][0]['Ref'][0]['id'][0],
+            nomDim = it['id'][0];
+        body += '<li><a href=/codelist/' + code + '>' + nomDim + '</a></li>';
     });
     body += '</ul>';
     body += '<h3> 2. List of the timeseries contained in the dataset</h3>';
