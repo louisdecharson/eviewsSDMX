@@ -78,11 +78,19 @@ function buildDataStruc(data,title) {
 
 
 function buildCodeList(codes,title_dim) {
-    var header = '<title>SDMX API for EViews / Codelist for '+ title_dim +'</title>';
+    function sliceCL(str) {
+        if (str.substring(0,3) == "CL_") {
+            str = str.slice(3);
+            return str;
+        } else {
+            return str;
+        }
+    }
+    var header = '<title>SDMX API for EViews / Codelist for '+ sliceCL(title_dim) +'</title>';
     var body ='',
         table = '',
         theader = '<th>Id</th><th>Description</th>',
-        tbody = '<h2>List of codes potentially available for the dimension ' + title_dim  + '</h2>';
+        tbody = '<h2>List of codes potentially available for the dimension ' + sliceCL(title_dim)  + '</h2>';
 
 
     codes.forEach(function(item,index) {
@@ -169,9 +177,19 @@ function buildHtml(vTS,title){
 
 
 
-function buildHtmlnoData(vTS,title){
+function buildHtmlnoData(vTS,title,arr){
     var header = '<title>SDMX API for EViews / '+ title +'</title>';
-    var body = '';
+    
+    var body = '<h1>Dataset ' + title  + '</h1>';
+    body += '<h3> 1. Dimensions of the data </h3>';
+    body += 'Dataset has ' + arr[0] + ' dimensions :';
+    body += '<ul>';
+    arr[1].forEach(function(it,ind) {
+        body += '<li>' + it  +'</li>';
+    });
+    body += '</ul>';
+    body += '<h3> 2. List of the timeseries contained in the dataset</h3>';
+    
     var table ='';
     var theader = '<th>IdBank</th><th>Title</th><th>Last update</th>';
     var tbody = '';
@@ -183,7 +201,7 @@ function buildHtmlnoData(vTS,title){
     });
                  
     
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table cellpadding="4" rules="cols">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + body + '<table cellpadding="4" rules="cols">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
     
     return myHtml;
 }
@@ -193,6 +211,12 @@ function getFreq(freq){
     return freq.toUpperCase() + "...." ;
 }
 
+
+
+
+
+// EXPORTED FUNCTIONS
+// ==================
 
 exports.getSeries = function(req,res) {
     
@@ -213,17 +237,6 @@ exports.getSeries = function(req,res) {
         }
     });    
     var myPath = '/series/sdmx/data/SERIES_BDM/'+series+params;
-
-    // if (startPeriod!= null) {
-    //     myPath += "?startPeriod="+startPeriod;
-    // } else if (lastNObservations != null) {
-    //     myPath += "?lastNObservations="+lastNObservations;
-    // } else if (firstNObservations != null) {
-    //     myPath += "?firstNObservations="+firstNObservations;
-    // } else if (endPeriod != null) {
-    //     myPath += "?endPeriod="+endPeriod;        
-    // }
-
     
     var options = {
         hostname: 'www.bdm.insee.fr',
@@ -381,7 +394,7 @@ exports.getDataFlow = function(req,res) {
 exports.getDataStruc = function(req,res) {
 
     var dataSet = req.params.dataset;
-    var myPath = "/series/sdmx/datastructure/FR1/" + dataSet;
+    var myPath = "/series/sdmx/datastructure/FR1/" + dataSet.toUpperCase();
     var options = {
             hostname: 'www.bdm.insee.fr',
             port: 80,
@@ -480,7 +493,9 @@ exports.getListIdBanks = function(req,res) {
                         if(err == null) {
                             var data = obj.StructureSpecificData.DataSet[0];
                             var vTS = data.Series;
-                            res.send(buildHtmlnoData(vTS,dataSet));
+                            getDim(dataSet, function (arr) {
+                                res.send(buildHtmlnoData(vTS,dataSet,arr));
+                            });
                         } else {
                             res.send(err);
                         }
