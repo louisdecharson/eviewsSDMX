@@ -37,6 +37,10 @@ function getService(service, callback) {
         url = 'sdw-wsrest.ecb.europa.eu',
         path = '/service/',
         provider = 'ECB';
+    } else if (service == "EUROSTAT") {
+        url = 'ec.europa.eu',
+        path= '/eurostat/SDMX/diss-web/rest/',
+        provider = 'ESTAT';
     }
     callback([url,path,provider]);
 };
@@ -161,13 +165,14 @@ function getDim(service, agency, dsdId, dataset, callback) {
 exports.getAllDataFlow = function(req,res) {
     var service = req.params.service;
     getService(service, function(url) {
-        var myPath = url[1]+'dataflow';
+        var myPath = url[1]+'dataflow/'+url[2]+'/all';
         var options = {
             hostname: url[0],
             port: 80,
             path: myPath,
             headers: {
-                'connection':'keep-alive'
+                'connection':'keep-alive',
+                'accept': 'application/vnd.sdmx.structure+xml;version=2.1'
             }
         };
         http.get(options, function(result) {
@@ -175,20 +180,19 @@ exports.getAllDataFlow = function(req,res) {
                 var xml = '';
                 result.on('data', function(chunk) {
                     xml += chunk;
-                });
-   
+                });                
                 result.on('end',function() {
                     xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                         if (err == null) {
-                            var data = []; 
+                            var data = [];
                             obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'].forEach(function(it,ind){
                                 var datasetId = it.id,
                                     dsdId = it.Structure[0]['Ref'][0]['id'],
                                     agency = it.Structure[0]['Ref'][0]['agencyID'],
-                                    name = it.Name[0]['_'];                              
+                                    name = it.Name[0]['_'];
                                 data.push([datasetId,dsdId,agency,name,service]);
                             });
-                            res.send(buildHTML.dataFlow(data));
+                            res.send(buildHTML.dataFlow(data,service));
                         } else {
                             res.send(err);
                         }
@@ -206,8 +210,14 @@ exports.getAllDataFlow = function(req,res) {
 
 exports.getDataFlow = function(req,res) {
     var service = req.params.service,
-        dataSet = req.params.dataset;
+        dataSet = req.params.dataset,
+        myTimeout = req.param('timeout');
 
+    if (myTimeout == null) {
+        myTimeout = 5000;
+    } else {
+        myTimeout = +myTimeout;
+    }
     getService(service, function(url) {
         var myPath = url[1]+'data/'+dataSet+'?detail=nodata';
         var options = {
@@ -219,7 +229,8 @@ exports.getDataFlow = function(req,res) {
                 'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1'
             }
         };
-        http.get(options, function(result) {
+        var hitTimeOut = false;
+        var request = http.get(options, function(result) {
             if (result.statusCode >= 200 && result.statusCode < 400) {
                 var xml = '';
                 result.on('data', function(chunk) {
@@ -232,7 +243,9 @@ exports.getDataFlow = function(req,res) {
                             var data = obj.StructureSpecificData.DataSet[0];
                             var vTS = data.Series;
                             getDim(service, null, null, dataSet, function(arr) {
-                                res.send(buildHTML.detailDataset(service,vTS,dataSet,arr));
+                                if (!hitTimeOut) {
+                                    res.send(buildHTML.detailDataset(service,vTS,dataSet,arr,null));
+                                }
                             });
                         } else {
                             res.send(err);
@@ -242,6 +255,13 @@ exports.getDataFlow = function(req,res) {
             } else {
                 res.send(result.statusCode);
             }
+        });
+        request.setTimeout(myTimeout,function() {
+            hitTimeOut = true;
+            var errorDatasetTooBig = 'the dataset is too big to retrieve all the timeseries. You can increase timeout by adding "?timeout=" at the end of the url.';
+            getDim(service,null,null,dataSet,function(arr) {
+                res.send(buildHTML.detailDataset(service,null,dataSet,arr,errorDatasetTooBig));
+            });
         });
     });
 };
@@ -374,7 +394,6 @@ exports.getSeries = function(req,res) {
                     'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1'
                 }
             };
-            console.log(myPath);
             http.get(options, function(result) {
                 if (result.statusCode >= 200 && result.statusCode < 400) {
                     var xml = '';
@@ -399,4 +418,45 @@ exports.getSeries = function(req,res) {
             });
         });
     };
+};
+
+exports.getCodeList = function(req,res) {
+
+    var service = req.params.service,
+        dim = req.params.codelist;
+    
+    getService(service,function(url) {
+        var myPath = url[1]+'codelist/'+url[2]+ '/' + dim ;
+        var options = {
+            hostname: url[0],
+            port: 80,
+            path: myPath,
+            headers: {
+                'connection': 'keep-alive'
+            }
+        };
+        http.get(options, function(result) {
+            if (result.statusCode >=200 && result.statusCode < 400) {
+                var xml = '';
+                result.on('data', function(chunk) {
+                    xml += chunk;
+                });
+
+                result.on('end',function() {
+                    xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                        if(err == null) {
+                            var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'][0];
+                            var title_dim = data['id'][0];
+                            var codes = data['Code'];
+                            res.send(buildHTML.codeList(codes,title_dim));
+                        } else {
+                            res.send(err);
+                        }
+                    });
+                });
+            } else {
+                res.send(result.statusCode);
+            }
+        });                   
+    });
 };

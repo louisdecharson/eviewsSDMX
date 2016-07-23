@@ -513,3 +513,33 @@ exports.getListIdBanks = function(req,res) {
 };
 
 
+exports.getChuck = function(req,res){
+
+    var bootstrap = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>',
+        css = '<style>body {padding-top: 30px;} a {margin-right: 10px !important;}</style>';
+    
+    var options = {
+            hostname: 'api.icndb.com',
+            port: 80,
+            path: '/jokes/random',
+            headers: {
+                'connection': 'keep-alive'
+            }
+    };
+    http.get(options, function(result) {
+            if (result.statusCode >= 200 && result.statusCode < 400) {
+                var data = '';
+                result.on('data', function(chunk) {
+                    data += chunk;
+                });
+                result.on('end',function() {
+                    var monJSON = JSON.parse(data);
+                    var monHTML = '<!DOCTYPE html>' + '<html><header>'+ bootstrap+ css + '<body><div class="container"><div class="jumbotron"><h1>Chuck Nurris Joke</h1><hr class="m-y-2"><p>'+ monJSON.value.joke  + '</p><p><a class="btn btn-lg btn-primary" href="/chuck" role="button">Another One</a><a class="btn btn-lg btn-warning" href="/" role="button">Back to work</a></p></div></div></body></html>';
+                    res.send(monHTML);
+                });
+            } else {
+                res.send(result.statusCode);
+            }
+    });
+};
+    

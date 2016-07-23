@@ -33,6 +33,9 @@ app.get('/:service/dataflow', fetcher2.getAllDataFlow);
 app.get('/:service/dataflow/:dataset', fetcher2.getDataFlow);
 app.get('/:service/dataset/:dataset',fetcher2.getDataSet);
 app.get('/:service/series/:series',fetcher2.getSeries);
+app.get('/:service/codelist/:codelist',fetcher2.getCodeList);
+
+
 
 // Calendrier
 app.get('/cal/:cals', cal.getCals);
@@ -43,6 +46,8 @@ app.post('/cal/createCal',cal.sendCal);
 // Search Engine
 // app.get('/search/all', search.getAllId);
 
+// Jokes
+app.get('/chuck',fetcher.getChuck);
 
 app.listen(port, function() {
     console.log('Our app is running on port '+ port);

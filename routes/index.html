@@ -7,7 +7,7 @@
     <meta name="author" content="">
     <link rel="icon" href="../../favicon.ico">
 
-    <title>SDMX + Insee for EViews</title>
+    <title>SDMX for EViews</title>
 
     <!-- Bootstrap core CSS -->
     <style style="display:none">/*!
@@ -83,7 +83,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">SDMX + Insee for EViews</a>
+          <a class="navbar-brand" href="#">SDMX for EViews</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
@@ -114,8 +114,10 @@
 
       <!-- Main component for a primary marketing message or call to action -->
       <div class="jumbotron">
-        <h1>Download Insee data in EViews </h1>
-        <p>This API allows you to retrieve an <strong>Insee</strong> series by its idbank or a dataset by its id.</p>
+        <h1>Download SDMX data in EViews </h1>
+        <p>This API allows you to retrieve datasets or series in EViews from different providers by their ID.</p>
+        <hr class="m-y-2">
+        <p>Currently, the app is only supporting data for <strong>Insee</strong> & <strong>ECB</strong> data.</p>
         <p>
           <a class="btn btn-lg btn-primary" href="#howitworks" role="button">See how it works</a>
         </p>
@@ -125,19 +127,19 @@
 
 <h2>I. How does it work ?</h2>
 
-<p>The app is transforming SDMX flows from Insee website in an HTML table that can be read by EViews. The app provides you with a stable URL that you can use in your EViews code.</p>
-<p>For instance, the url for the French HICP dataset is :
-<code>http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M</code></p>
+<p>The app is transforming SDMX flows from providers website in an HTML table that can be read by EViews. The app provides you with a stable URL that you can use in your EViews code.</p>
+<p>For instance, the url for retreiving the monthly data of the French HICP dataset on the Insee website is :
+<code>http://sdmx.herokuapp.com/insee/dataset/IPCH-2015-FR-COICOP?freq=M</code></p>
 
 <p>Thus, some EViews code for retrieving the series will look like this :</p>
 
-<pre>%url = http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M
+<pre>%url = "http://sdmx.herokuapp.com/insee/dataset/IPCH-2015-FR-COICOP?freq=M"
 wfopen(wf=ipch,type="html") %url colhead=2 namepos=first</pre>
 
 With an url you can retrieve :
 <ul>
   <li> a timeseries </li>
-  <li> multiple timeseries </li>
+  <li> multiple timeseries (on the Insee website) </li>
   <li> a dataset </li>
 </ul>
 
@@ -145,21 +147,23 @@ With an url you can retrieve :
 <a name="timeseries"></a>
 <h3>A. Get a Timeseries</h3>
 
-<p>Use the idbank of the timeseries :
+<p>Use the ids of the timeseries :
 <code>http://sdmx.herokuapp.com/series/idbank</code></p>
 
-You can filter the results and limit the number of observations by either :
+You can filter the results and limit the number of observations by adding the following filters :
 <ul>
-  <li>fixing the number of observations with the filter : <code>lastNObservations</code></li>
+  <li>fixing the number of observations with the filter : <code>lastNObservations</code> or <code>firstNObservations</code></li>
+
   <li>fixing the starting period with the filter : <code>startPeriod</code></li>
+  <li>fixing the ending period with the filter : <code>endPeriod</code></li>
 </ul>
 
-<strong>Example :</strong><code>%url = "http://sdmx.herokuapp.com/series/000436387?startPeriod=2010"</code>
+<strong>Example :</strong><code>%url = "http://sdmx.herokuapp.com/insee/series/000436387?startPeriod=2010"</code>
 
 <br></br>
 
 <a name="multtimeseries"></a>
-<h3>B. Get multiple Timeseries</h3>
+<h3>B. Get multiple Timeseries (only supported for Insee data)</h3>
 
 <p>You could add multiple idbanks to your request by separating each idbank by a '+' : <code>http://sdmx.herokuapp.com/series/idbank1+idbank2+idbank3</code></p>
 
@@ -172,33 +176,38 @@ You can filter the results and limit the number of observations by either :
 <a name="datasets"></a>
 <h3>C. Get a Dataset</h3>
 
-<p>To get a dataset, you should know its id. An exhaustive list is available here : <a href="http://sdmx.herokuapp.com/dataflow">http://sdmx.herokuapp.com/dataflow</a></p>
+<p>To get a dataset, you should know its id. An exhaustive list is available :
+<ul>
+    <li>for Insee : <a href="http://sdmx.herokuapp.com/insee/dataflow">http://sdmx.herokuapp.com/insee/dataflow</a></p></li>
+    <li>for ECB : <a href="http://sdmx.herokuapp.com/ecb/dataflow">http://sdmx.herokuapp.com/ecb/dataflow</a></p></li>
+</ul> 
 
 <p>Then, the url for the dataset data is :
-<code>http://sdmx.herokuapp.com/dataset/id_dataset</code></p>
+<code>http://sdmx.herokuapp.com/service/dataset/id_dataset</code></p>
 
 <p>Some datasets have multiple dimensions. For instance, CPI Inflation dataset (IPC-2015-COICOP) contains both monthly and annual data. Thus, you might need to know the dimensions of a dataset before retrieving it.<br>
-An exhaustive dimensions lists can be found here : <code>http://sdmx.herokuapp.com/datastructure/id_dataset</code></p>
+An exhaustive dimensions lists can be found here : <code>http://sdmx.herokuapp.com/insee/dataflow/id_dataset</code></p>
 
-<p>You can then use it as a standard filter.</p>
-<p><strong>Example : </strong><code>http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M</code>
+<p>The dimension are used to filter out the response. You must add '?nom_de_la_dimension=dimension' at the end of the URI.</p>
+<p>When using numerous dimensions, you must separate them by '&'.
+<p><strong>Example : </strong><code>http://sdmx.herokuapp.com/insee/dataset/IPCH-2015-FR-COICOP?FREQ=M</code>
+<p><strong>Example : </strong><code>http://sdmx.herokuapp.com/ecb/dataset/EXR?FREQ=M&CURRENCY_DENOM=EUR&EXR_TYPE=SP00&EXR_SUFFIX=A</code>
 <br></br>
 
 <a name="skim"></a>
 <h3>Skim Data</h3>
-<p>The app allows you to skim through the available datasets and timeseries. 
-A list of all the available datasets can be found here : <a href="http://sdmx.herokuapp.com/dataflow">http://sdmx.herokuapp.com/dataflow</a></p>
-<p>And an exhaustive of timeseries available in each dataset is at http://sdmx.herokuapp.com/dataflow/id_dataset (change 'id_dataset' by the name of the dataset).</p>
+<p>The app allows you to skim through the available datasets and timeseries from different services.
+A list of all the available datasets for each provider can be found at the url <code>http://sdmx.herokuapp.com/provider/dataflow</code>. The lists provide with links to information on each dataset.
 
 <hr></hr>
 <h2>Example</h2>
 <h4><i> EViews Input : </i></h4>
   <pre>
-%url = http://sdmx.herokuapp.com/series/000436387?startPeriod=2016
+%url = "http://sdmx.herokuapp.com/insee/series/000436387?startPeriod=2010&endPeriod=2016"
 wfopen(wf=ipch,type="html") %url colhead=2 namepos=first
 </pre>
   <h4><i>EViews Output : </i></h4>
-  <p>A workfile with a two series, one series named <code>num000436387</code> containing information from the timeseries with idbank <i>000436387</i> and a series <code>Dates</code>containing Dates from 2016M01 to 2016M05</p>
+  <p>A workfile with a two series, one series named <code>num000436387</code> containing information from the timeseries with idbank <i>000436387</i> and a series <code>Dates</code>containing Dates from 2010M01 to 2016M05</p>
 
 
   <a name="codesource"></a>
