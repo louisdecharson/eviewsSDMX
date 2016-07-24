@@ -20,7 +20,19 @@ function stripPrefix(str){
     var prefixMatch;
     prefixMatch = new RegExp(/(?!xmlns)^.*:/);
     return str.replace(prefixMatch, '');
-}    
+}
+
+
+function getErrorMessage(errorCode) {
+    var message = '';
+    if (errorCode == 500) {
+        message = 'Internal Server Error';
+        return message;
+    } else {
+        return message;
+    }
+}
+
 
 // return the url "base" for a service Eurostat, BCE, INSEE
 function getService(service, callback) {
@@ -39,7 +51,7 @@ function getService(service, callback) {
         provider = 'ECB';
     } else if (service == "EUROSTAT") {
         url = 'ec.europa.eu',
-        path= '/eurostat/SDMX/diss-web/rest/',
+        path = '/eurostat/SDMX/diss-web/rest/',
         provider = 'ESTAT';
     }
     callback([url,path,provider]);
@@ -55,7 +67,9 @@ function getAgency(service,dataset,callback) {
             port: 80,
             path: myPath,
             headers: {
-                'connection' : 'keep-alive'
+                'connection' : 'keep-alive',
+                'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
+                'user-agent': 'nodeJS'
             }
         };
         http.get(options, function(result) {
@@ -85,21 +99,20 @@ function getAgency(service,dataset,callback) {
 function getDim(service, agency, dsdId, dataset, callback) {
     var nbDim = 0,
         arrDim = [];
-
     getService(service, function(url) {
-
         if ((agency == null && dsdId == null) && dataset != null) {
             getAgency(service,dataset,function(agencyInfo) {
                 agency = agencyInfo[0],
-                dsdId = agencyInfo[1];
-                
+                dsdId = agencyInfo[1];              
                 var myPath = url[1]+'datastructure/'+agency+'/'+dsdId;
                 var options = {
                     hostname: url[0],
                     port: 80,
                     path: myPath,
                     headers: {
-                        'connection' : 'keep-alive'
+                        'connection' : 'keep-alive',
+                        'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
+                        'user-agent': 'nodeJS'
                     }
                 };
                 http.get(options, function(result) {
@@ -133,7 +146,9 @@ function getDim(service, agency, dsdId, dataset, callback) {
                 port: 80,
                 path: myPath,
                 headers: {
-                    'connection' : 'keep-alive'
+                    'connection' : 'keep-alive',
+                    'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
+                    'user-agent': 'nodeJS'
                 }
             };
             http.get(options, function(result) {
@@ -168,11 +183,11 @@ exports.getAllDataFlow = function(req,res) {
         var myPath = url[1]+'dataflow/'+url[2]+'/all';
         var options = {
             hostname: url[0],
-            port: 80,
             path: myPath,
             headers: {
                 'connection':'keep-alive',
-                'accept': 'application/vnd.sdmx.structure+xml;version=2.1'
+                'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
+                'user-agent': 'nodeJS'
             }
         };
         http.get(options, function(result) {
@@ -180,7 +195,7 @@ exports.getAllDataFlow = function(req,res) {
                 var xml = '';
                 result.on('data', function(chunk) {
                     xml += chunk;
-                });                
+                });
                 result.on('end',function() {
                     xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                         if (err == null) {
@@ -226,7 +241,8 @@ exports.getDataFlow = function(req,res) {
             path: myPath,
             headers: {
                 'connection': 'keep-alive',
-                'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1'
+                'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
+                'user-agent': 'nodeJS'
             }
         };
         var hitTimeOut = false;
@@ -240,13 +256,28 @@ exports.getDataFlow = function(req,res) {
                 result.on('end',function() {
                     xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj) {
                         if (err==null) {
-                            var data = obj.StructureSpecificData.DataSet[0];
-                            var vTS = data.Series;
-                            getDim(service, null, null, dataSet, function(arr) {
-                                if (!hitTimeOut) {
-                                    res.send(buildHTML.detailDataset(service,vTS,dataSet,arr,null));
+                            var footer =  obj.StructureSpecificData.Footer;
+                            try {
+                                footer = footer[0].Message[0].code[0];
+                            } catch(e) {
+                            } finally {
+                                if (footer == '413') {
+                                    var errorFooter413 = '413 | Dataset is too big to retreive'; // Eurostat is sending error 413 in the footer...
+                                    getDim(service,null,null,dataSet,function(arr) {
+                                        res.send(buildHTML.detailDataset(service,null,dataSet,arr,errorFooter413));
+                                    });
+                                } else if (footer != null) {
+                                    res.status(footer).send('ERROR | Code : '+ footer + ' ' + getErrorMessage(footer));
+                                } else {                   
+                                    var data = obj.StructureSpecificData.DataSet[0];
+                                    var vTS = data.Series;
+                                    getDim(service, null, null, dataSet, function(arr) {
+                                        if (!hitTimeOut) {
+                                            res.send(buildHTML.detailDataset(service,vTS,dataSet,arr,null));
+                                        }
+                                    });
                                 }
-                            });
+                            }
                         } else {
                             res.send(err);
                         }
@@ -258,7 +289,7 @@ exports.getDataFlow = function(req,res) {
         });
         request.setTimeout(myTimeout,function() {
             hitTimeOut = true;
-            var errorDatasetTooBig = 'the dataset is too big to retrieve all the timeseries. You can increase timeout by adding "?timeout=" at the end of the url.';
+            var errorDatasetTooBig = 'the dataset is too big to retrieve all the timeseries. You can increase timeout by adding "?timeout=" at the end of the url (default is 5000ms)';
             getDim(service,null,null,dataSet,function(arr) {
                 res.send(buildHTML.detailDataset(service,null,dataSet,arr,errorDatasetTooBig));
             });
@@ -268,8 +299,13 @@ exports.getDataFlow = function(req,res) {
 
 exports.getDataSet = function(req,res) {
 
-    var dataSet = req.params.dataset.toUpperCase(),
-        service = req.params.service.toUpperCase();
+    var service = req.params.service.toUpperCase();
+    var dataSet = '';
+    if (service != 'EUROSTAT')  {
+        dataSet = req.params.dataset.toUpperCase();
+    } else {
+        dataSet = req.params.dataset;        
+    };
         
 
     // All keys to UpperCase
@@ -332,7 +368,8 @@ exports.getDataSet = function(req,res) {
                 path: myPath,
                 headers: {
                     'connection': 'keep-alive',
-                    'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1'
+                    'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
+                    'user-agent': 'nodeJS'
                 }
             };
             http.get(options, function(result) {
@@ -391,7 +428,8 @@ exports.getSeries = function(req,res) {
                 path: myPath,
                 headers: {
                     'connection': 'keep-alive',
-                    'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1'
+                    'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
+                    'user-agent': 'nodeJS'
                 }
             };
             http.get(options, function(result) {
@@ -432,7 +470,9 @@ exports.getCodeList = function(req,res) {
             port: 80,
             path: myPath,
             headers: {
-                'connection': 'keep-alive'
+                'connection': 'keep-alive',
+                'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
+                'user-agent': 'nodeJS'
             }
         };
         http.get(options, function(result) {
