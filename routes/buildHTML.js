@@ -44,7 +44,7 @@ exports.makeTable = function(vTS,title,authParams){
 
     // Check if timeseries are in reverse position :
     var isReverse = false;
-    if (vTsSorted[0].Obs[0].length > 0) {
+    if (vTsSorted[0].Obs.length > 0) {
         var dateFirst = vTsSorted[0].Obs[0].TIME_PERIOD[0],
             dateLast = vTsSorted[0].Obs[1].TIME_PERIOD[0];
         if (dateFirst.substring(0,4) > dateLast.substring(0,4)) {
