@@ -12,21 +12,29 @@ function sliceCL(str) {
 
 exports.dataFlow = function(data,service) {
     var header = '<title>SDMX API for EViews / DATAFLOWS </title>',
+        jQuery = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>',
         bootstrap = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>',
-        css = '<style display:none>body {padding-left: 10px;}</style>';
+        css = '<style display:none>body {padding-left: 10px; padding-right: 10px; } </style>',
+        listJS = '<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.2.0/list.min.js"></script>';
+    var jsforList = "<script>var options = {valueNames: ['name', 'desc'], searchClass: 'form-control'}; var dataList = new List('myDataflows',options);</script>";
+   
     var body = '<h2>List of all the datasets of '+ service.toUpperCase() + '</h2><hr class="m-y-2">',
         table = '',
         theader = '<th>Id</th><th>Description</th>',
         tbody = '';
+
+    body += '<div id="myDataflows">';
+    body += '<input class="form-control" placeholder="Search"><br>';
     
     data.forEach(function(item,index){
-        tbody += '<tr><td><a href="/'+ item[4] +'/dataflow/' + item[0]+ '">' + item[0] + '</a>' + '</td><td>';
-        tbody += item[3] + '</td>';
+        tbody += '<tr>';
+        tbody += '<td class="name"><a href="/'+ item[4] +'/dataflow/' + item[0]+ '">' + item[0] + '</a>' + '</td>';
+        tbody += '<td class="desc">'+ item[3] + '</td>';
+        tbody += '</tr>';
     });
-
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + bootstrap + css +'</header><body>' + body + '<table class="table table-condensed table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + jQuery + bootstrap + css + '</head><body>' + body + '<table class="table table-condensed table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS  + jsforList + '</body></html>';
     return myHtml;
-}; 
+};
 
 
 exports.makeTable = function(vTS,title,authParams){
@@ -109,7 +117,7 @@ exports.makeTable = function(vTS,title,authParams){
         tbody += '</tr>';
         i ++;
     };
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table>' + '<thead>'  + '<tr>' + theader1 + '</tr>' + '<tr>' + theader2 + '</tr>'  + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table>' + '<thead>'  + '<tr>' + theader1 + '</tr>' + '<tr>' + theader2 + '</tr>'  + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table>' + '</body></html>';
     
     return myHtml;
 };
@@ -118,8 +126,13 @@ exports.makeTable = function(vTS,title,authParams){
 exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
     var header = '<title>SDMX API for EViews / '+ dataSet +'</title>',
         bootstrap = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>',
-        css = '<style display:none>body {padding-left: 10px;}</style>';
+        css = '<style display:none>body {padding-left: 10px; padding-right:10px;}</style>',
+        listJS = '<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.2.0/list.min.js"></script>';
+
+    var jsforList = "<script>var options = {valueNames: ['name', 'id'], searchClass: 'form-control'}; var dataList = new List('myTS',options);</script>";
+    
     var body = '<h1>Dataset ' + dataSet  + '</h1><hr class="m-y-2">';
+    
     body += '<h3> 1. Dimensions of the data </h3>';
     body += 'Dataset has ' + arr[0] + ' dimensions :';
     body += '<ul>';
@@ -130,8 +143,8 @@ exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
     });
     body += '</ul>';
     body += '<h3> 2. List of the timeseries contained in the dataset</h3>';
+    var searchBar = '<div id="myTS"><input class="form-control" placeholder="Search"><br>';
     
-    var table ='';
     var theader = '<th>Series Id</th><th>Title</th><th>Last update</th>';
     var tbody = '',
         idSeries = '',
@@ -139,7 +152,8 @@ exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
         lastUpdateSeries = '',
         error = '<p hidden></p>',
         tableDef = '<table class="table table-hover">';
-
+    
+    
     if (errorDatasetTooBig == null) {
         vTS.forEach(function(item,index){
             if (item.IDBANK != null) {
@@ -153,7 +167,7 @@ exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
                     }
                 });
             }
-            tbody += '<tr><td><a href="/'+service+ '/series/' + idSeries + '">' + idSeries +'</a></td><td>';
+            tbody += '<tr><td class="id"><a href="/'+service+ '/series/' + idSeries + '">' + idSeries +'</a></td><td class="name">';
             if (item.TITLE != null) {
                 titleSeries = item.TITLE[0];
             } else if (item.TITLE_COMPL != null) {
@@ -176,7 +190,7 @@ exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
     }
                  
     
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + bootstrap + css+ '</header><body>' + body + error + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + bootstrap + css+ '</header><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + '</body></html>';
     
     return myHtml;
 };
