@@ -2,11 +2,11 @@
 
 ### Purpose
 
-EViews cannot read SDMX format (yet). However, EViews can read html tables.
+EViews cannot read SDMX format. However, EViews can read html tables.
 
 This very simple app aims at creating html table from SDMX flow in a quick and efficient way in the same spirit as [Widukind](https://github.com/Widukind)
 
-Currently, the app supports only INSEE SDMX requests but any contribution is very welcome.
+Currently, the app supports only Insee, ECB or Eurostat SDMX requests but any contribution is very welcome.
 
 ### Libraries
 
@@ -24,14 +24,14 @@ More information on the [website](http://sdmx.herokuapp.com)
  
 ## I. How does it work ?
  
-The app is transforming SDMX flows from Insee website in an HTML table that can be read by EViews. The app provides you with a stable URL that you can use in your EViews code.
+The app is transforming SDMX flows from Insee, ECB or Eurostat website in an HTML table that can be read by EViews. The app provides you with a stable URL that you can use in your EViews code.
  
-For instance, the url for the French HICP dataset is : `http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M`
+For instance, the url for the French HICP dataset is : `http://sdmx.herokuapp.com/insee/dataset/IPCH-2015-FR-COICOP?freq=M`
  
 Thus, some EViews code for retrieving the series will look like this :
 
 ```
-%url = http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M
+%url = http://sdmx.herokuapp.com/insee/dataset/IPCH-2015-FR-COICOP?freq=M
 wfopen(wf=ipch,type="html") %url colhead=2 namepos=first
 ```
 
@@ -44,21 +44,21 @@ With an url you can retrieve :
  
 ### A. Get a Timeseries
  
-Use the idbank of the timeseries : `http://sdmx.herokuapp.com/series/idbank`
+Use the id of the timeseries : `http://sdmx.herokuapp.com/service/series/id`
  
 You can filter the results and limit the number of observations by either :
  
 *   fixing the number of observations with the filter : `lastNObservations`
 *   fixing the starting period with the filter : `startPeriod`
  
-**Example :**`%url = "http://sdmx.herokuapp.com/series/000436387?startPeriod=2010"`
+**Example :**`%url = "http://sdmx.herokuapp.com/service/series/000436387?startPeriod=2010"`
  
  
-### B. Get multiple Timeseries
+### B. Get multiple Timeseries (only supported for Insee)
  
-You could add multiple idbanks to your request by separating each idbank by a '+' : `http://sdmx.herokuapp.com/series/idbank1+idbank2+idbank3`
+You could add multiple idbanks to your request by separating each idbank by a '+' : `http://sdmx.herokuapp.com/service/series/idbank1+idbank2+idbank3`
  
-**Example :** `http://sdmx.herokuapp.com/series/001762151+001762152+001762153?startPeriod=2010`
+**Example :** `http://sdmx.herokuapp.com/service/series/001762151+001762152+001762153?startPeriod=2010`
  
 **Be cautious !** :  Previous filters still work but you have to ensure that all the timeseries share the same time period. Otherwise, some values can be missing.
  
@@ -67,7 +67,7 @@ You could add multiple idbanks to your request by separating each idbank by a '+
  
 To get a dataset, you should know its id. An exhaustive list is available here : [http://sdmx.herokuapp.com/dataflow](http://sdmx.herokuapp.com/dataflow)
  
-Then, the url for the dataset data is : `http://sdmx.herokuapp.com/dataset/id_dataset`
+Then, the url for the dataset data is : `http://sdmx.herokuapp.com/service/dataset/id_dataset`
  
 Some datasets have multiple dimensions. For instance, CPI Inflation dataset (IPC-2015-COICOP) contains both monthly and annual data. Thus, you might need to know the dimensions of a dataset before retrieving it.
 An exhaustive dimensions lists can be found here : `http://sdmx.herokuapp.com/datastructure/id_dataset`
@@ -125,11 +125,13 @@ You can raise new issues [here](https://github.com/louisdecharson/eviewsSDMX/iss
  
  
 * * *
- 
+
+## Licence
+GNU Affero General Public License version 3
  
 <center>
  
-Made with by [louisdecharson](https://github.com/louisdecharson/)
+Made with <3 by [louisdecharson](https://github.com/louisdecharson/)
  
 </center>
  
