@@ -22,6 +22,24 @@ function sliceCL(str) {
     }
 }
 
+// mini-function that look in a JSON object for an id or title
+function findTitle(json,str,callback) {
+    var myKeys = Object.keys(json),
+        result = -1,
+        k = 0,
+        it = '';
+    while (k<myKeys.length && result === -1) {
+        it = myKeys[k];
+        result = it.indexOf(str);
+        k ++;
+    }
+    if (result > -1) {
+        callback(it);
+    } else {
+        callback(null);
+    }
+};
+
 
 exports.dataFlow = function(data,service) {
     var header = '<title>SDMX API for EViews / DATAFLOWS </title>',
@@ -74,39 +92,86 @@ exports.makeTable = function(vTS,title,authParams){
             isReverse = true;
         }
     }
-    // HEADER 
+    // HEADER
     for(var kk=0; kk<vTsSorted.length; kk++) {
-        if (vTsSorted[kk].IDBANK != null) {
-            theader1 += '<th>' + vTsSorted[kk].IDBANK[0] + '</th>';
-        } else { // on construit un nom à partir des paramètres.
-            var monId = title;
-            if (authParams.length > 0) {
-                monId += '.';
-                authParams.forEach(function(it,ind,arr) {
-                    if (ind<arr.length-1) {
-                        monId += vTsSorted[kk][it][0]+'.';
+
+        // GET AN ID FOR THE TIMESERIES
+        findTitle(vTsSorted[kk],'ID', function(res) {
+            if (res != null) { // un parametre contient ID on l'utilise comme ID
+                theader1 += '<th>' + vTsSorted[kk][res][0] + '</th>';
+            } else { // aucun param ne contient ID, on le constitue a partir du nom de la page qui est l'identifiant de la serie
+                var monId = title;
+                if (authParams.length > 0) {
+                    monId += '.';
+                    authParams.forEach(function(it,ind,arr) {
+                        if (ind<arr.length-1) {
+                            monId += vTsSorted[kk][it][0]+'.';
+                        } else {
+                            monId +=vTsSorted[kk][it][0];
+                        };
+                    });
+                }
+                theader1 += '<th>'+monId+'</th>'; 
+            }
+        });
+
+        // GET A TITLE OR DESCRIPTION FOR THE TIMESERIES
+        var montitre = '';
+        findTitle(vTsSorted[kk],'TITLE', function(res) {
+            if (res != null) {
+                montitre = vTsSorted[kk][res][0];
+            } else {
+                findTitle(vTsSorted[kk],'NAME',function(res) {
+                    if (res !=null) {
+                        montitre = vTsSorted[kk][res][0];
                     } else {
-                        monId +=vTsSorted[kk][it][0];
-                    };
+                        montitre = '&nbsp;';
+                    }
                 });
             }
-            theader1 += '<th>'+monId+'</th>';
-        };
-        var montitre = '';
-        if (vTsSorted[kk].TITLE != null){
-            montitre = vTsSorted[kk].TITLE[0];
-        } else if (vTsSorted[kk].TITLE_COMPL != null) {
-            montitre = vTsSorted[kk].TITLE_COMPL[0];
-        } else {
-            montitre = '&nbsp;';
-        }
+        });
         theader2 += '<th>' + montitre + '</th>';
+
+        // REVERSE THE TIMESERIES TO GET DATE IT THE ASCENDING ORDER
         if (isReverse) {
             vTsSR.push(vTsSorted[kk].Obs.reverse()); // sorted vector of timeseries
         } else {
             vTsSR.push(vTsSorted[kk].Obs);
         }
-    }
+    }    
+    
+    // for(var kk=0; kk<vTsSorted.length; kk++) {
+    //     if (vTsSorted[kk].IDBANK != null) {
+    //         theader1 += '<th>' + vTsSorted[kk].IDBANK[0] + '</th>';
+    //     } else {      // on construit un nom à partir des paramètres.
+    //         var monId = title;
+    //         if (authParams.length > 0) {
+    //             monId += '.';
+    //             authParams.forEach(function(it,ind,arr) {
+    //                 if (ind<arr.length-1) {
+    //                     monId += vTsSorted[kk][it][0]+'.';
+    //                 } else {
+    //                     monId +=vTsSorted[kk][it][0];
+    //                 };
+    //             });
+    //         }
+    //         theader1 += '<th>'+monId+'</th>';
+    //     };
+    //     var montitre = '';
+    //     if (vTsSorted[kk].TITLE != null){
+    //         montitre = vTsSorted[kk].TITLE[0];
+    //     } else if (vTsSorted[kk].TITLE_COMPL != null) {
+    //         montitre = vTsSorted[kk].TITLE_COMPL[0];
+    //     } else {
+    //         montitre = '&nbsp;';
+    //     }
+    //     theader2 += '<th>' + montitre + '</th>';
+    //     if (isReverse) {
+    //         vTsSR.push(vTsSorted[kk].Obs.reverse()); // sorted vector of timeseries
+    //     } else {
+    //         vTsSR.push(vTsSorted[kk].Obs);
+    //     }
+    // }
     
     // BODY
     var i = 0;

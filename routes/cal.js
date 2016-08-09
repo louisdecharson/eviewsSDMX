@@ -226,7 +226,7 @@ function buildForm(vecEv) {
         };
     });
     form += '</div></div>';
-    form+= '<br><strong>Ajoutez une alarme</strong><br><input type="checkbox" name="alarm" value="15"> 15mn avant<br>';
+    form += '<br><strong>Ajoutez une alarme</strong><br><input type="checkbox" name="alarm" value="15"> 15mn avant<br>';
     form += '<input type="checkbox" name="alarm" value="60"> 1 heure avant<br>';
     form += '<input type="checkbox" name="alarm" value="1440"> 1 jour avant<br>';
     form += '<input type="checkbox" name="alarm" value="2880"> 2 jours avant<br>';

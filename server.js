@@ -24,15 +24,13 @@ var express = require('express'),
 
 var app = express();
 
+
 var port = process.env.PORT || 8080;
 
 
 app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
-
-app.get('/', function(req,res) {
-    res.sendFile(path.join(__dirname + '/routes/index.html'));
-});
+app.use('/',express.static(__dirname + '/public/'));
 
 // TimeSeries for Insee
 app.get('/series/:series', fetcher.getSeries);
@@ -42,14 +40,17 @@ app.get('/dataflow',fetcher.getDataFlow);
 app.get('/dataflow/:dataset', fetcher.getListIdBanks); // donne la liste des idbanks contenue dans un dataset
 app.get('/codelist/:codelist', fetcher.getCodeList); // donne la liste des codes disponibles pour chaque dimension
 
-// Timeseries for ECB
+// Timeseries for others providers
 app.get('/:service/dataflow', fetcher2.getAllDataFlow);
 app.get('/:service/dataflow/:dataset', fetcher2.getDataFlow);
 app.get('/:service/dataset/:dataset',fetcher2.getDataSet);
 app.get('/:service/series/:series',fetcher2.getSeries);
 app.get('/:service/codelist/:codelist',fetcher2.getCodeList);
 
-
+// Timeseries from sdmx url
+app.get('/req',fetcher2.getDatafromURL);
+app.post('/requestbyURL',fetcher2.redirectURL);
+// app.get('/byURL', fetcher2.getFormforURL);
 
 // Calendrier
 app.get('/cal/:cals', cal.getCals);
