@@ -17,6 +17,7 @@ var express = require('express'),
     bodyParser = require('body-parser'),
     fetcher = require('./routes/fetcher'),
     cal = require('./routes/cal'),
+    favicon = require('serve-favicon'),
     fetcher2 = require('./routes/fetcher2');
     // search = require('./routes/search');
 
@@ -31,6 +32,9 @@ var port = process.env.PORT || 8080;
 app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use('/',express.static(__dirname + '/public/'));
+
+// Favicon
+app.use(favicon(path.join(__dirname,'public','favicon.ico')));
 
 // TimeSeries for Insee
 app.get('/series/:series', fetcher.getSeries);

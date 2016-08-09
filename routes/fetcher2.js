@@ -21,6 +21,7 @@ var xml2js = require('xml2js'),
     moment = require('moment-timezone'),
     forms = require('forms'),
     http = require('http'),
+    https = require('https'),
     url = require('url'),
     buildHTML = require('./buildHTML');
 
@@ -519,44 +520,83 @@ exports.getCodeList = function(req,res) {
 exports.getDatafromURL = function(req,res) {
 
     var myUrl = req.param('url').replace(/\'*/g,"").replace(/\s/g,'+'); // remove ''
-    var hostname = url.parse(myUrl).hostname;
+    var hostname = url.parse(myUrl).hostname,
+        protocol = url.parse(myUrl).protocol,
+        path = url.parse(myUrl).pathname;
+    
     var options = {
+        protocol: protocol,
         hostname: hostname,
         port: 80,
-        path: myUrl,
+        path: path,
         headers: {
             'connection': 'keep-alive',
             'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
             'user-agent': 'nodeJS'
         }       
     };
-    http.get(options, function(result) {
-    if (result.statusCode >= 200 && result.statusCode < 400) {
-        var xml = '';
-        result.on('data', function(chunk) {
-            xml += chunk;
-        });
+    if (protocol === 'http:') {
+        http.get(options, function(result) {
+            if (result.statusCode >= 200 && result.statusCode < 400) {
+                var xml = '';
+                result.on('data', function(chunk) {
+                    xml += chunk;
+                });
 
-        result.on('end',function() {
-            xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                if(err == null) {
-                    if (typeof obj.StructureSpecificData !== 'undefined') {
-                        var data = obj.StructureSpecificData.DataSet[0],
-                            vTS = data.Series,
-                            title = 'request to '+ hostname;
-                        res.send(buildHTML.makeTable(vTS,title,[]));                      
-                    } else {
-                        res.send("The request could not be handled");
-                    }               
-                } else {
-                    res.send(err);
-                }
-            });
+                result.on('end',function() {
+                    xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                        if(err == null) {
+                            if (typeof obj.StructureSpecificData !== 'undefined') {
+                                var data = obj.StructureSpecificData.DataSet[0],
+                                    vTS = data.Series,
+                                    title = 'request to '+ hostname;
+                                res.send(buildHTML.makeTable(vTS,title,[]));                      
+                            } else {
+                                res.send("The request could not be handled");
+                            }               
+                        } else {
+                            res.send(err);
+                        }
+                    });
+                });
+            } else {
+                res.send(result.statusCode);
+            }
+        });
+    } else if (protocol === 'https:') {
+        console.log(protocol+'//'+hostname+path);
+        https.get(options, function(result) {
+            console.log('hello');
+            if (result.statusCode >= 200 && result.statusCode < 400) {
+                var xml = '';
+                result.on('data', function(chunk) {
+                    xml += chunk;
+                });
+
+                result.on('end',function() {
+                    xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                        if(err == null) {
+                            if (typeof obj.StructureSpecificData !== 'undefined') {
+                                var data = obj.StructureSpecificData.DataSet[0],
+                                    vTS = data.Series,
+                                    title = 'request to '+ hostname;
+                                res.send(buildHTML.makeTable(vTS,title,[]));                      
+                            } else {
+                                res.send("The request could not be handled");
+                            }               
+                        } else {
+                            res.send(err);
+                        }
+                    });
+                });
+            } else {
+                res.send(result.statusCode);
+            }
         });
     } else {
-        res.send(result.statusCode);
+        res.set('Content-Type', 'text/plain');
+        res.send('protocol '+protocol+' is not recognised');
     }
-    });
 };
 
 exports.redirectURL = function(req,res) {
