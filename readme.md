@@ -1,4 +1,4 @@
-# SDMX + INSEE for EViews
+# SDMX for EViews
 
 ### Purpose
 
@@ -6,7 +6,7 @@ EViews cannot read SDMX format. However, EViews can read html tables.
 
 This very simple app aims at creating html table from SDMX flow in a quick and efficient way in the same spirit as [Widukind](https://github.com/Widukind)
 
-Currently, the app supports only Insee, ECB or Eurostat SDMX requests but any contribution is very welcome.
+Currently, the app supports only Insee, ECB or Eurostat data natively.
 
 ### Libraries
 
@@ -19,8 +19,6 @@ This app is written is NodeJS. It's using the following librairies
 * ical-generator
 
 More information on the [website](http://sdmx.herokuapp.com) 
-
-<a name="howitworks"></a>
  
 ## I. How does it work ?
  
@@ -32,33 +30,35 @@ Thus, some EViews code for retrieving the series will look like this :
 
 ```
 %url = http://sdmx.herokuapp.com/insee/dataset/IPCH-2015-FR-COICOP?freq=M
-wfopen(wf=ipch,type="html") %url colhead=2 namepos=first
+import(t="html") %url colhead=2 namepos=first
 ```
 
 With an url you can retrieve :
  
 *   a timeseries
-*   multiple timeseries
 *   a dataset
+*   multiple timeseries (only supported for Insee)
+
+The app also gives flows from the providers [Insee](http://sdmx.herokuapp.com/insee/dataflow), [ECB](http://sdmx.herokuapp.com/ecb/dataflow) and [Eurostat](http://sdmx.herokuapp.com/eurostat/dataflow).
  
  
 ### A. Get a Timeseries
  
-Use the id of the timeseries : `http://sdmx.herokuapp.com/service/series/id`
+Use the id of the timeseries : `http://sdmx.herokuapp.com/provider/series/id`
  
 You can filter the results and limit the number of observations by either :
  
 *   fixing the number of observations with the filter : `lastNObservations`
 *   fixing the starting period with the filter : `startPeriod`
  
-**Example :**`%url = "http://sdmx.herokuapp.com/service/series/000436387?startPeriod=2010"`
+**Example :**`%url = "http://sdmx.herokuapp.com/provider/series/000436387?startPeriod=2010"`
  
  
 ### B. Get multiple Timeseries (only supported for Insee)
  
-You could add multiple idbanks to your request by separating each idbank by a '+' : `http://sdmx.herokuapp.com/service/series/idbank1+idbank2+idbank3`
+You could add multiple idbanks to your request by separating each idbank by a '+' : `http://sdmx.herokuapp.com/provider/series/idbank1+idbank2+idbank3`
  
-**Example :** `http://sdmx.herokuapp.com/service/series/001762151+001762152+001762153?startPeriod=2010`
+**Example :** `http://sdmx.herokuapp.com/provider/series/001762151+001762152+001762153?startPeriod=2010`
  
 **Be cautious !** :  Previous filters still work but you have to ensure that all the timeseries share the same time period. Otherwise, some values can be missing.
  
@@ -74,12 +74,15 @@ An exhaustive dimensions lists can be found here : `http://sdmx.herokuapp.com/da
  
 You can then use it as a standard filter.
  
-**Example :** `http://sdmx.herokuapp.com/dataset/IPCH-2015-FR-COICOP?freq=M`
+**Example :** `http://sdmx.herokuapp.com//dataset/IPCH-2015-FR-COICOP?freq=M`
  
  
 ### Skim Data
- 
-The app allows you to skim through the available datasets and timeseries. A list of all the available datasets can be found here : [http://sdmx.herokuapp.com/dataflow](http://sdmx.herokuapp.com/dataflow)
+
+The app allows you to skim through the available datasets and timeseries. A list of all the available datasets can be found here for each provider :
+* [Insee](http://sdmx.herokuapp.com/insee/dataflow)
+* [ECB](http://sdmx.herokuapp.com/ecb/dataflow)
+* [Eurostat](http://sdmx.herokuapp.com/eurostat/dataflow)
  
 And an exhaustive of timeseries available in each dataset is at http://sdmx.herokuapp.com/dataflow/id_dataset (change 'id_dataset' by the name of the dataset).
  
@@ -90,7 +93,7 @@ And an exhaustive of timeseries available in each dataset is at http://sdmx.hero
 #### _EViews Input :_
  
  ```
-%url = http://sdmx.herokuapp.com/series/000436387?startPeriod=2016
+%url = http://sdmx.herokuapp.com/insee/series/000436387?startPeriod=2016
 wfopen(wf=ipch,type="html") %url colhead=2 namepos=first
 ```
 
@@ -98,20 +101,15 @@ wfopen(wf=ipch,type="html") %url colhead=2 namepos=first
  
 A workfile with a two series, one series named `num000436387` containing information from the timeseries with idbank _000436387_ and a series `Dates`containing Dates from 2016M01 to 2016M05
  
-<a name="codesource"></a>
  
 ## Contribute to the code
  
 Ideas and suggestions are more than welcome. Contribute to the code [here](https://github.com/louisdecharson/eviewsSDMX)
  
 * * *
- 
-<a class="issues"></a><font color="darkRed">
- 
+  
 ## Known Issues
- 
-</font>
- 
+ z 
 Since the app output is an html table, an obvious limitation is that a request cannot be done along multiple time dimensions. You cannot retrieve in the same request monthly and quaterly data.
  
 Moreover :
@@ -129,9 +127,6 @@ You can raise new issues [here](https://github.com/louisdecharson/eviewsSDMX/iss
 ## Licence
 GNU Affero General Public License version 3
  
-<center>
  
 Made with <3 by [louisdecharson](https://github.com/louisdecharson/)
- 
-</center>
- 
+  
