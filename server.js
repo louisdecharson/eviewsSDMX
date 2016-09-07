@@ -19,7 +19,6 @@ var express = require('express'),
     cal = require('./routes/cal'),
     favicon = require('serve-favicon'),
     fetcher2 = require('./routes/fetcher2'),
-    futures = require('./routes/futures'),
     quandl = require('./routes/quandl');
     // search = require('./routes/search');
 
