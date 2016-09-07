@@ -18,7 +18,9 @@ var express = require('express'),
     fetcher = require('./routes/fetcher'),
     cal = require('./routes/cal'),
     favicon = require('serve-favicon'),
-    fetcher2 = require('./routes/fetcher2');
+    fetcher2 = require('./routes/fetcher2'),
+    futures = require('./routes/futures'),
+    quandl = require('./routes/quandl');
     // search = require('./routes/search');
 
 
@@ -55,6 +57,10 @@ app.get('/:service/codelist/:codelist',fetcher2.getCodeList);
 app.get('/req',fetcher2.getDatafromURL);
 app.post('/requestbyURL',fetcher2.redirectURL);
 // app.get('/byURL', fetcher2.getFormforURL);
+
+// Futures
+// app.get('/futures/', futures.getFutures);
+app.get('/quandl/:apiKey/:dataset/:series',quandl.getSeries);
 
 // Calendrier
 app.get('/cal/:cals', cal.getCals);
