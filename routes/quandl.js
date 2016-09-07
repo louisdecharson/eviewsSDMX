@@ -78,7 +78,7 @@ exports.getSeries = function(req,res) {
                         res.send(buildHMTL(mySeries.reverse(),nameSeries));
                     });
                 } else {
-                    var e = "Error: "+result.statusCode; 
+                    var e = "Error: "+result.statusCode + ' | Headers :'+req.headers;
                     res.send(e);
                 };
             });
