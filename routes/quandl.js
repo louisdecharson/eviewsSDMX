@@ -52,7 +52,7 @@ exports.getSeries = function(req,res) {
     if (dataset === "ICE") {
 
         arrSeries.forEach(function(it,ind) {
-            var myPath = '/api/v3/datasets/'+ dataset + '/' + it + '.json?api_key'+apiKey;
+            var myPath = '/api/v3/datasets/'+ dataset + '/' + it + '.json?api_key='+apiKey;
             var options = {
                 hostname: 'www.quandl.com',
                 port: 443,
@@ -61,7 +61,6 @@ exports.getSeries = function(req,res) {
                     'connection': 'keep-alive'
                 }
             };
-
             https.get(options, function(result) {
                 if (result.statusCode >=200 && result.statusCode < 400) {
                     var xml = '';
@@ -78,7 +77,12 @@ exports.getSeries = function(req,res) {
                         res.send(buildHMTL(mySeries.reverse(),nameSeries));
                     });
                 } else {
-                    var e = "Error: "+result.statusCode + ' | Headers :'+req.headers;
+                    if (result.statusCode === 429) {
+                        var msg = "Too many requests";
+                    } else {
+                        var msg = "";
+                    }
+                    var e = "Error: "+result.statusCode + ' | '+ msg  + ' | Headers '+JSON.stringify(result.headers) + ' | ';
                     res.send(e);
                 };
             });
