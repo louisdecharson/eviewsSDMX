@@ -39,15 +39,9 @@ app.use('/',express.static(__dirname + '/public/'));
 app.use(favicon(path.join(__dirname,'public','favicon.ico')));
 
 // TIMEOUT
-app.use(timeout(29900,true));
+app.use(timeout(29900,{"respond":true}));
 app.use(haltOnTimedout);
-function haltOnTimedout(req,res,next) {
-    if (req.timedout === true) {
-        next();
-    } else {
-        res.redirect('/timedout.html');
-    }
-};
+
 
 // TimeSeries for Insee
 app.get('/series/:series', fetcher.getSeries);
@@ -91,6 +85,15 @@ app.listen(port, function() {
 
 
 
+// TIMEOUT
+function haltOnTimedout(req,res,next) {
+    if (req.timedout === true) {
+        console.log("timedout");
+        res.redirect('/timedout.html');
+    } else {
+        next();
+    }
+};
 
 // Very dangerous
 process.on('uncaughtException', (err) => {
