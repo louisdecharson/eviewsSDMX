@@ -399,7 +399,9 @@ exports.getDataSet = function(req,res) {
                             if(err == null) {
                                 var data = obj.StructureSpecificData.DataSet[0];
                                 var vTS = data.Series;
-                                res.send(buildHTML.makeTable(vTS,dataSet,authParams));
+                                if (!req.timedout) {
+                                    res.send(buildHTML.makeTable(vTS,dataSet,authParams));
+                                }
                             } else {
                                 res.send(err);
                             }
@@ -459,7 +461,9 @@ exports.getSeries = function(req,res) {
                             if(err == null) {
                                 var data = obj.StructureSpecificData.DataSet[0];
                                 var vTS = data.Series;
-                                res.send(buildHTML.makeTable(vTS,series,[]));
+                                if (!req.timedout) {
+                                    res.send(buildHTML.makeTable(vTS,series,[]));
+                                }
                             } else {
                                 res.send(err);
                             }
@@ -546,14 +550,16 @@ exports.getDatafromURL = function(req,res) {
                 result.on('end',function() {
                     xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                         if(err == null) {
-                            if (typeof obj.StructureSpecificData !== 'undefined') {
-                                var data = obj.StructureSpecificData.DataSet[0],
-                                    vTS = data.Series,
-                                    title = 'request to '+ hostname;
-                                res.send(buildHTML.makeTable(vTS,title,[]));                      
-                            } else {
-                                res.send("The request could not be handled");
-                            }               
+                            if (!req.timedout) {
+                                if (typeof obj.StructureSpecificData !== 'undefined') {
+                                    var data = obj.StructureSpecificData.DataSet[0],
+                                        vTS = data.Series,
+                                        title = 'request to '+ hostname;
+                                    res.send(buildHTML.makeTable(vTS,title,[]));                      
+                                } else {
+                                    res.send("The request could not be handled");
+                                }
+                            }
                         } else {
                             res.send(err);
                         }
@@ -576,14 +582,16 @@ exports.getDatafromURL = function(req,res) {
                 result.on('end',function() {
                     xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                         if(err == null) {
-                            if (typeof obj.StructureSpecificData !== 'undefined') {
-                                var data = obj.StructureSpecificData.DataSet[0],
-                                    vTS = data.Series,
-                                    title = 'request to '+ hostname;
-                                res.send(buildHTML.makeTable(vTS,title,[]));                      
-                            } else {
-                                res.send("The request could not be handled");
-                            }               
+                            if (!req.timedout) {
+                                if (typeof obj.StructureSpecificData !== 'undefined') {
+                                    var data = obj.StructureSpecificData.DataSet[0],
+                                        vTS = data.Series,
+                                        title = 'request to '+ hostname;
+                                    res.send(buildHTML.makeTable(vTS,title,[]));                      
+                                } else {
+                                    res.send("The request could not be handled");
+                                }
+                            }
                         } else {
                             res.send(err);
                         }

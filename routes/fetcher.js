@@ -276,7 +276,9 @@ exports.getSeries = function(req,res) {
                     if(err == null) {
                         var data = obj.StructureSpecificData.DataSet[0];
                         var vTS = data.Series;
-                        res.send(buildHtml(vTS,arr[0]));
+                        if (!req.timedout) {
+                            res.send(buildHtml(vTS,arr[0]));
+                        }
                     }
                     else{
                         res.send(err);

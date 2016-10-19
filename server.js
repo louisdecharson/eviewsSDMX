@@ -21,6 +21,7 @@ var express = require('express'),
     fetcher2 = require('./routes/fetcher2'),
     quandl = require('./routes/quandl'),
     timeout = require('connect-timeout');
+    //timeout = require('./timeout.js');
     // search = require('./routes/search');
 
 
@@ -40,8 +41,6 @@ app.use(favicon(path.join(__dirname,'public','favicon.ico')));
 
 // TIMEOUT
 app.use(timeout(29900,{"respond":true}));
-app.use(haltOnTimedout);
-
 
 // TimeSeries for Insee
 app.get('/series/:series', fetcher.getSeries);
@@ -79,23 +78,33 @@ app.post('/cal/createCal',cal.sendCal);
 // Jokes
 app.get('/chuck',fetcher.getChuck);
 
+// TIMEOUT
+app.use(haltOnTimedout);
+
+function haltOnTimedout(err,req,res,next) {
+    if (req.timedout === true) {
+        if (res.headersSent) {
+            next(err);
+        } else {
+            res.redirect('/timedout.html');
+        }
+    } else {
+        next();
+    }
+};
+
 app.listen(port, function() {
     console.log('Our app is running on port '+ port);
 });
 
 
 
-// TIMEOUT
-function haltOnTimedout(req,res,next) {
-    if (req.timedout === true) {
-        console.log("timedout");
-        res.redirect('/timedout.html');
-    } else {
-        next();
-    }
-};
+
+
+
 
 // Very dangerous
 process.on('uncaughtException', (err) => {
      console.log(`Caught exception: ${err}`);
 });
+
