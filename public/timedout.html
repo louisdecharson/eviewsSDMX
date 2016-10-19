@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+  <head>
+    <title>SDMX + EViews - Connection Timedout</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"></meta>
+    <!-- CSS /-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/css/bootstrap.min.css" integrity="sha384-2hfp1SzUoho7/TsGGGDaFdsuuDL0LX2hnUp6VkX3CUQ2K4K+xjboZdsXyp4oUHZj" crossorigin="anonymous"></link>
+
+    <style>
+
+      body {
+      margin-top: 2%;
+      margin-right: 5%;
+      margin-left: 5%
+      }
+
+      h2 {
+      font-weight: bold ;
+      }
+      
+    </style>
+      
+  </head>
+
+  <body>
+    <code>ERROR 408 : Request has timed out.</code>
+    <br></br>
+    <strong><h2>Your request has timed out, here is why:</h2></strong>
+    <br/>
+    <ul>
+      <li><strong>The dataset was too big</strong>
+      <p>The dataset you requested was too big and it takes too long to send it back. You should cut it according to one or multiple dimensions using filters. <br/>
+      See <a href="/">here</a> how to do so. </br>
+      You should also see the dimensions list at : <code>http://sdmx.herokuapp.com/PROVIDER/dataflow/DATASET_ID</code> (the capital letters are to be replaced by the actual value according to the <em>provider</em> and <em>dataset id</em> you want to retrieve data from).
+      <p></li>
+      <br/>
+    <li><strong>The request was wrongly specified.</strong>
+    <p>You made a mistake specifying the request and the server can't find what you mean. See <a href="/">here</a> how to use the filters.</br></p></li>
+  </ul>
+    
+    <!-- JAVASCRIPT /-->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/js/bootstrap.min.js" integrity="sha384-VjEeINv9OSwtWFLAtmc4JCtEJXXBub00gtSnszmspDLCtC0I4z4nqz7rEFbIZLLU" crossorigin="anonymous"></script>
+
+  </body>
+  
+  
+</html>

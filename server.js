@@ -19,7 +19,8 @@ var express = require('express'),
     cal = require('./routes/cal'),
     favicon = require('serve-favicon'),
     fetcher2 = require('./routes/fetcher2'),
-    quandl = require('./routes/quandl');
+    quandl = require('./routes/quandl'),
+    timeout = require('connect-timeout');
     // search = require('./routes/search');
 
 
@@ -36,6 +37,17 @@ app.use('/',express.static(__dirname + '/public/'));
 
 // Favicon
 app.use(favicon(path.join(__dirname,'public','favicon.ico')));
+
+// TIMEOUT
+app.use(timeout(29900,true));
+app.use(haltOnTimedout);
+function haltOnTimedout(req,res,next) {
+    if (req.timedout === true) {
+        next();
+    } else {
+        res.redirect('/timedout.html');
+    }
+};
 
 // TimeSeries for Insee
 app.get('/series/:series', fetcher.getSeries);
@@ -76,6 +88,8 @@ app.get('/chuck',fetcher.getChuck);
 app.listen(port, function() {
     console.log('Our app is running on port '+ port);
 });
+
+
 
 
 // Very dangerous
