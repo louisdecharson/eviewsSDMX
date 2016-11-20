@@ -75,9 +75,6 @@ app.post('/cal/createCal',cal.sendCal);
 // Search Engine
 // app.get('/search/all', search.getAllId);
 
-// Jokes
-app.get('/chuck',fetcher.getChuck);
-
 // TIMEOUT
 app.use(haltOnTimedout);
 
@@ -100,7 +97,7 @@ app.listen(port, function() {
 
 
 
-
+global.gc();
 
 
 // Very dangerous
