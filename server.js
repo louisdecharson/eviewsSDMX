@@ -20,7 +20,8 @@ var express = require('express'),
     favicon = require('serve-favicon'),
     fetcher2 = require('./routes/fetcher2'),
     quandl = require('./routes/quandl'),
-    timeout = require('connect-timeout');
+    timeout = require('connect-timeout'),
+    bls = require('./routes/bls');
     //timeout = require('./timeout.js');
     // search = require('./routes/search');
 
@@ -64,7 +65,13 @@ app.post('/requestbyURL',fetcher2.redirectURL);
 
 // Futures
 // app.get('/futures/', futures.getFutures);
+
+// OTHER NON-SDMX PROVIDER
+// -----------------------
+// Quandl
 app.get('/quandl/:apiKey/:dataset/:series',quandl.getSeries);
+// BLS
+app.get('/bls/:apiKey/:series',bls.getSeries);
 
 // Calendrier
 app.get('/cal/:cals', cal.getCals);
@@ -93,12 +100,6 @@ function haltOnTimedout(err,req,res,next) {
 app.listen(port, function() {
     console.log('Our app is running on port '+ port);
 });
-
-
-
-
-global.gc();
-
 
 // Very dangerous
 process.on('uncaughtException', (err) => {
