@@ -2,11 +2,16 @@
 
 ### Purpose
 
-EViews cannot read SDMX format. However, EViews can read html tables.
+EViews cannot read SDMX format (yet). However, EViews can read html tables.
 
 This very simple app aims at creating html table from SDMX flow in a quick and efficient way in the same spirit as [Widukind](https://github.com/Widukind)
 
 Currently, the app supports only Insee, ECB or Eurostat data natively.
+
+It also supports requests for :
+
++ Quandl
++ Bureau of Labor Stastics
 
 ### Libraries
 
@@ -75,8 +80,14 @@ An exhaustive dimensions lists can be found here : `http://sdmx.herokuapp.com/da
 You can then use it as a standard filter.
  
 **Example :** `http://sdmx.herokuapp.com//dataset/IPCH-2015-FR-COICOP?freq=M`
- 
- 
+
+### D. Get data from other providers
+Alternatively, you can also make a request to
+
++ an other SDMX provider using an **url**: `http://sdmx.herokuapp.com/req?url=SDMX_URL`
++ Quand series: `http://sdmx.herokuapp.com/quandl/API_KEY/DATASET/SERIES`
++ BLS series: `http://sdmx.herokuapp.com/bls/API_KEY/SERIES_ID?startyear=STARTYEAR&endyear=ENDYEAR`. Filters
+
 ### Skim Data
 
 The app allows you to skim through the available datasets and timeseries. A list of all the available datasets can be found here for each provider :
@@ -109,7 +120,7 @@ Ideas and suggestions are more than welcome. Contribute to the code [here](https
 * * *
   
 ## Known Issues
- z 
+
 Since the app output is an html table, an obvious limitation is that a request cannot be done along multiple time dimensions. You cannot retrieve in the same request monthly and quaterly data.
  
 Moreover :
