@@ -29,7 +29,7 @@ function buildHTML(series) {
         theader2 = '',
         tbody = '';
 
-    theader2 += '<th>' + series.seriesID  + '</th>';
+    theader2 += '<th>Dates</th>' + series.seriesID  + '</th>';
     data.forEach(function(it,ind) {
         tbody += '<tr>';
         tbody += '<td style="align:center">' + it.year + it.period +'</td>';
