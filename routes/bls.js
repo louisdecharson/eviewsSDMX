@@ -32,8 +32,8 @@ function buildHTML(series) {
     theader2 += '<th>Dates</th><th>' + series.seriesID  + '</th>';
     data.forEach(function(it,ind) {
         tbody += '<tr>';
-        tbody += '<td style="align:center">' + it.year + it.period +'</td>';
-        tbody += '<td style="align:center">' + it.value +'</td>';
+        tbody += '<td style="text-align:center">' + it.year + it.period +'</td>';
+        tbody += '<td style="text-align:center">' + it.value +'</td>';
         tbody += '</tr>';
     });
 

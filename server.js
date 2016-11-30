@@ -21,7 +21,8 @@ var express = require('express'),
     fetcher2 = require('./routes/fetcher2'),
     quandl = require('./routes/quandl'),
     timeout = require('connect-timeout'),
-    bls = require('./routes/bls');
+    bls = require('./routes/bls'),
+    fred = require('./routes/fred');
     //timeout = require('./timeout.js');
     // search = require('./routes/search');
 
@@ -72,6 +73,9 @@ app.post('/requestbyURL',fetcher2.redirectURL);
 app.get('/quandl/:apiKey/:dataset/:series',quandl.getSeries);
 // BLS
 app.get('/bls/:apiKey/:series',bls.getSeries);
+// FRED
+app.get('/fred/:apiKey/:series',fred.getSeries);
+
 
 // Calendrier
 app.get('/cal/:cals', cal.getCals);

@@ -39,7 +39,7 @@ function buildHMTL(arr,nameSeries,nameDataset) {
     arr.forEach(function(it,ind) {
         tbody += '<tr>';
         it.forEach(function(i) {
-            tbody += '<td style="align:center">' + i  +'</td>';
+            tbody += '<td style="text-align:center">' + i  +'</td>';
         });
         tbody += '</tr>';
     });
