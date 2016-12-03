@@ -46,9 +46,9 @@
     <strong><h2>Take it easy, a subroutine</h2></strong>
     <br/>
     <p>To ease the use of the app, I've coded for you an EViews subroutine. You can download it <a href="./subsdmx.prg">here</a> or see the code below. You are welcome.</p><br></br>
-
+    
     <h6>EViews subroutine</h6>
-    <pre><code>
+    <pre class="pre-scrollable"><code>
       <span class="keyw">subroutine</span> sdmx(string %provider, string %series, string %filters, string %rename)
 
         ' Api Key Quandl & BLS 
@@ -84,7 +84,15 @@
                 <span class="keyw">endif</span>
         <span class="keyw">endif</span>       
 <span class="keyw">endsub</span>
-    </code><pre>
+    </code></pre>
+    <h6>Use it like this:</h6>
+    <pre><code>
+      <span class="keyw">wfcreate</span> M 1990 2010
+      <span class="keyw">call</span> sdmx("fred","unrate","","u")
+      <span class="keyw">call</span> sdmx("ecb","EXR.M.E2.USD.EN00.A","?startPeriod=2003&endPeriod=2004","eonia")
+      <span class="keyw">call</span> sdmx("","http://widukind-api.cepremap.org/api/v1/sdmx/BIS/data/DSRP/Q.BE.N","","debt_service_belgium")
+    </code></pre>
+
     
     <!-- JAVASCRIPT /-->
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/js/bootstrap.min.js" integrity="sha384-VjEeINv9OSwtWFLAtmc4JCtEJXXBub00gtSnszmspDLCtC0I4z4nqz7rEFbIZLLU" crossorigin="anonymous"></script>
