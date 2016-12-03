@@ -12,6 +12,7 @@ It also supports requests for :
 
 + Quandl
 + Bureau of Labor Stastics
++ Fred
 
 ### Libraries
 

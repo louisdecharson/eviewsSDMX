@@ -104,7 +104,6 @@
                 <li><a href="#skim">Skim data</a></li>
               </ul>
             </li>
-            <li><a href="./cal">Calendars</a></li>
             <li><a href="#issues">Know Issues</a></li>
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dataflows<span class="caret"></span></a>
@@ -114,7 +113,8 @@
                 <li><a href="/eurostat/dataflow">Eurostat</a></li>
               </ul>
             </li>
-            <li><a href="./form.html">Request by SDMX url</a></li> 
+                <li><a href="./form.html">Request by SDMX url</a></li> 
+            <li><a href="./sub.html">EViews subroutine</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
               <li><a href="http://github.com/louisdecharson"><i><> by louisdecharson</i></a></li>
@@ -133,11 +133,13 @@
         <p>This API allows you to retrieve datasets or series in EViews from different providers by their ID.</p>
         <hr class="m-y-2">
           <p>Currently, the app is supporting <strong>Insee</strong>, <strong>ECB</strong> & <strong>Eurostat</strong> data natively.</p>
-          <p>Requests to <strong>Quandl</strong> and <strong>BLS</strong> are also supported.</p>
+          <p>Requests to <strong>Quandl</strong>, <strong>BLS</strong> and <strong>FRED</strong> are also supported.</p>
           <p>Alternatively, SDMX requests to others providers can be made <a href="./form.html">here</a>.</p>
+          <p>Some <a href="./slides.pdf">slides.</a></p>
         <p>
           <a class="btn btn-lg btn-primary" href="#howitworks" role="button">See how it works</a>
         </p>
+        
       </div>
 
 
@@ -227,8 +229,8 @@ wfopen(wf=ipch,type="html") %url colhead=2 namepos=first
   <h4><i>EViews Output: </i></h4>
   <p>A workfile with a two series, one series named <code>num000436387</code> containing information from the timeseries with idbank <i>000436387</i> and a series <code>Dates</code>containing Dates from 2010M01 to 2016M05</p>
 
- 
-<h2 id=codesource>Code and credits</h2>
+  
+  <h2 id=codesource>Code and credits</h2>
 <p>The code is available on <a href="https://github.com/louisdecharson/eviewsSDMX">Github</a></p>
 <p>The app is written in NodeJS and make an extensive use of the following libraries</p>
 <ul>

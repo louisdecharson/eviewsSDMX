@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+  <head>
+    <title>SDMX + EViews - A subroutine</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"></meta>
+    <!-- CSS /-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/css/bootstrap.min.css" integrity="sha384-2hfp1SzUoho7/TsGGGDaFdsuuDL0LX2hnUp6VkX3CUQ2K4K+xjboZdsXyp4oUHZj" crossorigin="anonymous"></link>
+
+    <style>
+
+      body {
+      margin-top: 2%;
+      margin-right: 5%;
+      margin-left: 5%
+      }
+
+      h2, h6 {
+      font-weight: bold ;
+      }
+
+      .keyw {
+      color: #85981C;
+      }
+      .string {
+      color: #2E8CCF;
+      }
+      .comment {
+      color: #93A1A1;
+      }
+      .str {
+      color: #32A198;
+      }
+
+      pre {
+      background-color: #FDF6E4;
+      }
+      
+      
+    </style>
+      
+  </head>
+
+  <body>
+    <br></br>
+    <strong><h2>Take it easy, a subroutine</h2></strong>
+    <br/>
+    <p>To ease the use of the app, I've coded for you an EViews subroutine. You can download it <a href="./subsdmx.prg">here</a> or see the code below. You are welcome.</p><br></br>
+
+    <h6>EViews subroutine</h6>
+    <pre><code>
+      <span class="keyw">subroutine</span> sdmx(string %provider, string %series, string %filters, string %rename)
+
+        ' Api Key Quandl & BLS 
+        <span class="string">%__quandl</span> = "" <span class="comment">' PUT YOUR API KEY BETWEEN THE QUOTES</span>
+        <span class="string">%__bls</span>  = "" <span class="comment"> 'PUT YOUR API KEY BETWEEN THE QUOTES</span>
+        <span class="string">%__fred</span>  = "" <span class="comment"> ' PUT YOUR API KEY BETWEEN THE QUOTES</span>
+        
+        <span class="string">%__app</span> = "http://sdmx.herokuapp.com/"
+        <span class="string">%__url</span> = %__app
+        
+        <span class="keyw">if</span> %provider = "quandl" or %provider = "bls" or %provider = "fred" <span class="keyw">then</span>
+                %__url = %__url + %provider + "/" + %__{%provider} + "/" + %series + %filters
+                <span class="keyw">if</span> @len(%rename) > 0 then</span>
+                        <span class="keyw">import</span>(t=html) <span class="string">%__url</span> names=("date",%rename)
+                <span class="keyw">else</span>
+                        <span class="keyw">import</span>(t=html) <span class="string">%__url</span>
+                <span class="keyw">endif</span>
+        <span class="keyw">else</span>
+                <span class="keyw">if</span> %provider = "ecb" or %provider = "insee" or %provider = "eurostat" then
+                        %__url = %__url + %provider + "/" + "series/" + %series + %filters
+                        <span class="keyw">if</span> @len(%rename) > 0 then</span>
+                                <span class="keyw">import</span>(t=html) <span class="string">%__url</span> colhead=2 namepos=none names=("date",%rename)
+                        <span class="keyw">else</span>
+                                <span class="keyw">import</span>(t=html) <span class="string">%__url</span> colhead=2 namepos=first
+                        <span class="keyw">endif</span>
+                <span class="keyw">else</span>
+                        <span class="string">%__url</span> = <span class="string">%__url</span> + "req?url=" + "'"  + %series + "'"
+                        <span class="keyw">if</span> @len(%rename) > 0 then</span>
+                                <span class="keyw">import</span>(t=html) <span class="string">%__url</span> colhead=2 namepos=none names=("date",%rename)
+                        <span class="keyw">else</span>
+                                <span class="keyw">import</span>(t=html) <span class="string">%__url</span> colhead=2 namepos=first
+                        <span class="keyw">endif</span>
+                <span class="keyw">endif</span>
+        <span class="keyw">endif</span>       
+<span class="keyw">endsub</span>
+    </code><pre>
+    
+    <!-- JAVASCRIPT /-->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/js/bootstrap.min.js" integrity="sha384-VjEeINv9OSwtWFLAtmc4JCtEJXXBub00gtSnszmspDLCtC0I4z4nqz7rEFbIZLLU" crossorigin="anonymous"></script>
+
+  </body>
+  
+  
+</html>
