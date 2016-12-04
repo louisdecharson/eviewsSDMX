@@ -1,313 +1,357 @@
-<html lang="en"><head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <link rel="shortcut icon" href="favicon.ico">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
+  <head>
     <title>SDMX for EViews</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"></meta>
+    <!-- CSS /-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/css/bootstrap.min.css" integrity="sha384-2hfp1SzUoho7/TsGGGDaFdsuuDL0LX2hnUp6VkX3CUQ2K4K+xjboZdsXyp4oUHZj" crossorigin="anonymous"></link>
+    <link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
 
-    <!-- Bootstrap core CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <style>
+
+      body {
+      margin-top: 2%;
+      margin-right: 5%;
+      margin-left: 5%
+      }
+
+      h2, h3, h6 {
+      font-weight: bold ;
+      }
+
+      h3 {
+      margin-bottom: 20px;
+      }
+
+      h5 {
+      font-style: oblique;
+      margin-bottom: 15px;
+      text-decoration: underline;
+      }
+      
+      .jumbotron {
+      background-color: white;
+      padding-bottom: 0px;
+      }
+
+      .keyw {
+      color: #85981C;
+      }
+      .string {
+      color: #2E8CCF;
+      }
+      .comment {
+      color: #93A1A1;
+      }
+      .str {
+      color: #32A198;
+      }
+
+      pre {
+      background-color: #FDF6E4;
+      }
+
+      .menu {
+      padding-top:20px;
+      }
+
+      .menu a {
+      color: black;
+      }
+
+      .navbar-fixed-left {
+      position: fixed;
+      }
+
+      .sub-nav {
+      padding-left:5px;
+      font-size:11px;
+      }
+      
+      .provider {
+      color: #e57e22;
+      }
+
+      .resource {
+      color: #2ecb71;
+      }
+
+      .resource_id {
+      color: #9a59b5;
+      }
 
 
-<style style="display:none">
-/*
- * See the Getting Started docs for more information:
- * http://getbootstrap.com/getting-started/#support-ie10-width
- */
-@-webkit-viewport { width: device-width; }
-@-moz-viewport    { width: device-width; }
-@-ms-viewport     { width: device-width; }
-@-o-viewport      { width: device-width; }
-@viewport         { width: device-width; }
+      .subpart{
+      padding-left: 20px;
+      }
 
-</style>
+      .concept {
+      padding: 8px;
+      background-color:#ebeff0;
+      }
 
+      .footer {
+      color: #7f8b8c;
+      }
 
-    <!-- Custom styles for this template -->
-<style style="display:none">
-    body {
-  min-height: 2000px;
-  padding-top: 70px;
-}
-  .bootstrap-demo{margin:30px;}
-  .b_w {
-    -webkit-filter: grayscale(100%); /* Chrome, Safari, Opera */
-    filter: grayscale(100%);
-    opacity: 0.7;
-  }
-  .gitlogo {
-    opacity: 0.5;
-    mix-blend-mode: multiply;
-  }
-  .nopad {
-    padding: 10 10 10 10 !important;
-  }
-  img.gitlogo:hover {
-    opacity:0.8;
-  }
-  i.b_w:hover{
-    filter:grayscale(50%);
-    opacity:0.9;
-  }
-</style>
-
-</style>
-
-<link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
-
- <style type="text/css"></style>
-
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
-<!-- The navbar is not masking the content -->
-<script>
-    var shiftWindow = function() { scrollBy(0, -70) };
-    if (location.hash) shiftWindow();
-    window.addEventListener("hashchange", shiftWindow);
-</script>
+      .logo {
+      margin-top: 64px;
+      
+      }
+      .gitlogo {
+      opacity: 0.7;
+      mix-blend-mode: multiply;
+      }
+      img.gitlogo:hover {
+      opacity:1;
+      }
+      .b_w {
+      -webkit-filter: grayscale(100%); /* Chrome, Safari, Opera */
+      filter: grayscale(100%);
+      opacity: 0.7;
+      }
+      i.b_w:hover{
+      filter:grayscale(50%);
+      opacity:1;
+      }
+      
+    </style>
+      
   </head>
 
   <body>
-<!-- Github Ribbon-->
-<!-- <a href="https://github.com/louisdecharson/eviewsSDMX"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:9999;" src="https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"></a> -->
-<!-- /Github Ribbon-->
+<div class="container-fluid">
+  <div class="row">
 
-    <!-- Fixed navbar -->
-    <nav class="navbar navbar-default navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">SDMX for EViews</a>
+    <!-- MENU -->
+   
+    <div class="col-md-2">
+      <img class="logo" src="sdmx_eviews.png" style="width:95%;ratio:1;"><br />
+      <div class="menu">
+        <div class="navbar-fixed-left">
+          <h6><a href="#">SDMX + EViews</a></h6>
+          <ul class="nav">
+            <li class="nav-item"><a href="#concept">1. The concept</a></li>
+            <li class="nav-item"><a href="#geturl">2. Get the url</a></li>
+            <li class="nav-item sub-nav"><a href="#url">a. The url</a></li>
+            <li class="nav-item sub-nav"><a href="#idres">b. Get the id of the resource</a></li>
+            <li class="nav-item"><a href="#filters">3. Filters</a></li>
+            <li class="nav-item sub-nav"><a href="#limit">a. Limit nb of obs</a></li>
+            <li class="nav-item sub-nav"><a href="#cut">b. Cut a dataset</a></li>
+            <li class="nav-item"><a href="#others">4. Other providers</a></li>
+            <hr>
+            <li class="nav-item">
+              <a href="./sub.html">EViews subroutine</a>
+            </li>
+           <hr>
+            <li class="nav-item"><a href="#credits">Credits</a></li>
+            <br />
+            <li class="nav-item"><a href="http://github.com/louisdecharson/eviewsSDMX"><img src="https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTMVofxkPmsP8yt6HGgzL5k7YLN-lDQcScKrk1MsMEHeP3Lyqkq" style="width:25px;height:25px;" class="gitlogo" hspace="-20" title="see on Github"></a> <a href="https://hub.docker.com/r/louisdecharson/eviewssdmx/" title="see on Docker"><i class="em em-whale b_w"></i></a></li>
+          </ul>
         </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Home</a></li>
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Fetch Data <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li><a href="#timeseries">Timeseries</a></li>
-                <li><a href="#multtimeseries">Multiple timeseries</a></li>
-                <li><a href="#datasets">Datasets</a></li>
-                <li><a href="#skim">Skim data</a></li>
-              </ul>
-            </li>
-            <li><a href="#issues">Know Issues</a></li>
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dataflows<span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li><a href="/insee/dataflow">Insee</a></li>
-                <li><a href="/ecb/dataflow">ECB</a></li>
-                <li><a href="/eurostat/dataflow">Eurostat</a></li>
-              </ul>
-            </li>
-                <li><a href="./form.html">Request by SDMX url</a></li> 
-            <li><a href="./sub.html">EViews subroutine</a></li>
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-              <li><a href="http://github.com/louisdecharson"><i><> by louisdecharson</i></a></li>
-              <li><a class="nopad" href="http://github.com/louisdecharson/eviewsSDMX"><img src="https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTMVofxkPmsP8yt6HGgzL5k7YLN-lDQcScKrk1MsMEHeP3Lyqkq" style="width:25px;height:25px;" class="gitlogo" hspace="-20" title="see on Github"></a></li>
-              <li><a class="nopad" href="https://hub.docker.com/r/louisdecharson/eviewssdmx/" title="see on Docker"><i class="em em-whale b_w"></i></a></li>
-            </ul>
-         </div><!--/.nav-collapse -->
       </div>
-    </nav>
+    </div>
+    
 
-    <div class="container">
-
-      <!-- Main component for a primary marketing message or call to action -->
-      <div class="jumbotron">
-        <h1>Download SDMX data in EViews </h1>
-        <p>This API allows you to retrieve datasets or series in EViews from different providers by their ID.</p>
-        <hr class="m-y-2">
-          <p>Currently, the app is supporting <strong>Insee</strong>, <strong>ECB</strong> & <strong>Eurostat</strong> data natively.</p>
-          <p>Requests to <strong>Quandl</strong>, <strong>BLS</strong> and <strong>FRED</strong> are also supported.</p>
-          <p>Alternatively, SDMX requests to others providers can be made <a href="./form.html">here</a>.</p>
-          <p>Some <a href="./slides.pdf">slides.</a></p>
-        <p>
-          <a class="btn btn-lg btn-primary" href="#howitworks" role="button">See how it works</a>
-        </p>
-        
-      </div>
-
-
-      <h2 id="howitworks">I. How does it work?</h2>
-
-      <p>The app is transforming SDMX flows from providers website in an HTML table that can be read by EViews. The app provides you with a stable URL that you can use in your EViews code.</p>
-      <p>Downloading data to EViews is done in two steps:</p>
-      <ul>
-        <li>get the <code>url</code>of the html table containing the data.</li>
-        <li>import the data into EViews.</li>
-      </ul>
-      <p><strong>Importing data</strong></p>
-      <ul>
-        <li>from Insee, ECB, Eurostat (provider): <code>http://sdmx.herokuapp.com/PROVIDER/RESOURCE/ID_RESOURCE</code>where the resource can be either dataset or series.</li>
-        <li>from Quandl: <code>http://sdmx.herokuapp.com/quandl/API_KEY/ID_RESOURCE</code></li>
-        <li>from the BLS: <code>http://sdmx.herokuapp.com/bls/API_KEY/ID_RESOURCE</code></li>
-        <li>from an SDMX url <code>http:sdmx.herokuapp.com/req?url=SDMX_URL</code></li>
-      </ul>
-      <p><strong>Example of EViews code:</strong></p>
-      <pre>
-%url = "http://sdmx.herokuapp.com/insee/dataset/IPCH-2015-FR-COICOP?freq=M"
-wfopen(wf=ipch,type="html") %url colhead=2 namepos=first</pre>
-
-      With an url you can retrieve:
-      <ul>
-        <li> a timeseries </li>
-        <li> a dataset </li>
-        <li> multiple timeseries (solely on the Insee website) </li>
-      </ul>
+    <!-- CONTENT -->
+    <div class="col-md-10">
       
-  <h3 id="timeseries">A. Get a Timeseries</h3>
-  <p>Use the ids of the timeseries:
-  <code>http://sdmx.herokuapp.com/series/idbank</code></p>
+      <!-- JUMBOTRON -->
+      <div class="jumbotron">
+        <h1 class="display-3">SDMX in EViews</h1>
+        <hr></hr>
+        <p>This API allows you to retrieve datasets or series in EViews from different SDMX providers.</p>
+        <p>Currently, the app is supporting <strong>Insee</strong>, <strong>ECB</strong> & <strong>Eurostat</strong> data natively.</p>
+        <p>Requests to <strong>Quandl</strong>, <strong>BLS</strong> and <strong>FRED</strong> are also supported.</p>
+        <p>Alternatively, SDMX requests to others providers can be made <a href="./form.html">here</a>.</p>
+        <p>Some <a href="./slides.pdf">slides.</a></p>
+      </div>
+      <hr></hr>
+      <!-- END JUMBOTRON -->
 
-  You can filter the results and limit the number of observations by adding the following filters:
-  <ul>
-    <li>fixing the number of observations with the filter: <code>lastNObservations</code> or <code>firstNObservations</code></li>
-    <li>fixing the starting period with the filter: <code>startPeriod</code></li>
-    <li>fixing the ending period with the filter: <code>endPeriod</code></li>
-  </ul>
+      <p><strong>Importing SDMX data in EViews becomes as easy as:</strong></p>
+      <pre><code>
+        <span class="string">%url</span> = <span class="str">"http://sdmx.herokuapp.com/ecb/series/EXR.A.E2.USD.EN00.A"</span>
+        <span class="keyw">import</span>(t=html) <span class="string">%url</span> colhead=2 namepos=first
+      </code></pre>
 
-<strong>Example:</strong><code>%url = "http://sdmx.herokuapp.com/insee/series/000436387?startPeriod=2010"</code>
+      <br></br>
+      
+      <!-- CONCEPT -->
+      <h3 id="concept">1. The concept</h3>
 
-<br></br>
+      <p class="concept"><i>The app is transforming <a href="https://sdmx.org">SDMX</a> flows from providers website in an HTML table that can be read by EViews. The app provides you with a stable URL that you can use in your EViews code.</i></p>
+      <p>Downloading data to EViews is done in <b>two steps</b>:</p>
+      <ol>
+        <li>get the <code>url</code>of the HTML table containing the data.</li>
+        <li>import the data into EViews with <code>import(t=html) url</code></li>
+      </ol>
+      <br></br>
+      
+      <!-- GET THE URL  -->
+      <h3 id="geturl">2. Get the url</h3>
 
-<h3 id="multitimeseries">B. Get multiple Timeseries (only supported for Insee data)</h3>
-<p>You could add multiple idbanks to your request by separating each idbank by a '+': <code>http://sdmx.herokuapp.com/series/idbank1+idbank2+idbank3</code></p>
-<strong>Example: </strong><code>http://sdmx.herokuapp.com/series/001762151+001762152+001762153?startPeriod=2010</code>
-<br></br>
-<div class="alert alert-warning">
-  <strong>Be cautious !</strong> Previous filters still work but you have to ensure that all the timeseries share the same time period. Otherwise, some values can be missing.
+      <!-- THE URL -->
+      <div class="subpart">
+        
+        <h5 id="url"> a. The url</h5>
+        <p>An url looks like:</p>
+        <strong><center><code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/<span class="resource">resource</span>/<span class="resource_id">resource_id</span></code></center></strong>
+        <strong class="provider">Providers</strong>
+        <ul>
+          <li><code>eurostat</code>: for data from <a href="http://ec.europa.eu/eurostat/data/database">Eurostat</a>.</li>
+          <li><code>ecb</code>: for data from the <a href="https://www.ecb.europa.eu/home/html/index.en.html">European Central Bank</a>.</li>
+          <li><code>insee</code>: for data from the French national statistical institute <a href="http://www.bdm.insee.fr/bdm2/index">Insee</a>.</li>
+        </ul>
+        <strong class="resource">resource</strong>
+        <ul>
+          <li><code>dataset</code>: for retreiving a dataset.</li>
+          <li><code>series</code>: for retreiving a timeseries.</li>
+        </ul>
+        <strong class="resource_id">resource_id</strong> is the <strong>id</strong> of either the dataset or the timeseries.    
+        <br></br>
+      </div>
+      <!-- THE URL -->
+
+      
+      <!-- GET THE ID  -->
+      <div class="subpart">
+
+        <h5 id="idres"> b. Get the id of the resource</h5>
+
+        <p>There are two ways to get the id of your resource:</p>
+        <ul>
+          <li>Get it on the provider website. It is the same for sdmx.herokuapp.com.</li>
+          <li>Get it on the app:</li>
+          <ul>
+            <li>List of all datasets for a provider at: <code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/dataflow</code></li>
+            <li>List of all series for a dataset at: <code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/dataflow/<span class="resource_id">dataset_id</span>/</code></li>
+          </ul>
+        </ul>
+      </div>
+      <!-- GET THE ID  -->
+
+      <br />
+      
+      <!-- FILTERS -->
+      <h3 id="filters">3. Filters</h3>
+
+      <p>The app allows to apply the standard SDMX filters, namely:</p>
+      <ol>
+        <li>limit the number of observations retrieved. For example, retrieve data since 2014 or the last 10 observations.</li>
+        <li>cut a dataset along its <i>dimensions</i>.</li>
+      </ol>
+
+      <p>
+        A filter is applied by adding at the end of the url: <code>?name_filter=value_filter</code><br />
+        Multiple filters can be used by separating them by <code>&</code>
+      </p>
+      <br />
+
+      
+      <!-- LIMIT THE NUMBER OF OBS -->
+      <div class="subpart">
+
+        <h5 id="limit">a. Limit the number of observations</h5>
+        <p>There are four filters to limit the number of observations retrieved:</p>
+        <ul>
+          <li>startPeriod: <code>?startPeriod=2004</code></li>
+          <li>endPeriod: <code>?endPeriod=2010Q3</code></li>
+          <li>firstNObservations: <code>?firstNObservations=12</code></li>
+          <li>lastNObservations: <code>?lastNObservations=24</code></li>
+        </ul>
+        <strong>Example</strong><br />
+        The code below retrieve data from 2000 to 2010 of annual average of the ECB Nominal effective exch. rate.
+        <pre><code>
+        <span class="string">%url</span> = <span class="str">"http://sdmx.herokuapp.com/ecb/series/EXR.A.E2.USD.EN00.A?startPeriod=2000&endPeriod=2010"</span>
+        <span class="keyw">import</span>(t=html) <span class="string">%url</span> colhead=2 namepos=first
+        </code></pre>     
+      </div>
+      <br />
+      <!-- LIMIT THE NUMBER OF OBS -->
+      
+
+      <!-- CUT A DATASET -->
+      <div class="subpart">
+        <h5 id="cut">b. Cut a dataset </h5>
+        <p><i>"A dataset can be described as a container of ordered observations. Observations are classified by dimensions such as country, age, sex, and time period. Observations may be clustered into series, in particular, time series."</i></p>
+        <p>Subgroups of data can be retrieve by restricting dimensions (only monthly data for instance).
+        It can be done by adding a filter at the end of the url.</p>
+        <center><strong><code>http://sdmx.herokuapp.com/...?<span class="provider">name_dimension</span>=<span class="resource_id">code_dimension</span></code></strong></center>
+        <br />
+        <p>To apply the filter, you need:
+        <ol>
+          <li>the name of the dimension. Get it at <code>http://sdmx.herokuapp.com/provider/dataflow/dataset_id</code></li>
+          <li>the dimension code. Get it by clicking on the name of the dimension.</li>
+        </ol>
+        </p>
+        <strong>Example</strong><br />
+        The code below retrieve <i>monthly</i> data of French HICP.
+        <pre><code>
+        <span class="string">%url</span> = <span class="str">"http://sdmx.herokuapp.com/insee/dataset/ipch-2015-fr-coicop?freq=M"</span>
+        <span class="keyw">import</span>(t=html) <span class="string">%url</span> colhead=2 namepos=first
+        </code></pre>
+      </div>
+      <!-- CUT A DATASET -->
+      
+      <br />
+
+      
+      <!-- NON-SDMX PROVIDERS -->
+
+      <h3 id="others">4. Other providers</h3>
+      <p>Data from others SDMX provides can be retrieved using:</p>
+      <center><strong><code>http://sdmx.herokuapp.com/?req='<span class="resource_id">sdmx_url</span>'</code></strong></center><br />
+
+      <p>The app also supports requests to <strong>Fred</strong>, <strong>Quandl</strong> and the <strong>Bureau of Labor Statistics</strong>.<br />
+      The url to use is:</p>
+      <center><strong><code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/<span class="resource">api_key</span>/<span class="resource_id">resource_id</span></code></strong></center>
+
+      <strong class="provider">Providers</strong>
+        <ul>
+          <li><code>fred</code>: for data from <a href="http://fred.stlouisfed.org">Fred</a>.</li>
+          <li><code>quandl</code>: for data from <a href="http://quandl.com">Quandl</a>.</li>
+          <li><code>bls</code>: for data from the <a href="http://bls.gov">BLS</a>.</li>
+        </ul>
+
+        <strong class="resource">api_key</strong>: your api_key for the provider.<br />
+        <strong class="resource_id">resource_id</strong>: the id of the resource given by the provider.
+       
+
+        <br /><br />
+      
+      <!-- CODE AND CREDITS -->
+      <h3 id="credits">Credits</h3>
+      <p>
+        The code is available on <a href="https://github.com/louisdecharson/eviewsSDMX">Github.</a><br/>
+        The app is written in <a href="https://nodejs.org">nodeJS</a> and use <a href="http://expressjs.com">Express</a> web framework.<br/>
+        The HTML table technique is borrowed from the wonderful <a href="https://github.com/Widukind">Widukind project</a>.<br>
+      </p>
+
+
+      
+    </div>
+    <!-- END CONTENT -->
+    
+  </div>
+  <!-- END ROW -->
 </div>
+<!-- END CONTAINER-FLUID -->
 
+    
 
-<h3 id=datasets>C. Get a Dataset</h3>
-<p>To get a dataset, you should know its id. An exhaustive list is available:
-<ul>
-    <li>for Insee: <a href="http://sdmx.herokuapp.com/insee/dataflow">http://sdmx.herokuapp.com/insee/dataflow</a></p></li>
-    <li>for ECB: <a href="http://sdmx.herokuapp.com/ecb/dataflow">http://sdmx.herokuapp.com/ecb/dataflow</a></p></li>
-    <li>for Eurostat: <a href="http://sdmx.herokuapp.com/eurostat/dataflow">http://sdmx.herokuapp.com/eurostat/dataflow</a></p></li>
-</ul> 
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="container">
+        <hr></hr>
+        <center><span class="text-muted footer">Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html">GNU Affero General Public License</a> - coded with love by <a href="https://github.com/louisdecharson">louisdecharson</a></span></center>
+      </div>
+    </footer>
+    <!-- JAVASCRIPT /-->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/js/bootstrap.min.js" integrity="sha384-VjEeINv9OSwtWFLAtmc4JCtEJXXBub00gtSnszmspDLCtC0I4z4nqz7rEFbIZLLU" crossorigin="anonymous"></script>
 
-<p>Then, the url for the dataset data is:
-<code>http://sdmx.herokuapp.com/service/dataset/id_dataset</code></p>
-
-<p>Some datasets have multiple dimensions. For instance, CPI Inflation dataset (IPC-2015-COICOP) contains both monthly and annual data. Thus, you might need to know the dimensions of a dataset before retrieving it.<br>
-An exhaustive dimensions lists can be found here: <code>http://sdmx.herokuapp.com/insee/dataflow/id_dataset</code></p>
-
-<p>The dimension are used to filter out the response. You must add '?nom_de_la_dimension=dimension' at the end of the URI.</p>
-<p>When using numerous dimensions, you must separate them by '&'.
-<p><strong>Example: </strong><code>http://sdmx.herokuapp.com/insee/dataset/IPCH-2015-FR-COICOP?FREQ=M</code>
-<p><strong>Example: </strong><code>http://sdmx.herokuapp.com/ecb/dataset/EXR?FREQ=M&CURRENCY_DENOM=EUR&EXR_TYPE=SP00&EXR_SUFFIX=A</code>
-<br></br>
-
-<a name="skim"></a>
-<h3>Skim Data</h3>
-<p>The app allows you to skim through the available datasets and timeseries from different services.
-A list of all the available datasets for each provider can be found at the url <code>http://sdmx.herokuapp.com/provider/dataflow</code>. The lists provide with links to information on each dataset.
-
-<hr></hr>
-<h2>Example</h2>
-<h4><i> EViews Input: </i></h4>
-  <pre>
-%url = "http://sdmx.herokuapp.com/insee/series/000436387?startPeriod=2010&endPeriod=2016"
-wfopen(wf=ipch,type="html") %url colhead=2 namepos=first
-</pre>
-  <h4><i>EViews Output: </i></h4>
-  <p>A workfile with a two series, one series named <code>num000436387</code> containing information from the timeseries with idbank <i>000436387</i> and a series <code>Dates</code>containing Dates from 2010M01 to 2016M05</p>
-
+  </body>
   
-  <h2 id=codesource>Code and credits</h2>
-<p>The code is available on <a href="https://github.com/louisdecharson/eviewsSDMX">Github</a></p>
-<p>The app is written in NodeJS and make an extensive use of the following libraries</p>
-<ul>
-  <li>ExpressJS</li>
-  <li>xml2js</li>
-  <li>Concat</li>  
-  <li>Cheerio</li>
-  <li>ical-generator</li>
-</ul>
-The HTML table technique is borrowed from the wonderful <a href="https://github.com/Widukind">Widukind project</a>.
-
-<h3>Contribute to the code</h3>
-<p>Ideas and suggestions are more than welcome. Contribute to the code <a href="https://github.com/louisdecharson/eviewsSDMX">here</a></p>
-</br>
-
-
-<hr></hr>
-<a name="issues"></a>
-<font color=darkRed>
-<h2>Known Issues</h2>
-</font>
-<p>Since the app output is an html table, an obvious limitation is that a request cannot be done along multiple time dimensions. You cannot retrieve in the same request monthly and quaterly data.</p>
-Moreover :
-<ul>
-    <li> Using the filter <code>?lastNObservations=</code> when retrieving multiple series or a dataset is a <strong>bad</strong> idea if series do not belong to the same time period.</li>
-    <li> Currently, retreiving some entire datasets in one instance is not possible due to limitation on the timeout period on Heroku website. However, you can filter results in ordrer to retrieve the datasets in multiple instances.
-</ul>
-<strong>New Issues</strong>
-<p>You can raise new issues <a href="https://github.com/louisdecharson/eviewsSDMX/issues/new">here</a></p>
-
-<footer class="footer">
-<hr></hr>
-<div class="container">
-<center><p>Made with <i class="em em-heart"></i> by <a href="https://github.com/louisdecharson/">louisdecharson</a></p><i>Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html">GNU Affero General Public License</a></i></center>
-</div></footer>
-
-</body>
+  
 </html>
-</div> <!-- /container -->
-
-
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-
-    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <script style="display:none">
-<!--
-/*!
- * IE10 viewport hack for Surface/desktop Windows 8 bug
- * Copyright 2014-2015 Twitter, Inc.
- * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
- */
-
-// See the Getting Started docs for more information:
-// http://getbootstrap.com/getting-started/#support-ie10-width
-
-(function () {
-  'use strict';
-
-  if (navigator.userAgent.match(/IEMobile\/10\.0/)) {
-    var msViewportStyle = document.createElement('style')
-    msViewportStyle.appendChild(
-      document.createTextNode(
-        '@-ms-viewport{width:auto!important}'
-      )
-    )
-    document.querySelector('head').appendChild(msViewportStyle)
-  }
-
-})();
-
-//-->
-</script>
-  
-
-</body></html>
