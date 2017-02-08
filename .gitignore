@@ -7,7 +7,9 @@
 /routes/search.js
 /routes/search_2.js
 /routes/AllIdBank.json
-
+/node_modules/
+/routes/futures.js
+/bin/
 # OS generated files #
 ######################
 **/.DS_Store

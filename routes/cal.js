@@ -19,6 +19,7 @@ var assert = require('assert'),
     ical = require('ical-generator'),
     moment = require('moment-timezone'),
     forms = require('forms'),
+    Nightmare = require('nightmare'),
     http = require('http');
 
 
@@ -88,10 +89,9 @@ function buildCal(vecEv,alarms) {
         name: 'Calendrier des publications Insee'
     });
     vecEv.forEach(function(it,ind){
-        var myDate = it[1][2]+"-"+getMonth(it[1][1])+"-"+getDay(it[1][0])+"T"+getHour(it[1][4]);
+        var myDate = it[1][2] + "-" + it[1][1] + "-" + it[1][0]+ "T" + getHour(it[1][3]);
         // var startDate = new Date(myDate);
         var startDate = new Date(moment.tz(myDate,"Europe/Paris").format());
-        // console.log(startDate);
         var endDate = new Date(startDate.getTime()+3600000);
         var event = cal.createEvent({
             start: startDate,
@@ -114,47 +114,86 @@ function buildCal(vecEv,alarms) {
 
 // Créer la liste des évenements en fonction des publications sélectionnées
 exports.getCals = function(req,res) {
-
-    var cals = req.params.cals.split('+');
+    var nightmare = Nightmare();
     var alarms = req.query.alarm;
-    var myPath = "http://www.insee.fr/fr/service/agendas/agenda.asp?page=agenda_indic.htm";
-    var options = {
-        encoding: null,
-        method: "GET",
-        uri: myPath       
-    };
-    request(options, function(err, response, html) {
-        if (!err && response.statusCode == 200) {
-            var htmldecode = iconv.decode(new Buffer(html), "ISO-8859-1");
-            var $ =  cheerio.load(htmldecode);
-            var vecEv = [];
-            if (cals.length == 1 && cals[0]== "all") {
-                var myUrl = 'li[class="princ-ind"]';
-                $(myUrl).each(function(i,element){
-                    var ev = $(this).children().children().text().trim().replace('/+\t+/gm', '');
-                    var vectDate = $(this).children().next().text().split(" ");
-                    vecEv.push([ev,vectDate]);
-                });
-                res.setHeader("Content-Type", 'text/calendar');
-                res.send(buildCal(vecEv,alarms));
-            } else {
-                cals.forEach(function(it,ind){
-                    var myUrl = 'a[href="/fr/themes/indicateur.asp?id='+it.toString()+'"]';
-                    $(myUrl).each(function(i,element){
-                        var ev = $(this).text().trim().toString().replace('/+\t+/gm', '');
-                        var vectDate = $(this).parent().next().text().split(" ");
-                        vecEv.push([ev,vectDate]);
-                    });
-                });
-                res.setHeader("Content-Type", 'text/calendar');
-                res.send(buildCal(vecEv,alarms));
-            }
-        } else {
-            res.send(err);
-            console.log(err);
-        }
+    var cals = req.params.cals.split('+');
+
+    var url = 'https://www.insee.fr/fr/information/1405540';
+
+    if (cals.length == 1 && cals[0] == "all") {
+        url = url + '&taille=100&debut=0';
+    } else {
+        cals.join('+');
+        url = url + '?conjoncture=' + cals + '&taille=100&debut=0';
+    }
+    
+    nightmare
+    .goto(url)
+    .wait('.echo-texte')
+    .evaluate(function () {
+        // return HTML for Cheerio
+        return document.body.innerHTML; 
+    })
+    .end()
+    .then(function(body) {
+        var $ =  cheerio.load(body);
+        var vecEv = [];
+        $('div[class="echo-texte"]').each(function(i,e){
+            var ev = $(this).children().first().text();
+            var vectDate0 = $(this).children().eq(1).children().eq(1).text().split(" ");
+            var vectDate = vectDate0[0].split("/").concat(vectDate0[2]);
+            vecEv.push([ev,vectDate]);
+        });
+        res.setHeader("Content-Type", 'text/calendar');
+        res.send(buildCal(vecEv,alarms));
+    })
+    .catch(function(error){
+        res.send(error);
     });
 };
+
+// exports.getCals = function(req,res) {
+
+//     var cals = req.params.cals.split('+');
+//     var alarms = req.query.alarm;
+//     var myPath = "http://www.insee.fr/fr/service/agendas/agenda.asp?page=agenda_indic.htm";
+//     var options = {
+//         encoding: null,
+//         method: "GET",
+//         uri: myPath       
+//     };
+//     request(options, function(err, response, html) {
+//         if (!err && response.statusCode == 200) {
+//             var htmldecode = iconv.decode(new Buffer(html), "ISO-8859-1");
+//             var $ =  cheerio.load(htmldecode);
+//             var vecEv = [];
+//             if (cals.length == 1 && cals[0]== "all") {
+//                 var myUrl = 'li[class="princ-ind"]';
+//                 $(myUrl).each(function(i,element){
+//                     var ev = $(this).children().children().text().trim().replace('/+\t+/gm', '');
+//                     var vectDate = $(this).children().next().text().split(" ");
+//                     vecEv.push([ev,vectDate]);
+//                 });
+//                 res.setHeader("Content-Type", 'text/calendar');
+//                 res.send(buildCal(vecEv,alarms));
+//             } else {
+//                 cals.forEach(function(it,ind){
+//                     var myUrl = 'a[href="/fr/themes/indicateur.asp?id='+it.toString()+'"]';
+//                     $(myUrl).each(function(i,element){
+//                         var ev = $(this).text().trim().toString().replace('/+\t+/gm', '');
+//                         var vectDate = $(this).parent().next().text().split(" ");
+//                         vecEv.push([ev,vectDate]);
+//                     });
+//                 });
+//                 res.setHeader("Content-Type", 'text/calendar');
+//                 res.send(buildCal(vecEv,alarms));
+//             }
+//         } else {
+//             res.send(err);
+//             console.log(err);
+//         }
+//     });
+// };
 
 
 // FUNCTIONS JQUERY DANS LE HTML
@@ -240,30 +279,28 @@ function buildForm(vecEv) {
 
 // Va chercher la liste des publications
 exports.getFormCal = function(req,res) {
-    var myPath = "http://www.insee.fr/fr/service/agendas/agenda.asp?page=agenda_indic.htm";
-    var options = {
-        encoding: null,
-        method: 'GET',
-        uri: myPath
-    };
-    request(options, function(err,response,html) {
-        if (!err && response.statusCode == 200) {
-            var htmldecode = iconv.decode(new Buffer(html), "ISO-8859-1");
-            var $ = cheerio.load(htmldecode);
+    var nightmare = Nightmare();
+    nightmare
+        .goto('https://www.insee.fr/fr/information/1405540')
+        .wait('.echo-texte')
+        .evaluate(function () {
+            // return HTML for Cheerio
+            return document.body.innerHTML; 
+        })
+        .end()
+        .then(function(body) {
+            var $ =  cheerio.load(body);
             var vecEv = [];
-            var maClasse = 'select[id="indic"]';
-            $(maClasse).children().each(function(i,element) {
-                var id = $(this).attr('value');
-                var nom = $(this).attr('title');
+            $('li[class="branche"]').each(function(i,element) {
+                var id = $(this).attr('data-id');
+                var nom = $(this).children().children().children().eq(1).children().eq(0).text();
                 vecEv.push([id,nom]);
             });
             res.send(buildForm(vecEv));
-        }
-        else {
-            res.send(err);
-            console.log(err);
-        }
-    });
+        })
+        .catch(function(error){
+            res.send(error);
+        });
 };
 
 exports.sendCal = function(req,res) {
