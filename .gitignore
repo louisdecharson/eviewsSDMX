@@ -10,6 +10,7 @@
 /routes/futures.js
 /bin/
 timeout.js
+/node_modules/
 
 # OS generated files #
 ######################
