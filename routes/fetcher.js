@@ -167,7 +167,6 @@ function buildHtml(vTS,title){
     var i = 0;
 
     while (i < nbObs) {
-        // tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0] + '</td>';
         tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0].replace('-Q','Q') + '</td>';
         tbody += '<td style="text-align:center">' + vTsSR[0][i].OBS_VALUE[0] + '</td>';
         for(var k=1; k<vTsSR.length; k++) {
@@ -227,9 +226,6 @@ function buildHtmlnoData(vTS,title,arr){
 function getFreq(freq){
     return freq.toUpperCase() + "...." ;
 }
-
-
-
 
 
 // EXPORTED FUNCTIONS

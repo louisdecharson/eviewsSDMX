@@ -7,9 +7,11 @@
 /routes/search.js
 /routes/search_2.js
 /routes/AllIdBank.json
-/node_modules/
 /routes/futures.js
 /bin/
+.timeout.js
+
+
 # OS generated files #
 ######################
 **/.DS_Store
@@ -19,5 +21,4 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
-
 

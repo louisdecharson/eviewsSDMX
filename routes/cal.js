@@ -90,7 +90,6 @@ function buildCal(vecEv,alarms) {
     });
     vecEv.forEach(function(it,ind){
         var myDate = it[1][2] + "-" + it[1][1] + "-" + it[1][0]+ "T" + getHour(it[1][3]);
-        // var startDate = new Date(myDate);
         var startDate = new Date(moment.tz(myDate,"Europe/Paris").format());
         var endDate = new Date(startDate.getTime()+3600000);
         var event = cal.createEvent({
@@ -151,49 +150,6 @@ exports.getCals = function(req,res) {
         res.send(error);
     });
 };
-
-// exports.getCals = function(req,res) {
-
-//     var cals = req.params.cals.split('+');
-//     var alarms = req.query.alarm;
-//     var myPath = "http://www.insee.fr/fr/service/agendas/agenda.asp?page=agenda_indic.htm";
-//     var options = {
-//         encoding: null,
-//         method: "GET",
-//         uri: myPath       
-//     };
-//     request(options, function(err, response, html) {
-//         if (!err && response.statusCode == 200) {
-//             var htmldecode = iconv.decode(new Buffer(html), "ISO-8859-1");
-//             var $ =  cheerio.load(htmldecode);
-//             var vecEv = [];
-//             if (cals.length == 1 && cals[0]== "all") {
-//                 var myUrl = 'li[class="princ-ind"]';
-//                 $(myUrl).each(function(i,element){
-//                     var ev = $(this).children().children().text().trim().replace('/+\t+/gm', '');
-//                     var vectDate = $(this).children().next().text().split(" ");
-//                     vecEv.push([ev,vectDate]);
-//                 });
-//                 res.setHeader("Content-Type", 'text/calendar');
-//                 res.send(buildCal(vecEv,alarms));
-//             } else {
-//                 cals.forEach(function(it,ind){
-//                     var myUrl = 'a[href="/fr/themes/indicateur.asp?id='+it.toString()+'"]';
-//                     $(myUrl).each(function(i,element){
-//                         var ev = $(this).text().trim().toString().replace('/+\t+/gm', '');
-//                         var vectDate = $(this).parent().next().text().split(" ");
-//                         vecEv.push([ev,vectDate]);
-//                     });
-//                 });
-//                 res.setHeader("Content-Type", 'text/calendar');
-//                 res.send(buildCal(vecEv,alarms));
-//             }
-//         } else {
-//             res.send(err);
-//             console.log(err);
-//         }
-//     });
-// };
 
 
 // FUNCTIONS JQUERY DANS LE HTML

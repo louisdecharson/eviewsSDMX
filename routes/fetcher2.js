@@ -26,9 +26,6 @@ var xml2js = require('xml2js'),
     buildHTML = require('./buildHTML');
 
 
-// var parser = new xml2js.Parser();
-
-
 // Utilitaires
 
 function stripPrefix(str){
@@ -570,9 +567,7 @@ exports.getDatafromURL = function(req,res) {
             }
         });
     } else if (protocol === 'https:') {
-        console.log(protocol+'//'+hostname+path);
         https.get(options, function(result) {
-            console.log('hello');
             if (result.statusCode >= 200 && result.statusCode < 400) {
                 var xml = '';
                 result.on('data', function(chunk) {

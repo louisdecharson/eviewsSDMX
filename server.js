@@ -23,13 +23,8 @@ var express = require('express'),
     timeout = require('connect-timeout'),
     bls = require('./routes/bls'),
     fred = require('./routes/fred');
-    //timeout = require('./timeout.js');
-    // search = require('./routes/search');
-
-
 
 var app = express();
-
 
 var port = process.env.PORT || 8080;
 
@@ -62,10 +57,6 @@ app.get('/:service/codelist/:codelist',fetcher2.getCodeList);
 // Timeseries from sdmx url
 app.get('/req',fetcher2.getDatafromURL);
 app.post('/requestbyURL',fetcher2.redirectURL);
-// app.get('/byURL', fetcher2.getFormforURL);
-
-// Futures
-// app.get('/futures/', futures.getFutures);
 
 // OTHER NON-SDMX PROVIDER
 // -----------------------
@@ -82,9 +73,6 @@ app.get('/cal/:cals', cal.getCals);
 app.get('/cal',cal.getFormCal);
 app.post('/createCal',cal.sendCal);
 app.post('/cal/createCal',cal.sendCal);
-
-// Search Engine
-// app.get('/search/all', search.getAllId);
 
 // TIMEOUT
 app.use(haltOnTimedout);
