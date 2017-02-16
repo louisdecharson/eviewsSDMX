@@ -57,7 +57,7 @@
     
     <h6>EViews subroutine</h6>
     <pre class="pre-scrollable" id="eviews"><code>
-      subroutine sdmx(string %provider, string %series, string %filters, string %rename)
+subroutine sdmx(string %provider, string %series, string %filters, string %rename)
 
         ' Api Key Quandl & BLS 
         %__quandl = "" ' PUT YOUR API KEY BETWEEN THE QUOTES
@@ -94,17 +94,17 @@
 endsub
     </code></pre>
     <h6>Use it like this:</h6>
-    <pre><code>
-      <span class="keyw">wfcreate</span> M 1990 2010
-      <span class="keyw">call</span> sdmx("fred","unrate","","u")
-      <span class="keyw">call</span> sdmx("ecb","EXR.M.E2.USD.EN00.A","?startPeriod=2003&endPeriod=2004","eonia")
-      <span class="keyw">call</span> sdmx("","http://widukind-api.cepremap.org/api/v1/sdmx/BIS/data/DSRP/Q.BE.N","","debt_service_belgium")
+    <pre id="eviews"><code>
+wfcreate M 1990 2010
+call sdmx("fred","unrate","","u")
+call sdmx("ecb","EXR.M.E2.USD.EN00.A","?startPeriod=2003&endPeriod=2004","eonia")
+call sdmx("","http://widukind-api.cepremap.org/api/v1/sdmx/BIS/data/DSRP/Q.BE.N","","debt_service_belgium")
     </code></pre>
 
     
     <!-- JAVASCRIPT /-->
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/js/bootstrap.min.js" integrity="sha384-VjEeINv9OSwtWFLAtmc4JCtEJXXBub00gtSnszmspDLCtC0I4z4nqz7rEFbIZLLU" crossorigin="anonymous"></script>
-
+  <script src="./readme.js"></script>
   </body>
   
   
