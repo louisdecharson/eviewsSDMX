@@ -20,15 +20,18 @@
       }
 
       .keyw {
-      color: #85981C;
+      color: #859900;
       }
-      .string {
-      color: #2E8CCF;
+      .keyw2 {
+      color: #b58900;
+      }
+      .var {
+      color: #268bd2;
       }
       .comment {
       color: #93A1A1;
       }
-      .str {
+      .string {
       color: #32A198;
       }
 
@@ -53,42 +56,42 @@
     <p>To ease the use of the app, I've coded for you an EViews subroutine. You can download it <a href="./subsdmx.prg">here</a> or see the code below. You are welcome.</p><br></br>
     
     <h6>EViews subroutine</h6>
-    <pre class="pre-scrollable"><code>
-      <span class="keyw">subroutine</span> sdmx(string %provider, string %series, string %filters, string %rename)
+    <pre class="pre-scrollable" id="eviews"><code>
+      subroutine sdmx(string %provider, string %series, string %filters, string %rename)
 
         ' Api Key Quandl & BLS 
-        <span class="string">%__quandl</span> = "" <span class="comment">' PUT YOUR API KEY BETWEEN THE QUOTES</span>
-        <span class="string">%__bls</span>  = "" <span class="comment"> 'PUT YOUR API KEY BETWEEN THE QUOTES</span>
-        <span class="string">%__fred</span>  = "" <span class="comment"> ' PUT YOUR API KEY BETWEEN THE QUOTES</span>
+        %__quandl = "" ' PUT YOUR API KEY BETWEEN THE QUOTES
+        %__bls  = ""  'PUT YOUR API KEY BETWEEN THE QUOTES
+        %__fred  = ""  ' PUT YOUR API KEY BETWEEN THE QUOTES
         
-        <span class="string">%__app</span> = "http://sdmx.herokuapp.com/"
-        <span class="string">%__url</span> = %__app
+        %__app = "http://sdmx.herokuapp.com/"
+        %__url = %__app
         
-        <span class="keyw">if</span> %provider = "quandl" or %provider = "bls" or %provider = "fred" <span class="keyw">then</span>
+        if %provider = "quandl" or %provider = "bls" or %provider = "fred" then
                 %__url = %__url + %provider + "/" + %__{%provider} + "/" + %series + %filters
-                <span class="keyw">if</span> @len(%rename) > 0 then</span>
-                        <span class="keyw">import</span>(t=html) <span class="string">%__url</span> names=("date",%rename)
-                <span class="keyw">else</span>
-                        <span class="keyw">import</span>(t=html) <span class="string">%__url</span>
-                <span class="keyw">endif</span>
-        <span class="keyw">else</span>
-                <span class="keyw">if</span> %provider = "ecb" or %provider = "insee" or %provider = "eurostat" then
+                if @len(%rename) > 0 then
+                        import(t=html) %__url names=("date",%rename)
+                else
+                        import(t=html) %__url
+                endif
+        else
+                if %provider = "ecb" or %provider = "insee" or %provider = "eurostat" then
                         %__url = %__url + %provider + "/" + "series/" + %series + %filters
-                        <span class="keyw">if</span> @len(%rename) > 0 then</span>
-                                <span class="keyw">import</span>(t=html) <span class="string">%__url</span> colhead=2 namepos=none names=("date",%rename)
-                        <span class="keyw">else</span>
-                                <span class="keyw">import</span>(t=html) <span class="string">%__url</span> colhead=2 namepos=first
-                        <span class="keyw">endif</span>
-                <span class="keyw">else</span>
-                        <span class="string">%__url</span> = <span class="string">%__url</span> + "req?url=" + "'"  + %series + "'"
-                        <span class="keyw">if</span> @len(%rename) > 0 then</span>
-                                <span class="keyw">import</span>(t=html) <span class="string">%__url</span> colhead=2 namepos=none names=("date",%rename)
-                        <span class="keyw">else</span>
-                                <span class="keyw">import</span>(t=html) <span class="string">%__url</span> colhead=2 namepos=first
-                        <span class="keyw">endif</span>
-                <span class="keyw">endif</span>
-        <span class="keyw">endif</span>       
-<span class="keyw">endsub</span>
+                        if @len(%rename) > 0 then
+                                import(t=html) %__url colhead=2 namepos=none names=("date",%rename)
+                        else
+                                import(t=html) %__url colhead=2 namepos=first
+                        endif
+                else
+                        %__url = %__url + "req?url=" + "'"  + %series + "'"
+                        if @len(%rename) > 0 then
+                                import(t=html) %__url colhead=2 namepos=none names=("date",%rename)
+                        else
+                                import(t=html) %__url colhead=2 namepos=first
+                        endif
+                endif
+        endif       
+endsub
     </code></pre>
     <h6>Use it like this:</h6>
     <pre><code>
