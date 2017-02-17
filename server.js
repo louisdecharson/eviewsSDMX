@@ -1,4 +1,3 @@
-
 // Copyright (C) 2016 Louis de Charsonville
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License version 3 as
@@ -12,15 +11,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+// EXTERNAL MODULES
 var express = require('express'),
     path = require('path'),
     bodyParser = require('body-parser'),
-    fetcher = require('./routes/fetcher'),
-    cal = require('./routes/cal'),
-    favicon = require('serve-favicon'),
-    fetcher2 = require('./routes/fetcher2'),
-    quandl = require('./routes/quandl'),
     timeout = require('connect-timeout'),
+    favicon = require('serve-favicon');
+
+// ROUTES 
+var fetcher = require('./routes/fetcher'),
+    cal = require('./routes/cal'),
+    quandl = require('./routes/quandl'),
     bls = require('./routes/bls'),
     fred = require('./routes/fred');
 
@@ -39,24 +41,18 @@ app.use(favicon(path.join(__dirname,'public','favicon.ico')));
 // TIMEOUT
 app.use(timeout(29900,{"respond":true}));
 
-// TimeSeries for Insee
-app.get('/series/:series', fetcher.getSeries);
-app.get('/dataset/:dataset', fetcher.getDataSet);
-app.get('/datastructure/:dataset', fetcher.getDataStruc);
-app.get('/dataflow',fetcher.getDataFlow);
-app.get('/dataflow/:dataset', fetcher.getListIdBanks); // donne la liste des idbanks contenue dans un dataset
-app.get('/codelist/:codelist', fetcher.getCodeList); // donne la liste des codes disponibles pour chaque dimension
-
-// Timeseries for others providers
-app.get('/:service/dataflow', fetcher2.getAllDataFlow);
-app.get('/:service/dataflow/:dataset', fetcher2.getDataFlow);
-app.get('/:service/dataset/:dataset',fetcher2.getDataSet);
-app.get('/:service/series/:series',fetcher2.getSeries);
-app.get('/:service/codelist/:codelist',fetcher2.getCodeList);
+// SDMX PROVIDER
+// -----------------------
+// Timeseries from supported providers
+app.get('/:service/dataflow', fetcher.getAllDataFlow);
+app.get('/:service/dataflow/:dataset', fetcher.getDataFlow);
+app.get('/:service/dataset/:dataset',fetcher.getDataSet);
+app.get('/:service/series/:series',fetcher.getSeries);
+app.get('/:service/codelist/:codelist',fetcher.getCodeList);
 
 // Timeseries from sdmx url
-app.get('/req',fetcher2.getDatafromURL);
-app.post('/requestbyURL',fetcher2.redirectURL);
+app.get('/req',fetcher.getDatafromURL);
+app.post('/requestbyURL',fetcher.redirectURL);
 
 // OTHER NON-SDMX PROVIDER
 // -----------------------
@@ -67,8 +63,8 @@ app.get('/bls/:apiKey/:series',bls.getSeries);
 // FRED
 app.get('/fred/:apiKey/:series',fred.getSeries);
 
-
-// Calendrier
+// Calendar
+// --------
 app.get('/cal/:cals', cal.getCals);
 app.get('/cal',cal.getFormCal);
 app.post('/createCal',cal.sendCal);
@@ -89,6 +85,11 @@ function haltOnTimedout(err,req,res,next) {
     }
 };
 
+// 404
+app.get('*', function(req, res){
+    res.status(404).send("ERROR 404");
+});
+
 app.listen(port, function() {
     console.log('Our app is running on port '+ port);
 });
@@ -97,4 +98,3 @@ app.listen(port, function() {
 process.on('uncaughtException', (err) => {
      console.log(`Caught exception: ${err}`);
 });
-
