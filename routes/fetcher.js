@@ -45,7 +45,7 @@ function getErrorMessage(errorCode) {
 }
 
 function isInArray(it,arr) {
-    return arr.indexOf(it.toLowerCase()) > -1;
+    return arr.indexOf(it) > -1;
 }
 
 // return the url "base" for a service Eurostat, BCE, INSEE
@@ -323,103 +323,103 @@ exports.getDataSet = function(req,res) {
 
     var service = req.params.service.toUpperCase();
     if (isInArray(service,providers)) {
-    var dataSet = '';
-    if (service != 'EUROSTAT')  {
-        dataSet = req.params.dataset.toUpperCase();
-    } else {
-        dataSet = req.params.dataset;        
-    };
-    
-    // All keys to UpperCase
-    var key, keys = Object.keys(req.query);
-    var n = keys.length;
-    var reqParams={};
-    while (n--) {
-        key = keys[n];
-        var kkey = key; // name of the key before it get changed below
-        if (key.toUpperCase() == "FREQUENCY") {
-             key = "FREQ";
-        }       
-        reqParams[key.toUpperCase()] = req.query[kkey];
-    }
+        var dataSet = '';
+        if (service != 'EUROSTAT')  {
+            dataSet = req.params.dataset.toUpperCase();
+        } else {
+            dataSet = req.params.dataset;        
+        };
+        
+        // All keys to UpperCase
+        var key, keys = Object.keys(req.query);
+        var n = keys.length;
+        var reqParams={};
+        while (n--) {
+            key = keys[n];
+            var kkey = key; // name of the key before it get changed below
+            if (key.toUpperCase() == "FREQUENCY") {
+                key = "FREQ";
+            }       
+            reqParams[key.toUpperCase()] = req.query[kkey];
+        }
 
-    var startPeriod = reqParams['STARTPERIOD'],
-        firstNObservations = reqParams['FIRSTNOBSERVATIONS'],
-        lastNObservations =  reqParams['LASTNOBSERVATIONS'],
-        endPeriod = reqParams['ENDPERIOD'];
-    
-    var userParams = '';
+        var startPeriod = reqParams['STARTPERIOD'],
+            firstNObservations = reqParams['FIRSTNOBSERVATIONS'],
+            lastNObservations =  reqParams['LASTNOBSERVATIONS'],
+            endPeriod = reqParams['ENDPERIOD'];
+        
+        var userParams = '';
 
-    getService(service, function(url) {
-        var myPath = url[1]+'data/'+dataSet;
-        getDim(service, null, null, dataSet, function(arr) {
-            var authParams = arr[1]; // Authorised Parameters.
-            var compt = 0;
-            authParams.forEach(function(it,ind){
-                if(reqParams[it] != null) {
-                    if(ind<arr[0]-1) {
-                        userParams += reqParams[it]+'.';
-                    } else {
-                        userParams += reqParams[it];
+        getService(service, function(url) {
+            var myPath = url[1]+'data/'+dataSet;
+            getDim(service, null, null, dataSet, function(arr) {
+                var authParams = arr[1]; // Authorised Parameters.
+                var compt = 0;
+                authParams.forEach(function(it,ind){
+                    if(reqParams[it] != null) {
+                        if(ind<arr[0]-1) {
+                            userParams += reqParams[it]+'.';
+                        } else {
+                            userParams += reqParams[it];
+                        }
                     }
-                }
-                else {
-                    if (ind<arr[0]-1) {
-                        userParams += '.';
+                    else {
+                        if (ind<arr[0]-1) {
+                            userParams += '.';
+                        }
+                        compt ++;
                     }
-                    compt ++;
+                });
+                // When the whole dataSet is requested.
+                if (compt == arr[0]) {
+                    userParams = '';
+                };
+                myPath += '/' + userParams;
+                if (startPeriod != null){
+                    myPath += "?startPeriod="+startPeriod;
+                } else if (lastNObservations != null) {
+                    myPath += "?lastNObservations="+lastNObservations;
+                } else if (endPeriod != null) {
+                    myPath += "?endPeriod="+endPeriod;
+                } else if (firstNObservations != null) {
+                    myPath += "?firstNObservations="+firstNObservations;
                 }
-            });
-            // When the whole dataSet is requested.
-            if (compt == arr[0]) {
-                userParams = '';
-            };
-            myPath += '/' + userParams;
-            if (startPeriod != null){
-                myPath += "?startPeriod="+startPeriod;
-            } else if (lastNObservations != null) {
-                myPath += "?lastNObservations="+lastNObservations;
-            } else if (endPeriod != null) {
-                myPath += "?endPeriod="+endPeriod;
-            } else if (firstNObservations != null) {
-                myPath += "?firstNObservations="+firstNObservations;
-            }
-            var options = {
-                hostname: url[0],
-                port: 80,
-                path: myPath,
-                headers: {
-                    'connection': 'keep-alive',
-                    'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
-                    'user-agent': 'nodeJS'
-                }
-            };
-            http.get(options, function(result) {
-                if (result.statusCode >= 200 && result.statusCode < 400) {
-                    var xml = '';
-                    result.on('data', function(chunk) {
-                        xml += chunk;
-                    });
-
-                    result.on('end',function() {
-                        xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                            if(err == null) {
-                                var data = obj.StructureSpecificData.DataSet[0];
-                                var vTS = data.Series;
-                                if (!req.timedout) {
-                                    res.send(buildHTML.makeTable(vTS,dataSet,authParams));
-                                }
-                            } else {
-                                res.send(err);
-                            }
+                var options = {
+                    hostname: url[0],
+                    port: 80,
+                    path: myPath,
+                    headers: {
+                        'connection': 'keep-alive',
+                        'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
+                        'user-agent': 'nodeJS'
+                    }
+                };
+                http.get(options, function(result) {
+                    if (result.statusCode >= 200 && result.statusCode < 400) {
+                        var xml = '';
+                        result.on('data', function(chunk) {
+                            xml += chunk;
                         });
-                    });
-                } else {
-                    res.send(result.statusCode);
-                }
+
+                        result.on('end',function() {
+                            xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                                if(err == null) {
+                                    var data = obj.StructureSpecificData.DataSet[0];
+                                    var vTS = data.Series;
+                                    if (!req.timedout) {
+                                        res.send(buildHTML.makeTable(vTS,dataSet,authParams));
+                                    }
+                                } else {
+                                    res.send(err);
+                                }
+                            });
+                        });
+                    } else {
+                        res.send(result.statusCode);
+                    }
+                });
             });
         });
-    });
     } else {
         res.status(404).send("ERROR 404 - SERVICE IS NOT SUPPORTED");
     }
@@ -429,16 +429,15 @@ exports.getSeries = function(req,res) {
 
     var series = req.params.series,
         service = req.params.service.toUpperCase();
-
     if (isInArray(service,providers)) {
-    var keys = Object.keys(req.query);
-    var params = "?";
-    keys.forEach(function(it,ind,arr) {
-        params += it.toString() + "=" + req.query[it] ;
-        if (ind<arr.length-1) {
-            params += "&";
-        }
-    });  
+        var keys = Object.keys(req.query);
+        var params = "?";
+        keys.forEach(function(it,ind,arr) {
+            params += it.toString() + "=" + req.query[it] ;
+            if (ind<arr.length-1) {
+                params += "&";
+            }
+        });  
         if (service == "INSEE") {
             var myPath = '/series/sdmx/data/SERIES_BDM/'+series+params;
             var options = {
@@ -529,7 +528,7 @@ exports.getCodeList = function(req,res) {
     var service = req.params.service,
         dim = req.params.codelist;
 
-    if (isInArray(service,providers)) {    
+    if (isInArray(service.toUpperCase(),providers)) {    
         getService(service,function(url) {
             var myPath = url[1]+'codelist/'+url[2]+ '/' + dim ;
             var options = {
