@@ -568,6 +568,7 @@ exports.getCodeList = function(req,res) {
         });
     } else {
         res.status(404).send("ERROR 404 - SERVICE IS NOT SUPPORTED");
+    }
 };
 
 // Retrieve data from SDMX URL
