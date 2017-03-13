@@ -213,7 +213,9 @@ exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
     var jsforList = "<script>var options = {valueNames: ['name', 'id'], searchClass: 'form-control'}; var dataList = new List('myTS',options);</script>";
     
     var body = '<h1>Dataset ' + dataSet  + '</h1><hr class="m-y-2">';
+    var button = '<a href="http://sdmx.herokuapp.com/'+ service + '/dataset/' + dataSet +'" class="btn btn-primary" role="button">Download</a>';
     
+    body += button
     body += '<h3> 1. Dimensions of the data </h3>';
     body += 'Dataset has ' + arr[0] + ' dimensions :';
     body += '<ul>';
