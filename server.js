@@ -74,6 +74,11 @@ app.get('/cal',function(req,res) {
 // app.post('/createCal',cal.sendCal);
 // app.post('/cal/createCal',cal.sendCal);
 
+app.get('/status',function(req,res){
+    res.set('Content-Type','text/plain');
+    res.send('OK');
+});
+
 // TIMEOUT
 app.use(haltOnTimedout);
 
@@ -91,7 +96,7 @@ function haltOnTimedout(err,req,res,next) {
 
 // 404
 app.get('*', function(req, res){
-    res.status(404).send("ERROR 404");
+    res.status(404).send("ERROR 404 - NO ROUTES");
 });
 
 app.listen(port, function() {

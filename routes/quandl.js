@@ -11,24 +11,16 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// =====================================================================
 
-var assert = require('assert'),
-    concat = require('concat-stream'),
-    request = require('request'),
-    cheerio = require('cheerio'),
-    iconv = require('iconv-lite'),
-    ical = require('ical-generator'),
-    moment = require('moment-timezone'),
-    forms = require('forms'),
-    http = require('http'),
-    https = require('https');
+// PACKAGES
+var https = require('https');
 
 
 function buildHMTL(arr,nameSeries,nameDataset) {
 
     var header = '<title>SDMX API for EViews / '+ nameDataset +'</title>';
     var body = '';
-    var table ='';
     var myHeader = '<h4>'+ nameDataset +'</h4>',
         theader2 = '';
     var tbody = '';

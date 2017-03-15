@@ -10,14 +10,21 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// =====================================================================
 
 
-const gA = "<script> (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){ (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m) })(window,document,'script','https://www.google-analytics.com/analytics.js','ga'); ga('create', 'UA-92058229-1', 'auto'); ga('send', 'pageview');</script>";
+// CONSTANTS
+const gA = "<script> (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){ (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m) })(window,document,'script','https://www.google-analytics.com/analytics.js','ga'); ga('create', 'UA-92058229-1', 'auto'); ga('send', 'pageview');</script>",
+      jQuery = '<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="   crossorigin="anonymous"></script>',
+      bootstrap = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>',
+      listJS = '<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.2.0/list.min.js"></script>';
 
+ 
+   
 
 // mini-function used to remove 'CL_' to the name of a dimension when retrieving codelist.
 function sliceCL(str) {
-    if (str.substring(0,3) == "CL_") {
+    if (str.substring(0,3) === "CL_") {
         str = str.slice(3);
         return str;
     } else {
@@ -46,14 +53,10 @@ function findTitle(json,str,callback) {
 
 exports.dataFlow = function(data,service) {
     var header = '<title>SDMX API for EViews / DATAFLOWS </title>',
-        jQuery = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>',
-        bootstrap = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>',
-        css = '<style display:none>body {padding-left: 10px; padding-right: 10px; } </style>',
-        listJS = '<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.2.0/list.min.js"></script>';
+        css = '<style display:none>body {padding-left: 10px; padding-right: 10px; } </style>';
     var jsforList = "<script>var options = {valueNames: ['name', 'desc'], searchClass: 'form-control'}; var dataList = new List('myDataflows',options);</script>";
    
     var body = '<h2>List of all the datasets of '+ service.toUpperCase() + '</h2><hr class="m-y-2">',
-        table = '',
         theader = '<th>Id</th><th>Description</th>',
         tbody = '';
 
@@ -66,7 +69,7 @@ exports.dataFlow = function(data,service) {
         tbody += '<td class="desc">'+ item[3] + '</td>';
         tbody += '</tr>';
     });
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + jQuery + bootstrap + css + '</head><body>' + body + '<table class="table table-condensed table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS  + jsforList + gA + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + body + '<table class="table table-condensed table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS  + jsforList + gA + jQuery + bootstrap +'</body></html>';
     return myHtml;
 };
 
@@ -185,7 +188,7 @@ exports.makeTable = function(vTS,title,authParams){
         tbody += '<td style="text-align:center">' + vTsSR[0][i].OBS_VALUE[0] + '</td>';
         for(var k=1; k<vTsSR.length; k++) {
             if(vInd[k] < vTsSR[k].length) {
-                if(vTsSR[0][i].TIME_PERIOD[0] == vTsSR[k][vInd[k]].TIME_PERIOD[0]) {
+                if(vTsSR[0][i].TIME_PERIOD[0] === vTsSR[k][vInd[k]].TIME_PERIOD[0]) {
                     tbody += '<td style="text-align:center">' + vTsSR[k][vInd[k]].OBS_VALUE[0] + '</td>';
                     vInd[k] =  vInd[k] + 1;
                 } else {
@@ -206,16 +209,13 @@ exports.makeTable = function(vTS,title,authParams){
 
 exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
     var header = '<title>SDMX API for EViews / '+ dataSet +'</title>',
-        bootstrap = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>',
-        css = '<style display:none>body {padding-left: 10px; padding-right:10px;}</style>',
-        listJS = '<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.2.0/list.min.js"></script>';
-
+        css = '<style display:none>body {padding-left: 10px; padding-right:10px;}</style>';
     var jsforList = "<script>var options = {valueNames: ['name', 'id'], searchClass: 'form-control'}; var dataList = new List('myTS',options);</script>";
     
     var body = '<h1>Dataset ' + dataSet  + '</h1><hr class="m-y-2">';
     var button = '<a href="http://sdmx.herokuapp.com/'+ service + '/dataset/' + dataSet +'" class="btn btn-primary" role="button">Download</a>';
     
-    body += button
+    body += button;
     body += '<h3> 1. Dimensions of the data </h3>';
     body += 'Dataset has ' + arr[0] + ' dimensions :';
     body += '<ul>';
@@ -273,7 +273,7 @@ exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
     }
                  
     
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + bootstrap + css+ '</header><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header +  css+ '</header><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap + '</body></html>';
     
     return myHtml;
 };
@@ -281,7 +281,6 @@ exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
 
 exports.codeList = function (codes,title_dim) {   
     var header = '<title>SDMX API for EViews / Codelist for '+ sliceCL(title_dim) +'</title>',
-        bootstrap = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>',
         css = '<style display:none>body {padding-left: 10px;}</style>';
          
     var body ='',
@@ -295,7 +294,7 @@ exports.codeList = function (codes,title_dim) {
         tbody += '<td style="min-width:100px">' + item['Name'][item['Name'].length-1]['_']+'</td></tr>';
         
     });
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + bootstrap + css + '</header><body>' + '<table class="table table-hover table-condensed">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + gA + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header  + css + '</header><body>' + '<table class="table table-hover table-condensed">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + gA + jQuery + bootstrap + '</body></html>';
     return myHtml;
 };
 

@@ -10,22 +10,17 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// =====================================================================
 
+// PACKAGES
 var xml2js = require('xml2js'),
-    assert = require('assert'),
-    concat = require('concat-stream'),
-    request = require('request'),
-    cheerio = require('cheerio'),
-    iconv = require('iconv-lite'),
-    ical = require('ical-generator'),
-    moment = require('moment-timezone'),
-    forms = require('forms'),
-    http = require('http'),
+    // http = require('http'),
+    http = require('follow-redirects').http,
     https = require('https'),
     url = require('url'),
     buildHTML = require('./buildHTML');
 
-const providers = ['INSEE','ECB','EUROSTAT'];
+const providers = ['INSEE','ECB','EUROSTAT','WITS'];
 
 // Utilitaries
 function stripPrefix(str){
@@ -36,7 +31,7 @@ function stripPrefix(str){
 
 function getErrorMessage(errorCode) {
     var message = '';
-    if (errorCode == 500) {
+    if (errorCode === 500) {
         message = 'Internal Server Error';
         return message;
     } else {
@@ -55,18 +50,22 @@ function getService(service, callback) {
     var url = '',
         path = '',
         provider = '';
-    if (service == "INSEE") {
+    if (service === "INSEE") {
         url = 'www.bdm.insee.fr',
         path = '/series/sdmx/',
         provider = 'FR1';
-    } else if (service == "ECB") {
+    } else if (service === "ECB") {
         url = 'sdw-wsrest.ecb.europa.eu',
         path = '/service/',
         provider = 'ECB';
-    } else if (service == "EUROSTAT") {
+    } else if (service === "EUROSTAT") {
         url = 'ec.europa.eu',
         path = '/eurostat/SDMX/diss-web/rest/',
         provider = 'ESTAT';
+    } else if (service === 'WITS') {
+        url = 'wits.worldbank.org',
+        path = '/API/V1/SDMX/V21/rest/',
+        provider = 'WBG_WITS';
     }
     callback([url,path,provider]);
 };
@@ -93,7 +92,7 @@ function getAgency(service,dataset,callback) {
                 });
                 result.on('end',function() {
                     xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                        if (err == null) {
+                        if (err === null) {
                             var agency = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['agencyID'],
                                 dsdId = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['id'];
                             callback([agency,dsdId]);
@@ -107,11 +106,12 @@ function getAgency(service,dataset,callback) {
     });
 };
 
+// Get dimension of the data using its datastructure
 function getDim(service, agency, dsdId, dataset, callback) {
     var nbDim = 0,
         arrDim = [];
     getService(service, function(url) {
-        if ((agency == null && dsdId == null) && dataset != null) {
+        if ((agency === null && dsdId === null) && dataset !== null) {
             getAgency(service,dataset,function(agencyInfo) {
                 agency = agencyInfo[0],
                 dsdId = agencyInfo[1];              
@@ -126,6 +126,7 @@ function getDim(service, agency, dsdId, dataset, callback) {
                         'user-agent': 'nodeJS'
                     }
                 };
+                // console.log(url[0]+myPath);
                 http.get(options, function(result) {
                     if (result.statusCode >=200 && result.statusCode < 400) {
                         var xml = '';
@@ -134,7 +135,7 @@ function getDim(service, agency, dsdId, dataset, callback) {
                         });
                         result.on('end',function() {
                             xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                                if(err == null) {
+                                if(err === null) {
                                     var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
                                     nbDim = data.length;
                                     data.forEach(function(item,index) {
@@ -147,9 +148,9 @@ function getDim(service, agency, dsdId, dataset, callback) {
                     } 
                 });
             });
-        } else if (agency == null && dataset == null) {
+        } else if (agency === null && dataset === null) {
             console.log("not possible not retrieve data with no agency nor dataset");
-        } else if (agency != null && dsdId != null) {
+        } else if (agency !== null && dsdId !== null) {
 
             var myPath = url[1]+'datastructure/'+agency+'/'+dsdId;
             var options = {
@@ -170,7 +171,7 @@ function getDim(service, agency, dsdId, dataset, callback) {
                     });
                     result.on('end',function() {
                         xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                            if(err == null) {
+                            if(err === null) {
                                 var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
                                 nbDim = data.length;
                                 data.forEach(function(item,index) {
@@ -203,6 +204,7 @@ exports.getAllDataFlow = function(req,res) {
                     'user-agent': 'nodeJS'
                 }
             };
+            // console.log('http://'+url[0]+myPath);
             http.get(options, function(result) {
                 if (result.statusCode >=200 && result.statusCode < 400) {
                     var xml = '';
@@ -211,90 +213,21 @@ exports.getAllDataFlow = function(req,res) {
                     });
                     result.on('end',function() {
                         xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                            if (err == null) {
+                            if (err === null) {
                                 var data = [];
-                                obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'].forEach(function(it,ind){
-                                    var datasetId = it.id,
-                                        dsdId = it.Structure[0]['Ref'][0]['id'],
-                                        agency = it.Structure[0]['Ref'][0]['agencyID'],
-                                        name = it.Name[0]['_'];
-                                    data.push([datasetId,dsdId,agency,name,service]);
-                                });
-                                res.send(buildHTML.dataFlow(data,service));
-                            } else {
-                                res.send(err);
-                            }
-                        });
-                    });
-                } else {
-                    res.send(result.statusCode);
-                }
-            });
-        });
-    } else {
-        res.status(404).send("ERROR 404 - PROVIDER IS NOT SUPPORTED.");
-    }
-};
-
-
-
-// List the timeseries inside a dataset
-exports.getDataFlow = function(req,res) {
-    var service = req.params.service,
-        dataSet = req.params.dataset,
-        myTimeout = req.param('timeout');
-
-    if (myTimeout == null) {
-        myTimeout = 5000;
-    } else {
-        myTimeout = +myTimeout;
-    }
-
-    if (isInArray(service.toUpperCase(),providers)) {
-        getService(service, function(url) {
-            var myPath = url[1]+'data/'+dataSet+'?detail=nodata';
-            var options = {
-                hostname : url[0],
-                port: 80,
-                path: myPath,
-                headers: {
-                    'connection': 'keep-alive',
-                    'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
-                    'user-agent': 'nodeJS'
-                }
-            };
-            var hitTimeOut = false;
-            var request = http.get(options, function(result) {
-                if (result.statusCode >= 200 && result.statusCode < 400) {
-                    var xml = '';
-                    result.on('data', function(chunk) {
-                        xml += chunk;
-                    });
-
-                    result.on('end',function() {
-                        xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj) {
-                            if (err==null) {
-                                var footer =  obj.StructureSpecificData.Footer;
                                 try {
-                                    footer = footer[0].Message[0].code[0];
-                                } catch(e) {
-                                } finally {
-                                    if (footer == '413') {
-                                        var errorFooter413 = '413 | Dataset is too big to retreive'; // Eurostat is sending error 413 in the footer...
-                                        getDim(service,null,null,dataSet,function(arr) {
-                                            res.send(buildHTML.detailDataset(service,null,dataSet,arr,errorFooter413));
-                                        });
-                                    } else if (footer != null) {
-                                        res.status(footer).send('ERROR | Code : '+ footer + ' ' + getErrorMessage(footer));
-                                    } else {                   
-                                        var data = obj.StructureSpecificData.DataSet[0];
-                                        var vTS = data.Series;
-                                        getDim(service, null, null, dataSet, function(arr) {
-                                            if (!hitTimeOut) {
-                                                res.send(buildHTML.detailDataset(service,vTS,dataSet,arr,null));
-                                            }
-                                        });
-                                    }
+                                    obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'].forEach(function(it,ind){
+                                        var datasetId = it.id,
+                                            dsdId = it.Structure[0]['Ref'][0]['id'],
+                                            agency = it.Structure[0]['Ref'][0]['agencyID'],
+                                            name = it.Name[0]['_'];
+                                        data.push([datasetId,dsdId,agency,name,service]);
+                                    });
+                                    res.send(buildHTML.dataFlow(data,service));
+                                }
+                                catch(e) {
+                                    console.log(e);
+                                    res.status(404).send('COULD NOT PARSE SDMX ANSWER');
                                 }
                             } else {
                                 res.send(err);
@@ -305,17 +238,85 @@ exports.getDataFlow = function(req,res) {
                     res.send(result.statusCode);
                 }
             });
-            request.setTimeout(myTimeout,function() {
-                hitTimeOut = true;
-                var errorDatasetTooBig = 'the dataset is too big to retrieve all the timeseries. You can increase timeout by adding "?timeout=" at the end of the url (default is 5000ms)';
-                getDim(service,null,null,dataSet,function(arr) {
-                    res.send(buildHTML.detailDataset(service,null,dataSet,arr,errorDatasetTooBig));
-                });
-            });
         });
     } else {
-        res.status(404).send("ERROR 404 - SERVICE IS NOT SUPPORTED");
+        res.status(404).send('ERROR 404 - PROVIDER IS NOT SUPPORTED.');
     }
+};
+
+
+
+// List the timeseries inside a dataset
+
+exports.getDataFlow = function(req,res) {
+    var service = req.params.service,
+        dataSet = req.params.dataset,
+        myTimeout = req.param('timeout');
+
+    if (myTimeout === undefined) {
+        myTimeout = 5000;
+    } else {
+        myTimeout = +myTimeout;
+    }
+    if (isInArray(service.toUpperCase(),providers)) {
+        getService(service,function(url) {
+            getDim(service,null,null,dataSet,function(arr) {
+                        getService(service, function(url) {
+                            var myPath = url[1]+'data/'+dataSet+'?detail=nodata';
+                            var options = {
+                                hostname : url[0],
+                                port: 80,
+                                path: myPath,
+                                headers: {
+                                    'connection': 'keep-alive',
+                                    'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
+                                    'user-agent': 'nodeJS'
+                                }
+                            };
+                            var hitTimeOut = false;
+                            var request = http.get(options, function(result) {
+                                if (result.statusCode >= 200 && result.statusCode < 400) {
+                                    var xml = '';
+                                    result.on('data', function(chunk) { xml += chunk;});
+                                    result.on('end',function() {
+                                        xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj) {
+                                            if (err === null) {
+                                                var footer =  obj.StructureSpecificData.Footer;
+                                                try { footer = footer[0].Message[0].code[0];}
+                                                catch(e) {}
+                                                finally {
+                                                    if (footer == '413') {
+                                                        var errorFooter413 = '413 | Dataset is too big to retreive'; // Eurostat is sending error 413 in the footer...
+                                                        res.send(buildHTML.detailDataset(service,null,dataSet,arr,errorFooter413));
+                                                    } else if (footer != null) {
+                                                        res.status(footer).send('ERROR | Code : '+ footer + ' ' + getErrorMessage(footer));
+                                                    } else {                   
+                                                        var data = obj.StructureSpecificData.DataSet[0];
+                                                        var vTS = data.Series;
+                                                        if (!hitTimeOut) {
+                                                            res.send(buildHTML.detailDataset(service,vTS,dataSet,arr,null));
+                                                        };}}}
+                                            else {
+                                                res.send(err);
+                                            }
+                                        });
+                                    });
+                                } else {
+                                    if (!hitTimeOut) {
+                                        var error = result.statusMessage;
+                                        res.send(buildHTML.detailDataset(service,null,dataSet,arr,error));
+                                    }
+                                }
+                            });
+                            request.setTimeout(myTimeout,function() {
+                                hitTimeOut = true;
+                                var errorDatasetTooBig = 'the dataset is too big to retrieve all the timeseries. You can increase timeout by adding "?timeout=" at the end of the url (default is 5000ms)';
+                                res.send(buildHTML.detailDataset(service,null,dataSet,arr,errorDatasetTooBig));
+                            });
+                        });
+            });
+        });
+    } else {res.status(404).send('ERROR 404 - SERVICE IS NOT SUPPORTED');}
 };
 
 // Download a Dataset
@@ -324,7 +325,7 @@ exports.getDataSet = function(req,res) {
     var service = req.params.service.toUpperCase();
     if (isInArray(service,providers)) {
         var dataSet = '';
-        if (service != 'EUROSTAT')  {
+        if (service !== 'EUROSTAT')  {
             dataSet = req.params.dataset.toUpperCase();
         } else {
             dataSet = req.params.dataset;        
@@ -397,13 +398,10 @@ exports.getDataSet = function(req,res) {
                 http.get(options, function(result) {
                     if (result.statusCode >= 200 && result.statusCode < 400) {
                         var xml = '';
-                        result.on('data', function(chunk) {
-                            xml += chunk;
-                        });
-
+                        result.on('data', function(chunk) {xml += chunk;});
                         result.on('end',function() {
                             xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                                if(err == null) {
+                                if(err === null) {
                                     var data = obj.StructureSpecificData.DataSet[0];
                                     var vTS = data.Series;
                                     if (!req.timedout) {
@@ -414,8 +412,10 @@ exports.getDataSet = function(req,res) {
                                 }
                             });
                         });
+                    } else if (result.statusCode === 413) {
+                            res.redirect('/413.html');
                     } else {
-                        res.send(result.statusCode);
+                        res.status(result.statusCode).send(result.statusMessage);
                     }
                 });
             });
@@ -452,12 +452,10 @@ exports.getSeries = function(req,res) {
             http.get(options, function(result) {
                 if (result.statusCode >= 200 && result.statusCode < 400) {
                     var xml = '';
-                    result.on('data', function(chunk) {
-                        xml += chunk;
-                    });
+                    result.on('data', function(chunk) {xml += chunk;});
                     result.on('end',function() {
                         xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                            if(err == null) {
+                            if(err === null) {
                                 var data = obj.StructureSpecificData.DataSet[0];
                                 var vTS = data.Series;
                                 if (!req.timedout) {
@@ -501,7 +499,7 @@ exports.getSeries = function(req,res) {
 
                         result.on('end',function() {
                             xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                                if(err == null) {
+                                if(err === null) {
                                     var data = obj.StructureSpecificData.DataSet[0];
                                     var vTS = data.Series;
                                     if (!req.timedout) {
@@ -513,13 +511,13 @@ exports.getSeries = function(req,res) {
                             });
                         });
                     } else {
-                        res.send(result.statusCode);
+                        res.status(result.statusCode).send(result.statusMessage);
                     }
                 });
             });
         };
     } else {
-        res.status(404).send("ERROR 404 - SERVICE IS NOT SUPPORTED");
+        res.status(404).send('ERROR 404 - SERVICE IS NOT SUPPORTED');
     }
 };
 
@@ -550,7 +548,7 @@ exports.getCodeList = function(req,res) {
 
                     result.on('end',function() {
                         xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                            if(err == null) {
+                            if(err === null) {
                                 var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'][0];
                                 var title_dim = data['id'][0];
                                 var codes = data['Code'];
@@ -566,7 +564,7 @@ exports.getCodeList = function(req,res) {
             });                   
         });
     } else {
-        res.status(404).send("ERROR 404 - SERVICE IS NOT SUPPORTED");
+        res.status(404).send('ERROR 404 - SERVICE IS NOT SUPPORTED');
     }
 };
 
@@ -599,7 +597,7 @@ exports.getDatafromURL = function(req,res) {
 
                 result.on('end',function() {
                     xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                        if(err == null) {
+                        if(err === null) {
                             if (!req.timedout) {
                                 if (typeof obj.StructureSpecificData !== 'undefined') {
                                     var data = obj.StructureSpecificData.DataSet[0],
@@ -607,7 +605,7 @@ exports.getDatafromURL = function(req,res) {
                                         title = 'request to '+ hostname;
                                     res.send(buildHTML.makeTable(vTS,title,[]));                      
                                 } else {
-                                    res.send("The request could not be handled");
+                                    res.send('The request could not be handled');
                                 }
                             }
                         } else {
@@ -629,7 +627,7 @@ exports.getDatafromURL = function(req,res) {
 
                 result.on('end',function() {
                     xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                        if(err == null) {
+                        if(err === null) {
                             if (!req.timedout) {
                                 if (typeof obj.StructureSpecificData !== 'undefined') {
                                     var data = obj.StructureSpecificData.DataSet[0],
@@ -637,7 +635,7 @@ exports.getDatafromURL = function(req,res) {
                                         title = 'request to '+ hostname;
                                     res.send(buildHTML.makeTable(vTS,title,[]));                      
                                 } else {
-                                    res.send("The request could not be handled");
+                                    res.send('The request could not be handled');
                                 }
                             }
                         } else {
