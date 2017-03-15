@@ -65,10 +65,14 @@ app.get('/fred/:apiKey/:series',fred.getSeries);
 
 // Calendar
 // --------
-app.get('/cal/:cals', cal.getCals);
-app.get('/cal',cal.getFormCal);
-app.post('/createCal',cal.sendCal);
-app.post('/cal/createCal',cal.sendCal);
+app.get('/cal',function(req,res) {
+    res.set('Content-Type', 'text/plain');
+    res.send("NO LONGER SUPPORTED");
+});
+// app.get('/cal/:cals', cal.getCals);
+// app.get('/cal',cal.getFormCal);
+// app.post('/createCal',cal.sendCal);
+// app.post('/cal/createCal',cal.sendCal);
 
 // TIMEOUT
 app.use(haltOnTimedout);

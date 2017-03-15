@@ -5,7 +5,7 @@
   "license": "AGPL-3.0",
   "dependencies": {
     "assert": "^1.4.1",
-    "body-parser": "^1.16.0",
+    "body-parser": "^1.17.1",
     "cheerio": "^0.22.0",
     "concat-stream": "^1.6.0",
     "connect-timeout": "^1.7.0",
