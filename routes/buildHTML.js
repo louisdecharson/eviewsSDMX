@@ -81,23 +81,28 @@ exports.makeTable = function(vTS,title,authParams){
     var theader1 = '<th>Dates</th>';
     var theader2 = '<th>&nbsp;</th>';
     var tbody = '';
-    var vTsSorted = vTS.sort(function(a,b) { return b.Obs.length-a.Obs.length;}); // vector of timeseries
-    var nbObs = vTsSorted[0].Obs.length;
     var vInd = new Array(vTS.length).fill(0); // vector of cursors
-
     var vTsSR = [];
-
-    // Check if timeseries are in reverse position :
-    var isReverse = false;
-    if (vTsSorted[0].Obs.length > 1) {
-        var dateFirst = vTsSorted[0].Obs[0].TIME_PERIOD[0],
-            dateLast = vTsSorted[0].Obs[1].TIME_PERIOD[0];
-        if (dateFirst.substring(0,4) > dateLast.substring(0,4)) {
-            isReverse = true;
-        } else if (dateFirst.slice(-1) > dateLast.slice(-1)) {
-            isReverse = true;
+    if (vTS[0].Obs !== undefined) {
+        var vTsSorted = vTS.sort(function(a,b) { return b.Obs.length-a.Obs.length;}); // vector of timeseries
+        var nbObs = vTsSorted[0].Obs.length;
+        // Check if timeseries are in reverse position :
+        var isReverse = false;
+        if (vTsSorted[0].Obs.length > 1) {
+            var dateFirst = vTsSorted[0].Obs[0].TIME_PERIOD[0],
+                dateLast = vTsSorted[0].Obs[1].TIME_PERIOD[0];
+            if (dateFirst.substring(0,4) > dateLast.substring(0,4)) {
+                isReverse = true;
+            } else if (dateFirst.slice(-1) > dateLast.slice(-1)) {
+                isReverse = true;
+            }
         }
+    } else {
+        var vTsSorted = vTS,
+            nbObs = 0,
+            isReverse = false;
     }
+
     // HEADER
     for(var kk=0; kk<vTsSorted.length; kk++) {
 
@@ -139,7 +144,7 @@ exports.makeTable = function(vTS,title,authParams){
         theader2 += '<th>' + montitre + '</th>';
 
         // REVERSE THE TIMESERIES TO GET DATE IT THE ASCENDING ORDER
-        if (isReverse) {
+        if (isReverse && nbObs > 0) {
             vTsSR.push(vTsSorted[kk].Obs.reverse()); // sorted vector of timeseries
         } else {
             vTsSR.push(vTsSorted[kk].Obs);
