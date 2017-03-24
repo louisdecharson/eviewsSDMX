@@ -44,11 +44,12 @@ app.use(timeout(29900,{"respond":true}));
 // SDMX PROVIDER
 // -----------------------
 // Timeseries from supported providers
-app.get('/:service/dataflow', fetcher.getAllDataFlow);
-app.get('/:service/dataflow/:dataset', fetcher.getDataFlow);
-app.get('/:service/dataset/:dataset',fetcher.getDataSet);
-app.get('/:service/series/:series',fetcher.getSeries);
-app.get('/:service/codelist/:codelist',fetcher.getCodeList);
+app.get('/:provider/dataflow', fetcher.getAllDataFlow);
+app.get('/:provider/dataflow/:dataset', fetcher.getDataFlow);
+app.get('/:provider/dataset/:dataset',fetcher.getDataSet);
+app.get('/:provider/series/:series',fetcher.getSeries);
+app.get('/:provider/codelist/:codelist',fetcher.getCodeList);
+app.get('/providers',fetcher.getProviders);
 
 // Timeseries from sdmx url
 app.get('/req',fetcher.getDatafromURL);
