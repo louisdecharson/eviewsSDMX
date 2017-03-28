@@ -485,10 +485,10 @@ exports.getSeries = function(req,res) {
 
 exports.getCodeList = function(req,res) {
 
-    var provider = req.params.provider,
+    var provider = req.params.provider.toUpperCase(),
         dim = req.params.codelist;
 
-    if (isInArray(provider.toUpperCase(),Object.keys(providers))) {    
+    if (isInArray(provider,Object.keys(providers))) {    
         var myPath = providers[provider].path+'codelist/' + providers[provider].agencyID + '/' + dim + '?format=compact_2_1';
         var options = {
             hostname: providers[provider].host,
