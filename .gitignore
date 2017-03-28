@@ -11,6 +11,9 @@
 /bin/
 timeout.js
 /node_modules/
+/routes/fetcher_old.js
+/public/.ipynb_checkpoints?
+/public/robots.py
 
 # OS generated files #
 ######################
@@ -21,4 +24,5 @@ timeout.js
 .Trashes
 ehthumbs.db
 Thumbs.db
+**/.ipynb_checkpoints/
 

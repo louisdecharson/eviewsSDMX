@@ -232,7 +232,10 @@ exports.getDataFlow = function(req,res) {
     }
     if (isInArray(provider.toUpperCase(),Object.keys(providers))) {
         getDim(provider,null,null,dataSet,function(arr) {
-            var myPath = providers[provider.toUpperCase()].path+'data/'+dataSet+'?detail=nodata&format=compact_2_1';
+            var myPath = providers[provider.toUpperCase()].path+'data/'+dataSet+'?detail=nodata';
+            if (provider.toUpperCase() != 'EUROSTAT') {
+                myPath += '&format=compact_2_1';
+            }
             var options = {
                 hostname : providers[provider.toUpperCase()].host,
                 port: 80,
@@ -401,8 +404,10 @@ exports.getSeries = function(req,res) {
                 params += "&";
             }
         });
-        if (keys.length > 0) {params += '&format=compact_2_1';}
-        else { params += '&format=compact_2_1';}
+        if (provider !== 'EUROSTAT'){
+            if (keys.length > 0) {params += '&format=compact_2_1';}
+            else { params += 'format=compact_2_1';}
+        }
         if (provider == "INSEE") {
             var myPath = '/series/sdmx/data/SERIES_BDM/'+series+params;
             var options = {
@@ -485,10 +490,10 @@ exports.getSeries = function(req,res) {
 
 exports.getCodeList = function(req,res) {
 
-    var provider = req.params.provider,
+    var provider = req.params.provider.toUpperCase(),
         dim = req.params.codelist;
 
-    if (isInArray(provider.toUpperCase(),Object.keys(providers))) {    
+    if (isInArray(provider,Object.keys(providers))) {    
         var myPath = providers[provider].path+'codelist/' + providers[provider].agencyID + '/' + dim + '?format=compact_2_1';
         var options = {
             hostname: providers[provider].host,
