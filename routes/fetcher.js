@@ -111,7 +111,7 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                                 data.forEach(function(item,index) {
                                     arrDim.push(item['id'][0]);
                                 });
-                                callback([nbDim,arrDim,data]); 
+                                callback([nbDim,arrDim,data,dsdId]); 
                             }
                         });
                     });
@@ -292,6 +292,7 @@ exports.getDataFlow = function(req,res) {
 
 // Download a Dataset
 exports.getDataSet = function(req,res) {
+    // console.time('getDataset');
     var provider = req.params.provider.toUpperCase();
     if (isInArray(provider,Object.keys(providers))) {
         var dataSet = '';
@@ -362,9 +363,12 @@ exports.getDataSet = function(req,res) {
                             if(err === null) {
                                 try {
                                     var data = obj.StructureSpecificData.DataSet[0];
-                                    var vTS = data.Series;
+                                    // console.timeEnd('getDataset');
+                                    // console.time('HTML');
+                                    var vTS = data.Series; // vector of Time Series : vTS
                                     if (!req.timedout) {
                                         res.send(buildHTML.makeTable(vTS,dataSet,authParams));
+                                        // console.timeEnd('HTML');
                                     }
                                 } catch(e) {
                                     if (obj.StructureSpecificData.Footer[0].Message[0].code[0] === '413') {
@@ -491,10 +495,15 @@ exports.getSeries = function(req,res) {
 exports.getCodeList = function(req,res) {
 
     var provider = req.params.provider.toUpperCase(),
-        dim = req.params.codelist;
+        dim = req.params.codelist,
+        dsdId = req.query.dsdId;
 
-    if (isInArray(provider,Object.keys(providers))) {    
-        var myPath = providers[provider].path+'codelist/' + providers[provider].agencyID + '/' + dim + '?format=compact_2_1';
+    if (isInArray(provider,Object.keys(providers))) {
+        if (provider === 'EUROSTAT') {
+            var myPath = providers[provider.toUpperCase()].path + 'datastructure/'+providers[provider].agencyID+'/' + dsdId + '?format=compact_2_1';
+        } else {
+            var myPath = providers[provider].path+'codelist/' + providers[provider].agencyID + '/' + dim + '?format=compact_2_1';
+        }
         var options = {
             hostname: providers[provider].host,
             port: 80,
@@ -513,9 +522,18 @@ exports.getCodeList = function(req,res) {
                     xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                         if(err === null) {
                             try {
-                                var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'][0];
-                                var title_dim = data['id'][0];
-                                var codes = data['Code'];
+                                var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'];
+                                if (data.length > 1) {
+                                    for(var d in data){
+                                        if (data[d].id[0] === dim) {
+                                            myData = data[d];
+                                        }
+                                    }
+                                } else {
+                                    var myData = data[0];
+                                }
+                                var title_dim = myData['id'][0];
+                                var codes = myData['Code'];
                                 res.send(buildHTML.codeList(codes,title_dim));}
                             catch(e) {
                                 res.status(500).set('Content-Type','text/plain').send('COULD NOT PARSE SDMX');
