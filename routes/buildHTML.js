@@ -227,7 +227,7 @@ exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
     arr[2].forEach(function(it,ind) {
         var code = it['LocalRepresentation'][0]['Enumeration'][0]['Ref'][0]['id'][0],
             nomDim = it['id'][0];
-        body += '<li><a href=/'+ service + '/codelist/' + code + '>' + nomDim + '</a></li>';
+        body += '<li><a href=/'+ service + '/codelist/' + code + '?dsdId=' + arr[3] +'>' + nomDim + '</a></li>';
     });
     body += '</ul>';
     body += '<h3> 2. List of the timeseries contained in the dataset</h3>';
