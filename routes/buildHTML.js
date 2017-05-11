@@ -189,7 +189,7 @@ exports.makeTable = function(vTS,title,authParams){
 
     while (i < nbObs) {
         // tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0] + '</td>';
-        tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0].replace('-Q','Q') + '</td>';
+        tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0].replace('-Q','Q').replace('-S','S') + '</td>';
         tbody += '<td style="text-align:center">' + vTsSR[0][i].OBS_VALUE[0] + '</td>';
         for(var k=1; k<vTsSR.length; k++) {
             if(vInd[k] < vTsSR[k].length) {
