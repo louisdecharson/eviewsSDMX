@@ -396,7 +396,6 @@ exports.getDataSet = function(req,res) {
 };
 
 exports.getSeries = function(req,res) {
-
     var series = req.params.series,
         provider = req.params.provider.toUpperCase();
     if (isInArray(provider,Object.keys(providers))) {
@@ -472,10 +471,16 @@ exports.getSeries = function(req,res) {
                     result.on('end',function() {
                         xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                             if(err === null) {
-                                var data = obj.StructureSpecificData.DataSet[0];
-                                var vTS = data.Series;
-                                if (!req.timedout) {
-                                    res.send(buildHTML.makeTable(vTS,series,[]));
+                                try {
+                                    var data = obj.StructureSpecificData.DataSet[0];
+                                    var vTS = data.Series;
+                                    if (!req.timedout) {
+                                        res.send(buildHTML.makeTable(vTS,series,[]));
+                                    }
+                                }
+                                catch(e) {
+                                    console.log(e);
+                                    res.status(500).set('Content-Type','text/plain').send('COULD NOT PARSE SDMX');
                                 }
                             } else {
                                 res.send(err);
