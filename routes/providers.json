@@ -46,5 +46,11 @@
         "path": "",
         "agencyID": "",
         "apiKey": "True"
+    },
+    "WEUROSTAT": {
+        "host":"api.db.nomics.world",
+        "path": "/api/v1/sdmx/",
+        "agencyID": "EUROSTAT",
+        "apiKey": "False"
     }
 }

@@ -212,7 +212,7 @@ exports.makeTable = function(vTS,title,authParams){
 };
 
 
-exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
+exports.detailDataset = function(service,vTS,dataSet,dim,errorDatasetTooBig) {
     var header = '<title>SDMX API for EViews / '+ dataSet +'</title>',
         css = '<style display:none>body {padding-left: 10px; padding-right:10px;}</style>';
     var jsforList = "<script>var options = {valueNames: ['name', 'id'], searchClass: 'form-control'}; var dataList = new List('myTS',options);</script>";
@@ -222,12 +222,12 @@ exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
     
     body += button;
     body += '<h3> 1. Dimensions of the data </h3>';
-    body += 'Dataset has ' + arr[0] + ' dimensions :';
+    body += 'Dataset has ' + dim.nbDim + ' dimensions :';
     body += '<ul>';
-    arr[2].forEach(function(it,ind) {
+    dim.data.forEach(function(it,ind) {
         var code = it['LocalRepresentation'][0]['Enumeration'][0]['Ref'][0]['id'][0],
             nomDim = it['id'][0];
-        body += '<li><a href=/'+ service + '/codelist/' + code + '?dsdId=' + arr[3] +'>' + nomDim + '</a></li>';
+        body += '<li><a href=/'+ service + '/codelist/' + code + '?dsdId=' + dim.dsdId +'>' + nomDim + '</a></li>';
     });
     body += '</ul>';
     body += '<h3> 2. List of the timeseries contained in the dataset</h3>';
@@ -248,7 +248,7 @@ exports.detailDataset = function(service,vTS,dataSet,arr,errorDatasetTooBig) {
                 idSeries = item.IDBANK[0];
             } else {
                 idSeries = dataSet + '.';
-                arr[1].forEach(function(it,ind,ar) {
+                dim.arrDim.forEach(function(it,ind,ar) {
                     idSeries += item[it][0];
                     if(ind<ar.length-1) {
                         idSeries += '.';
