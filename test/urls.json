@@ -1,0 +1,21 @@
+{
+    "protocol": "http://",
+    "host": "sdmx.herokuapp.com",
+    "paths": {
+        "INSEE": {
+            "insee_dataset": "/insee/dataset/ACT-PARTIELLE-REG?startPeriod=2015",
+            "insee_series": "/insee/series/001769787"
+        },
+        "ECB": {
+            "ecb_dataset": "/ecb/dataset/EON?ENIOA_ITEM=RATE",
+            "ecb_series": "/ecb/series/BKN.H.AT.A020.Z.ZZZZ.ZZ.S.Q"
+        },
+        "WIDUKIND": {
+            "widukind_dataset": "/weurostat/dataset/prc_hicp_cow?FREQ=A"
+        },
+        "EUROSTAT": {
+            "eurostat_dataset": "/eurostat/dataset/une_rt_m?FREQ=M&S_ADJ=SA&AGE=TOTAL&UNIT=PC_ACT&SEX=T&GEO=EA19%2BLT",
+            "eurostat_413" : "/eurostat/dataset/une_rt_m"
+        }
+    }
+}
