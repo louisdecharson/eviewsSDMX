@@ -1,3 +1,10 @@
+# AUTOMATIC PROCEDURES TO TESTS URLS
+
+# How it works:
+# open a console, cd to the dir and type :
+# python test.py
+
+
 # IMPORT PACKAGES
 import requests as r
 import json as json
