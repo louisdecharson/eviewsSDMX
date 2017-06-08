@@ -322,8 +322,23 @@ exports.getDataFlow = function(req,res) {
 };
 
 // Download a Dataset
+
+// Parameters :
+// There are two kind of parameters, both are passed into the URL by the user
+// - Dimensions of the datasets : like frequency, geo, etc.
+// - Filters : like startPeriod, endPeriod, etc
+// Both should not be passed the same way to sdmx providers:
+// - Dimensions should be ordered and separated by dots and are parts of the path.
+// - Filters are separated by & and passed as standards params in the URL (ie: ?name=value)
+// NAME OF VARIABLES :
+// + reqParams = dictionnary of all params passed by the user
+// + authParams = array of the set of dimensions of the dataset (retreived with getDim)
+// + dimRequested = string of the ordered dimensions separated by dots passed by the
+//                  use. dimRequested should be a sub-set of authParams.
+
 exports.getDataSet = function(req,res) {
     // console.time('getDataset');
+    
     var provider = req.params.provider.toUpperCase();
     if (isInArray(provider,Object.keys(providers))) {
         var dataSet = '';
@@ -347,7 +362,7 @@ exports.getDataSet = function(req,res) {
             else if (key === 'endPeriod') {reqParams[key] = req.query[key];}
             else {reqParams[key.toUpperCase()] = req.query[kkey];}
         }      
-        var userParams = '';
+        var dimRequested = ''; // string fill with ordered dimensions passed by the user in req.params
         if (provider === 'WEUROSTAT') {
             var myPath = providers[provider].path + providers[provider].agencyID + '/data/' + dataSet;
         } else {
@@ -357,29 +372,33 @@ exports.getDataSet = function(req,res) {
             if (err) {
                 res.status(500).send(dim); // if err, dim is the errorMessage
             } else {
-                var authParams = dim.arrDim; // Authorised Parameters.
+                var authParams = dim.arrDim; // Authorised dimensions for the dataset.
                 var compt = 0;
                 authParams.forEach(function(it,ind){
                     if(reqParams[it] != null) {
-                        if(ind<dim.nbDim-1) {userParams += reqParams[it]+'.';}
-                        else { userParams += reqParams[it];}
+                        if(ind<dim.nbDim-1) {dimRequested += reqParams[it]+'.';}
+                        else { dimRequested += reqParams[it];}
                         delete reqParams[it];}
                     else {
                         if (ind<dim.nbDim-1) {
-                            userParams += '.';
+                            dimRequested += '.';
                         }
                         compt ++;
                     }
                 });
                 // When the whole dataSet is requested.
                 if (compt == dim.nbDim) {
-                    userParams = '';
+                    dimRequested = 'all';
                 };
-                // console.log("authParams: ",authParams);
-                // console.log("userParams: ",userParams);
+                myPath += '/' + dimRequested;
 
-                myPath += '/' + userParams + '?';
+                // console.log("authParams: ",authParams);
+                // console.log("dimRequested: ",dimRequested);
+
                 Object.keys(reqParams).forEach(function(it,ind,arr) {
+                    if (ind === 0) {
+                        myPath += '?';
+                    }
                     myPath += it.toString() + "=" + reqParams[it] ;
                     if (ind < arr.length-1) {
                         myPath += "&";
