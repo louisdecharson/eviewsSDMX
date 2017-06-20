@@ -18,7 +18,9 @@ var xml2js = require('xml2js'),
     http = require('follow-redirects').http,
     https = require('https'),
     url = require('url'),
-    buildHTML = require('./buildHTML');
+    buildHTML = require('./buildHTML'),
+    request = require('request'),
+    debug = require('debug')('fetcher');
 
 const providers = require('./providers.json');
 
@@ -46,40 +48,46 @@ function isInArray(it,arr) {
 
 // On récupére le nom de l'agence que l'on utilise pour récupérer la DSD d'un dataset
 function getAgency(provider,dataset,callback) {
-    var myPath = providers[provider.toUpperCase()].path + 'dataflow/' + providers[provider.toUpperCase()].agencyID +'/'+dataset + '?format=compact_2_1';
+    var protocol = providers[provider.toUpperCase()].protocol,
+        host = providers[provider.toUpperCase()].host,
+        path = providers[provider.toUpperCase()].path,
+        format = providers[provider.toUpperCase()].format,
+        agencyID = providers[provider.toUpperCase()].agencyID;
+    var myPath = path + 'dataflow/' + agencyID +'/'+dataset + '?'+ format;
     var options = {
-        hostname: providers[provider.toUpperCase()].host,
-        port: 80,
-        path: myPath,
+        url: protocol+'://'+host+myPath,
+        method: 'GET',
         headers: {
             'connection' : 'keep-alive',
             'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
             'user-agent': 'nodeJS'
         }
     };
-    http.get(options, function(result) {
-        if (result.statusCode >=200 && result.statusCode < 400) {
-            var xml = '';
-            result.on('data', function(chunk) {
-                xml += chunk;
-            });
-            result.on('end',function() {
-                xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                    if (err === null) {
-                        try {
-                            var agency = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['agencyID'],
-                                dsdId = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['id'];
-                            callback(false,{"agency":agency,"dsdId":dsdId});
-                        } catch(e) {
-                            var errorMessage = "Error parsing SDMX when retrieving datastructure at: "+ options.hostname + options.path;
-                            callback(true,errorMessage);
-                        }
-                    } else {
-                        var errorMessage = "Error retrieving datastructure at: "+ options.hostname + options.path;
+    debug('call getAgency; provider: %s, dataset: %s',provider,dataset);
+    debug('url: %s%s%s',options.url);
+    request(options,function(e,r,b) {
+        if (r.statusCode >=200 && r.statusCode < 400 && !e) {
+            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                if (err === null) {
+                    try {
+                        var agency = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['agencyID'],
+                            dsdId = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['id'];
+                        debug('getAgency: done.');
+                        callback(false,{"agency":agency,"dsdId":dsdId});
+                    } catch(error) {
+                        var errorMessage = "Error parsing SDMX when retrieving datastructure at: "+ options.url;
                         callback(true,errorMessage);
-                    };
-                });
+                        debug(error);
+                    }
+                } else {
+                    var errorMessage = "Error retrieving datastructure at: "+ options.url;
+                    callback(true,errorMessage);
+                };
             });
+        } else {
+            var errorMessage = "Error " + r.statusCode + " retrieving datastructure at: " + options.url;
+            callback(true,errorMessage);
+            debug(r.statusCode);
         }
     });
 };
@@ -88,92 +96,96 @@ function getAgency(provider,dataset,callback) {
 function getDim(provider, agency, dsdId, dataset, callback) {
     var nbDim = 0,
         arrDim = [];
+    debug('call getDim with provider=%s, agency=%s, dsdId=%s, dataset=%s',provider,agency,dsdId,dataset);
+    var protocol = providers[provider.toUpperCase()].protocol,
+        host = providers[provider.toUpperCase()].host,
+        path = providers[provider.toUpperCase()].path,
+        format = providers[provider.toUpperCase()].format;
     if ((agency === null && dsdId === null) && dataset !== null) {
         getAgency(provider,dataset,function(err,agencyInfo) {
             if (err) {
                 callback(true,agencyInfo);
             } else {
-                var myPath = providers[provider.toUpperCase()].path + 'datastructure/'+agencyInfo.agency+'/'+agencyInfo.dsdId + '?format=compact_2_1';
+                var myPath = path + 'datastructure/'+agencyInfo.agency+'/'+agencyInfo.dsdId + '?'+ format;
                 var options = {
-                    hostname: providers[provider.toUpperCase()].host,
-                    port: 80,
-                    path: myPath,
+                    url: protocol + '://' + host + myPath,
+                    method: 'GET',
                     headers: {
                         'connection' : 'keep-alive',
                         'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                         'user-agent': 'nodeJS'
                     }
                 };
-                http.get(options, function(result) {
-                    if (result.statusCode >=200 && result.statusCode < 400) {
-                        var xml = '';
-                        result.on('data', function(chunk) {
-                            xml += chunk;
-                        });
-                        result.on('end',function() {
-                            xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                                if(err === null) {
-                                    try {
+                request(options,function(e,r,b) { // e: error, r: response, b:body
+                    if (r.statusCode >=200 && r.statusCode < 400 && !e) {
+                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                            if(err === null) {
+                                try {
                                     var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
                                     nbDim = data.length;
                                     data.forEach(function(item,index) {
                                         arrDim.push(item['id'][0]);
                                     });
-                                        callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data,"dsdId":dsdId});
-                                    } catch(e) {
-                                        var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.hostname+options.path;
-                                        callback(true,errorMessage);
-                                    }
-                                } else {
-                                    var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.hostname+options.path;
-                                    callback(true, errorMessage);
+                                    callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data,"dsdId":dsdId});
+                                } catch(error) {
+                                    var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
+                                    debug(error);
+                                    callback(true,errorMessage);
                                 }
-                            });
+                            } else {
+                                var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
+                                debug(err);
+                                callback(true, errorMessage);
+                            }
                         });
+                    } else {
+                        var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
+                        callback(true, errorMessage);
+                        debug(errorMessage);
+                        debug(e);
                     } 
                 });
             }});
     } else if (agency === null && dataset === null) {
         callback(true,"no agency nor dataset provided");
     } else if (agency !== null && dsdId !== null) {
-        var myPath = providers[provider.toUpperCase()].path + 'datastructure/'+agency+'/'+dsdId + '?format=compact_2_1';
+        var myPath = path + 'datastructure/'+agency+'/'+dsdId + '?' + format;
         var options = {
-            hostname: providers[provider.toUpperCase()].host,
-            port: 80,
-            path: myPath,
+            url: protocol + '://' + host + myPath,
+            method: 'GET',
             headers: {
                 'connection' : 'keep-alive',
                 'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                 'user-agent': 'nodeJS'
             }
         };
-        http.get(options, function(result) {
-            if (result.statusCode >=200 && result.statusCode < 400) {
-                var xml = '';
-                result.on('data', function(chunk) {
-                    xml += chunk;
-                });
-                result.on('end',function() {
-                    xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                        if(err === null) {
-                            try {
-                                var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
-                                nbDim = data.length;
-                                data.forEach(function(item,index) {
-                                    arrDim.push(item['id'][0]);
-                                });
-                                callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data});
-                            } catch(e) {
-                                var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer "+options.hostname+options.path;
-                                callback(true, errorMessage);
-                            }
-                        } else {
-                            var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.hostname+options.path;
+        request(options, function(e,r,b) {
+            if (r.statusCode >=200 && r.statusCode < 400 && !e) {
+                xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                    if(err === null) {
+                        try {
+                            var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
+                            nbDim = data.length;
+                            data.forEach(function(item,index) {
+                                arrDim.push(item['id'][0]);
+                            });
+                            callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data});
+                        } catch(error) {
+                            var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer "+options.url;
+                            debug(error);
                             callback(true, errorMessage);
                         }
-                    });
+                    } else {
+                        var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
+                        debug(err);
+                        callback(true, errorMessage);
+                    }
                 });
-            } 
+            } else {
+                var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
+                debug(e);
+                callback(true, errorMessage);
+            }
         });           
     }
 };
@@ -183,26 +195,27 @@ function getDim(provider, agency, dsdId, dataset, callback) {
 // List the datasets of a provider
 exports.getAllDataFlow = function(req,res) {
     var provider = req.params.provider;
+    var protocol = providers[provider.toUpperCase()].protocol,
+        host = providers[provider.toUpperCase()].host,
+        path = providers[provider.toUpperCase()].path,
+        format = providers[provider.toUpperCase()].format,
+        agencyID = providers[provider.toUpperCase()].agencyID;
+    
     if (isInArray(provider.toUpperCase(),Object.keys(providers))) {
         // var myPath = providers[provider.toUpperCase()].path+'dataflow/'+providers[provider.toUpperCase()].agencyID+'/all?format=compact_2_1';
-        var myPath = providers[provider.toUpperCase()].path+'dataflow/'+providers[provider.toUpperCase()].agencyID+'?format=compact_2_1';
+        var myPath = path + 'dataflow/' + agencyID+ '?' + format;
         var options = {
-            hostname: providers[provider.toUpperCase()].host,
-            path: myPath,
+            url: protocol + '://'+ host + myPath,
             headers: {
                 'connection':'keep-alive',
                 'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                 'user-agent': 'nodeJS'
             }
         };
-        http.get(options, function(result) {
-            if (result.statusCode >=200 && result.statusCode < 400) {
-                var xml = '';
-                result.on('data', function(chunk) {
-                    xml += chunk;
-                });
-                result.on('end',function() {
-                    xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+        debug('get dataflow with path=%s',options.url);
+        request(options,function(e,r,b) {
+            if (r.statusCode >=200 && r.statusCode < 400 && !e) {
+                    xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                         if (err === null) {
                             var data = [];
                             try {
@@ -220,17 +233,16 @@ exports.getAllDataFlow = function(req,res) {
                                 });
                                 res.send(buildHTML.dataFlow(data,provider));
                             }
-                            catch(e) {
-                                console.log(e);
-                                res.status(500).send('COULD NOT PARSE SDMX ANSWER');
+                            catch(error) {
+                                res.status(500).send('Failed to retrieve dataflows. Could not parse SDMX answer at '+options.url);
+                                debug(error);
                             }
                         } else {
                             res.send(err);
                         }
                     });
-                });
             } else {
-                res.send(result.statusCode);
+                res.send(r.statusCode);
             }
         });
     } else {
@@ -251,31 +263,33 @@ exports.getDataFlow = function(req,res) {
     } else {
         myTimeout = +myTimeout;
     }
+    debug('getDataflow with provider:%s, dataset:%s, timeout:%s',provider,dataSet,myTimeout);
+    var protocol = providers[provider.toUpperCase()].protocol,
+        host = providers[provider.toUpperCase()].host,
+        path = providers[provider.toUpperCase()].path,
+        format = providers[provider.toUpperCase()].format,
+        agencyID = providers[provider.toUpperCase()].agencyID;
+    
     if (isInArray(provider.toUpperCase(),Object.keys(providers))) {
         getDim(provider,null,null,dataSet,function(err,dim) {
             if (err) {
                 res.status(500).send(dim); // if err, dim is the error message
             } else {
-                var myPath = providers[provider.toUpperCase()].path+'data/'+dataSet+'?detail=nodata';
-                if (provider.toUpperCase() != 'EUROSTAT') {
-                    myPath += '&format=compact_2_1';
-                }
+                var myPath = path + 'data/' + dataSet + '?detail=nodata' + '&' + format;
                 var options = {
-                    hostname : providers[provider.toUpperCase()].host,
-                    port: 80,
-                    path: myPath,
+                    url: protocol + '://' +  host + myPath,
+                    method: 'GET',
+                    timeout: myTimeout,
                     headers: {
                         'connection': 'keep-alive',
                         'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
                         'user-agent': 'nodeJS'
                     }
                 };
-                var request = http.get(options, function(result) {
-                    if (result.statusCode >= 200 && result.statusCode < 400) {
-                        var xml = '';
-                        result.on('data', function(chunk) { xml += chunk;});
-                        result.on('end',function() {
-                            xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj) {
+                debug('get dataflow with path=%s',options.url);
+                request(options,function(e,r,b) {
+                    if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+                            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj) {
                                 if (err === null) {
                                     try {
                                         var footer =  obj.StructureSpecificData.Footer;
@@ -294,8 +308,10 @@ exports.getDataFlow = function(req,res) {
                                                     res.send(buildHTML.detailDataset(provider,vTS,dataSet,dim,null));
                                                 };}}
                                     } catch(e) {
-                                        console.log(e);
-                                        var errorMessage = "Error retrieving data at: " + options.hostname + options.path;
+                                        var errorMessage = "Error retrieving data at: " + options.url;
+                                        debug(errorMessage);
+                                        debug('-------------------------');
+                                        debug(e);
                                         res.status(500).send(errorMessage);
                                     }
                                 }
@@ -303,18 +319,18 @@ exports.getDataFlow = function(req,res) {
                                     res.send(err);
                                 }
                             });
-                        });
+                    } else if (e.code === 'ETIMEDOUT') {
+                        var errorDatasetTooBig = 'the dataset is too big to retrieve all the timeseries. You can increase timeout by adding "?timeout=" at the end of the url (default is 5000ms)';
+                        if (!res.headersSent) {
+                            res.send(buildHTML.detailDataset(provider,null,dataSet,dim,errorDatasetTooBig));
+                        }
                     } else {
                         if (!res.headersSent) {
-                            var error = result.statusMessage;
+                            var error = r.statusMessage;
+                            debug(e);
+                            debug(error);
                             res.send(buildHTML.detailDataset(provider,null,dataSet,dim,error));
                         }
-                    }
-                });
-                request.setTimeout(myTimeout,function() {
-                    var errorDatasetTooBig = 'the dataset is too big to retrieve all the timeseries. You can increase timeout by adding "?timeout=" at the end of the url (default is 5000ms)';
-                    if (!res.headersSent) {
-                        res.send(buildHTML.detailDataset(provider,null,dataSet,dim,errorDatasetTooBig));
                     }
                 });
             }});
@@ -336,10 +352,13 @@ exports.getDataFlow = function(req,res) {
 // + dimRequested = string of the ordered dimensions separated by dots passed by the
 //                  use. dimRequested should be a sub-set of authParams.
 
-exports.getDataSet = function(req,res) {
-    // console.time('getDataset');
-    
+exports.getDataSet = function(req,res) {    
     var provider = req.params.provider.toUpperCase();
+    var protocol = providers[provider.toUpperCase()].protocol,
+        host = providers[provider.toUpperCase()].host,
+        path = providers[provider.toUpperCase()].path,
+        format = providers[provider.toUpperCase()].format,
+        agencyID = providers[provider.toUpperCase()].agencyID;
     if (isInArray(provider,Object.keys(providers))) {
         var dataSet = '';
         if (provider !== 'EUROSTAT' && provider !== 'WEUROSTAT')  {
@@ -368,6 +387,8 @@ exports.getDataSet = function(req,res) {
         } else {
             var myPath = providers[provider].path + 'data/' + dataSet;
         }
+        debug('getDataset with provider: %s, dataset: %s',provider,dataSet);
+        debug('getDataset with path=%s',myPath);
         getDim(provider, null, null, dataSet, function(err,dim) {
             if (err) {
                 res.status(500).send(dim); // if err, dim is the errorMessage
@@ -392,9 +413,6 @@ exports.getDataSet = function(req,res) {
                 };
                 myPath += '/' + dimRequested;
 
-                // console.log("authParams: ",authParams);
-                // console.log("dimRequested: ",dimRequested);
-
                 Object.keys(reqParams).forEach(function(it,ind,arr) {
                     if (ind === 0) {
                         myPath += '?';
@@ -405,21 +423,18 @@ exports.getDataSet = function(req,res) {
                     }
                 });
                 var options = {
-                    hostname: providers[provider.toUpperCase()].host,
-                    port: 80,
-                    path: myPath,
+                    url: protocol + '://' + host + myPath,
                     headers: {
                         'connection': 'keep-alive',
                         'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
                         'user-agent': 'nodeJS'
                     }
                 };
-                http.get(options, function(result) {
-                    if (result.statusCode >= 200 && result.statusCode < 400) {
-                        var xml = '';
-                        result.on('data', function(chunk) {xml += chunk;});
-                        result.on('end',function() {
-                            xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                debug('auth params: %s',authParams);
+                debug('dimensions: %s',dimRequested);
+                request(options, function(e,r,b) {
+                    if (r.statusCode >= 200 && r.statusCode < 400) {
+                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                                 if(err === null) {
                                     try {
                                         var data = obj.StructureSpecificData.DataSet[0];
@@ -428,17 +443,21 @@ exports.getDataSet = function(req,res) {
                                         if (!req.timedout) {
                                             res.send(buildHTML.makeTable(vTS,dataSet,authParams));
                                         }
-                                    } catch(e) {
+                                    } catch(error) {
+                                        debug(error);
                                         try {
                                             var footer = obj.StructureSpecificData.Footer[0].Message[0].code[0]; // for handling Eurostat errors
                                             if (footer === '413') {
                                                 res.redirect('/413.html');
+                                                debug('redirecting to 413');
                                             } else {
-                                                var errorMessage = "Error parsing SDMX at: " + options.hostname + options.path;
+                                                var errorMessage = "Error parsing SDMX at: " + options.url;
                                                 res.status(500).send(errorMessage);
+                                                debug(errorMessage);
                                             }
-                                        } catch(e) {
-                                            var errorMessage = "Error parsing SDMX at: " + options.hostname + options.path;
+                                        } catch(error2) {
+                                            debug(error2);
+                                            var errorMessage = "Error parsing SDMX at: " + options.url;
                                             res.status(500).send(errorMessage);
                                         }
                                     }
@@ -446,15 +465,14 @@ exports.getDataSet = function(req,res) {
                                     res.send(err);
                                 }
                             });
-                        });
-                    } else if (result.statusCode === 413) {
+                    } else if (r.statusCode === 413) {
                         res.redirect('/413.html');
                     } else {
-                        var errorMessage = "Error retrieving data at: " + options.hostname + options.path + '\n';
-                        errorMessage += 'Code: ' + result.statusCode + '\n';
-                        errorMessage += 'Message: ' + result.statusMessage;
-                        res.status(result.statusCode).send(errorMessage);
-                        console.log(result);
+                        var errorMessage = "Error retrieving data at: " + options.url + '\n';
+                        errorMessage += 'Code: ' + r.statusCode + '\n';
+                        errorMessage += 'Message: ' + r.statusMessage;
+                        res.status(r.statusCode).send(errorMessage);
+                        debug(r);
                     }
                 });
             }});
@@ -466,6 +484,11 @@ exports.getDataSet = function(req,res) {
 exports.getSeries = function(req,res) {
     var series = req.params.series,
         provider = req.params.provider.toUpperCase();
+    var protocol = providers[provider.toUpperCase()].protocol,
+        host = providers[provider.toUpperCase()].host,
+        path = providers[provider.toUpperCase()].path,
+        format = providers[provider.toUpperCase()].format,
+        agencyID = providers[provider.toUpperCase()].agencyID;
     if (isInArray(provider,Object.keys(providers))) {
         var keys = Object.keys(req.query);
         var params = "?";
@@ -475,27 +498,25 @@ exports.getSeries = function(req,res) {
                 params += "&";
             }
         });
-        if (provider !== 'EUROSTAT'){
-            if (keys.length > 0) {params += '&format=compact_2_1';}
-            else { params += 'format=compact_2_1';}
+        if (keys.length > 0) {
+            params += '&' + format;
+        } else {
+            params += format;
         }
         if (provider == "INSEE") {
             var myPath = '/series/sdmx/data/SERIES_BDM/'+series+params;
             var options = {
-                hostname: 'www.bdm.insee.fr',
-                port: 80,
-                path: myPath,
+                url: protocol + '://' + host + myPath,
+                method: 'GET',
                 headers: {
                     'connection': 'keep-alive',
                     'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1'
                 }
             };
-            http.get(options, function(result) {
-                if (result.statusCode >= 200 && result.statusCode < 400) {
-                    var xml = '';
-                    result.on('data', function(chunk) {xml += chunk;});
-                    result.on('end',function() {
-                        xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+            debug('getSeries with path=%s',options.url);
+            request(options, function(e,r,b) {
+                if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                             if(err === null) {
                                 try {
                                     var data = obj.StructureSpecificData.DataSet[0];
@@ -503,18 +524,18 @@ exports.getSeries = function(req,res) {
                                     if (!req.timedout) {
                                         res.send(buildHTML.makeTable(vTS,series,[]));
                                     }}
-                                catch(e) {
-                                    console.log(e);
-                                    var errorMessage = "Error parsing SDMX at: " + options.hostname + options.path;
+                                catch(error) {
+                                    debug(error);
+                                    var errorMessage = "Error parsing SDMX at: " + options.url;
                                     res.status(500).send(errorMessage);
                                 }
                             } else{
                                 res.send(err);
                             }
                         });
-                    });
                 } else {
-                    res.status(result.statusCode).send(result.statusMessage);
+                    res.status(r.statusCode).send(r.statusMessage);
+                    debug(e);
                 }
             });        
         } else {
@@ -522,23 +543,19 @@ exports.getSeries = function(req,res) {
                 dataSet = arr[0];
             arr.shift();
             var userParams = arr.join('.');
-            var myPath = providers[provider].path+'data/'+dataSet+'/'+userParams + params;
+            var myPath = path+'data/'+dataSet+'/'+userParams + params;
             var options = {
-                hostname: providers[provider].host,
-                port: 80,
-                path: myPath,
+                url: protocol + '://' + host + myPath,
+                method: 'GET',
                 headers: {
                     'connection': 'keep-alive',
                     'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
                     'user-agent': 'nodeJS'
                 }
             };
-            http.get(options, function(result) {
-                if (result.statusCode >= 200 && result.statusCode < 400) {
-                    var xml = '';
-                    result.on('data', function(chunk) {xml += chunk;});
-                    result.on('end',function() {
-                        xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+            request(options, function(e,r,b) {
+                if (r.statusCode >= 200 && r.statusCode < 400) {
+                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                             if(err === null) {
                                 try {
                                     var data = obj.StructureSpecificData.DataSet[0];
@@ -547,18 +564,18 @@ exports.getSeries = function(req,res) {
                                         res.send(buildHTML.makeTable(vTS,series,[]));
                                     }
                                 }
-                                catch(e) {
-                                    console.log(e);
-                                    var errorMessage = "Error parsing SDMX at: " + options.hostname + options.path;
+                                catch(error) {
+                                    debug(error);
+                                    var errorMessage = "Error parsing SDMX at: " + options.url;
                                     res.status(500).send(errorMessage);
                                 }
                             } else {
                                 res.send(err);
                             }
                         });
-                    });
                 } else {
-                    res.status(result.statusCode).send(result.statusMessage);
+                    res.status(r.statusCode).send(r.statusMessage);
+                    debug(e);
                 }
             });
         };
@@ -573,54 +590,60 @@ exports.getCodeList = function(req,res) {
         dim = req.params.codelist,
         dsdId = req.query.dsdId;
 
+    var protocol = providers[provider.toUpperCase()].protocol,
+        host = providers[provider.toUpperCase()].host,
+        path = providers[provider.toUpperCase()].path,
+        format = providers[provider.toUpperCase()].format,
+        agencyID = providers[provider.toUpperCase()].agencyID;
+    
     if (isInArray(provider,Object.keys(providers))) {
         if (provider === 'EUROSTAT') {
-            var myPath = providers[provider.toUpperCase()].path + 'datastructure/'+providers[provider].agencyID+'/' + dsdId + '?format=compact_2_1';
+            var myPath = providers[provider.toUpperCase()].path + 'datastructure/'+providers[provider].agencyID+'/' + dsdId + '?' + format;
         } else {
-            var myPath = providers[provider].path+'codelist/' + providers[provider].agencyID + '/' + dim + '?format=compact_2_1';
+            var myPath = providers[provider].path+'codelist/' + providers[provider].agencyID + '/' + dim + '?' + format;
         }
         var options = {
-            hostname: providers[provider].host,
-            port: 80,
-            path: myPath,
+            url: protocol + '://' + host + myPath,
+            method: 'GET',
             headers: {
                 'connection': 'keep-alive',
                 'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                 'user-agent': 'nodeJS'
             }
         };
-        http.get(options, function(result) {
-            if (result.statusCode >=200 && result.statusCode < 400) {
-                var xml = '';
-                result.on('data', function(chunk) {xml += chunk;});
-                result.on('end',function() {
-                    xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                        if(err === null) {
-                            try {
-                                var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'];
-                                if (data.length > 1) {
-                                    for(var d in data){
-                                        if (data[d].id[0] === dim) {
-                                            myData = data[d];
-                                        }
+        debug('getCodeList with provider: %s; dim: %s, dsdId: %s',provider,dim,dsdId);
+        debug('url: %s', options.url);
+        request(options, function(e,r,b) {
+            if (r.statusCode >=200 && r.statusCode < 400 && !e) {
+                xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                    if(err === null) {
+                        try {
+                            var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'];
+                            if (data.length > 1) {
+                                for(var d in data){
+                                    if (data[d].id[0] === dim) {
+                                        myData = data[d];
                                     }
-                                } else {
-                                    var myData = data[0];
                                 }
-                                var title_dim = myData['id'][0];
-                                var codes = myData['Code'];
-                                res.send(buildHTML.codeList(codes,title_dim));}
-                            catch(e) {
-                                var errorMessage = "Error parsing SDMX at: " + options.hostname + options.path;
-                                res.status(500).send(errorMessage);
+                            } else {
+                                var myData = data[0];
                             }
-                        } else {
-                            res.send(err);
+                            var title_dim = myData['id'][0];
+                            var codes = myData['Code'];
+                            debug('getCodeList: done;');
+                            res.send(buildHTML.codeList(codes,title_dim));}
+                        catch(error) {
+                            var errorMessage = "Error parsing SDMX at: " + options.url;
+                            res.status(500).send(errorMessage);
+                            debug(error);
                         }
-                    });
+                    } else {
+                        res.send(err);
+                    }
                 });
             } else {
-                res.status(result.statusCode).send(result.statusMessage);
+                res.status(r.statusCode).send(r.statusMessage);
+                debug(e);
             }
         });                   
     } else {

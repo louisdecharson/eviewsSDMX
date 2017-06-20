@@ -1,56 +1,71 @@
 {
     "INSEE": {
+        "protocol":"https",
         "host": "www.bdm.insee.fr",
         "path": "/series/sdmx/",
         "agencyID": "FR1",
-        "apiKey": "False"
+        "apiKey": "False",
+        "format":""
     },
     "EUROSTAT": {
+        "protocol":"http",
         "host": "ec.europa.eu",
         "path": "/eurostat/SDMX/diss-web/rest/",
         "agencyID": "ESTAT",
-        "apiKey": "False"
+        "apiKey": "False",
+        "format":""
     },
     "ECB": {
+        "protocol":"http",
         "host": "sdw-wsrest.ecb.europa.eu",
         "path": "/service/",
         "agencyID": "ECB",
-        "apiKey": "False"
+        "apiKey": "False",
+        "format":"format=compact_2_1"
     },
     "WITS": {
+        "protocol":"http",
         "host": "wits.worldbank.org",
         "path": "/API/V1/SDMX/V21/rest/",
         "agencyID": "WBG_WITS",
-        "apiKey": "False"
+        "apiKey": "False",
+        "format":"format=compact_2_1"
     },
     "ILO": {
+        "protocol":"http",
         "host": "www.ilo.org",
         "path": "/ilostat/sdmx/ws/rest/",
         "agencyID": "ILO",
-        "apiKey": "False"
+        "apiKey": "False",
+        "format":"format=compact_2_1"
     },
     "Quandl": {
+        "protocol":"https",
         "host": "www.quandl.com",
         "path": "",
         "agencyID": "",
         "apiKey": "True"
     },
     "Fred": {
+        "protocol":"https",
         "host": "api.stlouisfed.org",
         "path": "",
         "agencyID": "",
         "apiKey": "True"
     },
     "BLS": {
+        "protocol":"https",
         "host": "api.bls.gov",
         "path": "",
         "agencyID": "",
         "apiKey": "True"
     },
     "WEUROSTAT": {
+        "protocol":"http",
         "host":"api.db.nomics.world",
         "path": "/api/v1/sdmx/",
         "agencyID": "EUROSTAT",
-        "apiKey": "False"
+        "apiKey": "False",
+        "format":"format=compact_2_1"
     }
 }
