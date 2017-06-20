@@ -17,8 +17,8 @@ var express = require('express'),
     path = require('path'),
     bodyParser = require('body-parser'),
     timeout = require('connect-timeout'),
-    favicon = require('serve-favicon');
-
+    favicon = require('serve-favicon'),
+    debug = require('debug')('server');
 // ROUTES 
 var fetcher = require('./routes/fetcher'),
     cal = require('./routes/cal'),
@@ -26,10 +26,11 @@ var fetcher = require('./routes/fetcher'),
     bls = require('./routes/bls'),
     fred = require('./routes/fred');
 
-var app = express();
 
+var app = express();
 var port = process.env.PORT || 8080;
 
+debug('booting %s','EViews - SDMX');
 
 app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));

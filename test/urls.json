@@ -4,7 +4,7 @@
     "paths": {
         "INSEE": {
             "insee_dataflow": "/insee/dataflow",
-            "insee_dataset": "/insee/dataset/ACT-PARTIELLE-REG?startPeriod=2015",
+            "insee_dataset": "/insee/dataset/ERI-ACTIVITE-PARTIELLE?startPeriod=2015",
             "insee_series": "/insee/series/001769787"
         },
         "ECB": {
