@@ -109,3 +109,7 @@ app.listen(port, function() {
 process.on('uncaughtException', (err) => {
      console.log(`Caught exception: ${err}`);
 });
+
+
+// FOR TESTING
+module.exports = app;

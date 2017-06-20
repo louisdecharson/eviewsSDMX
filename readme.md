@@ -1,4 +1,5 @@
 # SDMX for EViews
+[![Build Status](https://travis-ci.org/dgei-sdmx/eviewsSDMX.svg?branch=master)](https://travis-ci.org/dgei-sdmx/eviewsSDMX)
 
 ### Purpose
 
