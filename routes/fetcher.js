@@ -72,8 +72,9 @@ function getAgency(provider,dataset,callback) {
                     try {
                         var agency = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['agencyID'],
                             dsdId = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['id'];
-                        debug('getAgency: done.');
                         callback(false,{"agency":agency,"dsdId":dsdId});
+                        debug('agency: %s; dsdId: %s',agency, dsdId);
+                        debug('getAgency: done.');
                     } catch(error) {
                         var errorMessage = "Error parsing SDMX when retrieving datastructure at: "+ options.url;
                         callback(true,errorMessage);
@@ -126,7 +127,8 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                                     data.forEach(function(item,index) {
                                         arrDim.push(item['id'][0]);
                                     });
-                                    callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data,"dsdId":dsdId});
+                                    callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data,"dsdId":agencyInfo.dsdId});
+                                    debug('nbDim: %s ; arrDim: %s, dsdId: %s',nbDim,arrDim,dsdId);
                                 } catch(error) {
                                     var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
                                     debug(error);
@@ -288,13 +290,14 @@ exports.getDataFlow = function(req,res) {
                 };
                 debug('get dataflow with path=%s',options.url);
                 request(options,function(e,r,b) {
-                    if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+                    if (!e) {
+                        if (r.statusCode >= 200 && r.statusCode < 400) {
                             xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj) {
                                 if (err === null) {
                                     try {
                                         var footer =  obj.StructureSpecificData.Footer;
                                         try { footer = footer[0].Message[0].code[0];}
-                                        catch(e) {}
+                                        catch(error) {}
                                         finally {
                                             if (footer == '413') {
                                                 var errorFooter413 = '413 | Dataset is too big to retreive'; // Eurostat is sending error 413 in the footer...
@@ -307,11 +310,11 @@ exports.getDataFlow = function(req,res) {
                                                 if (!res.headersSent) {
                                                     res.send(buildHTML.detailDataset(provider,vTS,dataSet,dim,null));
                                                 };}}
-                                    } catch(e) {
+                                    } catch(error) {
                                         var errorMessage = "Error retrieving data at: " + options.url;
                                         debug(errorMessage);
                                         debug('-------------------------');
-                                        debug(e);
+                                        debug(error);
                                         res.status(500).send(errorMessage);
                                     }
                                 }
@@ -319,7 +322,13 @@ exports.getDataFlow = function(req,res) {
                                     res.send(err);
                                 }
                             });
-                    } else if (e.code === 'ETIMEDOUT') {
+                        } else {
+                            if (!res.headersSent) {
+                                var myError = 'Response Code: ' + r.statusCode;
+                                res.send(buildHTML.detailDataset(provider,null,dataSet,dim,myError));
+                            }
+                        }
+                    } else if (e.code === 'ETIMEDOUT' || e.code === 'ESOCKETTIMEDOUT') {
                         var errorDatasetTooBig = 'the dataset is too big to retrieve all the timeseries. You can increase timeout by adding "?timeout=" at the end of the url (default is 5000ms)';
                         if (!res.headersSent) {
                             res.send(buildHTML.detailDataset(provider,null,dataSet,dim,errorDatasetTooBig));
@@ -438,7 +447,6 @@ exports.getDataSet = function(req,res) {
                                 if(err === null) {
                                     try {
                                         var data = obj.StructureSpecificData.DataSet[0];
-                                        // console.timeEnd('getDataset');
                                         var vTS = data.Series; // vector of Time Series : vTS
                                         if (!req.timedout) {
                                             res.send(buildHTML.makeTable(vTS,dataSet,authParams));
@@ -598,9 +606,9 @@ exports.getCodeList = function(req,res) {
     
     if (isInArray(provider,Object.keys(providers))) {
         if (provider === 'EUROSTAT') {
-            var myPath = providers[provider.toUpperCase()].path + 'datastructure/'+providers[provider].agencyID+'/' + dsdId + '?' + format;
+            var myPath = path + 'datastructure/'+ agencyID + '/' + dsdId + '?' + format;
         } else {
-            var myPath = providers[provider].path+'codelist/' + providers[provider].agencyID + '/' + dim + '?' + format;
+            var myPath = path + 'codelist/' + agencyID + '/' + dim + '?' + format;
         }
         var options = {
             url: protocol + '://' + host + myPath,
