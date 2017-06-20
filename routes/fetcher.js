@@ -288,43 +288,43 @@ exports.getDataFlow = function(req,res) {
                 };
                 debug('get dataflow with path=%s',options.url);
                 request(options,function(e,r,b) {
-                    if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
-                            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj) {
-                                if (err === null) {
-                                    try {
-                                        var footer =  obj.StructureSpecificData.Footer;
-                                        try { footer = footer[0].Message[0].code[0];}
-                                        catch(e) {}
-                                        finally {
-                                            if (footer == '413') {
-                                                var errorFooter413 = '413 | Dataset is too big to retreive'; // Eurostat is sending error 413 in the footer...
-                                                res.send(buildHTML.detailDataset(provider,null,dataSet,dim,errorFooter413));
-                                            } else if (footer != null) {
-                                                res.status(footer).send('ERROR | Code : '+ footer + ' ' + getErrorMessage(footer));
-                                            } else {                   
-                                                var data = obj.StructureSpecificData.DataSet[0];
-                                                var vTS = data.Series;
-                                                if (!res.headersSent) {
-                                                    res.send(buildHTML.detailDataset(provider,vTS,dataSet,dim,null));
-                                                };}}
-                                    } catch(e) {
-                                        var errorMessage = "Error retrieving data at: " + options.url;
-                                        debug(errorMessage);
-                                        debug('-------------------------');
-                                        debug(e);
-                                        res.status(500).send(errorMessage);
-                                    }
-                                }
-                                else {
-                                    res.send(err);
-                                }
-                            });
-                    } else if (e.code === 'ETIMEDOUT') {
+                    if (e.code === 'ESOCKETTIMEDOUT' || e.code === 'ETIMEDOUT')  {
                         var errorDatasetTooBig = 'the dataset is too big to retrieve all the timeseries. You can increase timeout by adding "?timeout=" at the end of the url (default is 5000ms)';
                         if (!res.headersSent) {
                             res.send(buildHTML.detailDataset(provider,null,dataSet,dim,errorDatasetTooBig));
                         }
-                    } else {
+                    } else if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj) {
+                            if (err === null) {
+                                try {
+                                    var footer =  obj.StructureSpecificData.Footer;
+                                    try { footer = footer[0].Message[0].code[0];}
+                                    catch(error) {}
+                                    finally {
+                                        if (footer == '413') {
+                                            var errorFooter413 = '413 | Dataset is too big to retreive'; // Eurostat is sending error 413 in the footer...
+                                            res.send(buildHTML.detailDataset(provider,null,dataSet,dim,errorFooter413));
+                                        } else if (footer != null) {
+                                            res.status(footer).send('ERROR | Code : '+ footer + ' ' + getErrorMessage(footer));
+                                        } else {                   
+                                            var data = obj.StructureSpecificData.DataSet[0];
+                                            var vTS = data.Series;
+                                            if (!res.headersSent) {
+                                                res.send(buildHTML.detailDataset(provider,vTS,dataSet,dim,null));
+                                            };}}
+                                } catch(error2) {
+                                    var errorMessage = "Error retrieving data at: " + options.url;
+                                    debug(errorMessage);
+                                    debug('-------------------------');
+                                    debug(error2);
+                                    res.status(500).send(errorMessage);
+                                }
+                            }
+                            else {
+                                res.send(err);
+                            }
+                        });
+                    }  else {
                         if (!res.headersSent) {
                             var error = r.statusMessage;
                             debug(e);
