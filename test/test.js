@@ -25,6 +25,7 @@ for(var provider in urls.paths){
             url = urls.paths[provider][test];
         console.log(url);
         describe(desc,function(){
+            this.timeout(10000);
             var str = 'status 200 for' + url;
             it(str, function(done) {
                 chai.request(app)
