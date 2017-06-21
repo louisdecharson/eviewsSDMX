@@ -21,7 +21,6 @@ var express = require('express'),
     debug = require('debug')('server');
 // ROUTES 
 var fetcher = require('./routes/fetcher'),
-    cal = require('./routes/cal'),
     quandl = require('./routes/quandl'),
     bls = require('./routes/bls'),
     fred = require('./routes/fred');
@@ -49,6 +48,7 @@ app.get('/:provider/dataflow', fetcher.getAllDataFlow);
 app.get('/:provider/dataflow/:dataset', fetcher.getDataFlow);
 app.get('/:provider/dataset/:dataset',fetcher.getDataSet);
 app.get('/:provider/series/:series',fetcher.getSeries);
+app.get('/:provider/list/:dataset',fetcher.getList);
 app.get('/:provider/codelist/:codelist',fetcher.getCodeList);
 app.get('/providers',fetcher.getProviders);
 
