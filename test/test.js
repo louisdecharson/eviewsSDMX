@@ -23,7 +23,6 @@ for(var provider in urls.paths){
     for(var test in urls.paths[provider]){
         var desc = ' GET / ' + test,
             url = urls.paths[provider][test];
-        console.log(url);
         describe(desc,function(){
             this.timeout(10000);
             var str = 'status 200 for' + url;
