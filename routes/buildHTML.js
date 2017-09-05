@@ -272,7 +272,7 @@ exports.detailDataset = function(service,vTS,dataSet,dim,errorDatasetTooBig) {
             };
             
             tbody += titleSeries + '</td><td>';
-            tbody += lastUpdateSeries + '</td><td>';
+            tbody += lastUpdateSeries + '</td></tr>';
         });
     } else {
         error = '<p>ERROR : The app cannot display timeseries because '+ errorDatasetTooBig  +'</p>';
@@ -284,7 +284,6 @@ exports.detailDataset = function(service,vTS,dataSet,dim,errorDatasetTooBig) {
     
     return myHtml;
 };
-
 
 exports.codeList = function (codes,title_dim) {   
     var header = '<title>SDMX API for EViews / Codelist for '+ sliceCL(title_dim) +'</title>',
@@ -323,5 +322,72 @@ exports.listProviders = function(providers) {
         tbody += '</tr>';
     });
     var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + body + '<hr/><table class="table table-condensed table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + gA + jQuery + bootstrap +'</body></html>';
+    return myHtml;
+};
+
+
+exports.List = function(service,vTS,dataSet,dim) {
+    var header = '<title>SDMX API for EViews / '+ dataSet +'</title>',
+        css = '<style display:none>body {padding-left: 10px; padding-right:10px;}</style>';
+    var jsforList = "<script>var options = {valueNames: ['name', 'id'], searchClass: 'form-control'}; var dataList = new List('myTS',options);</script>";
+    
+    var body = '<h1>Dataset ' + dataSet  + '</h1><hr class="m-y-2">';
+    body += '<h3> 1. Dimensions of the data </h3>';
+    body += 'Dataset has ' + dim.nbDim + ' dimensions :';
+    body += '<ul>';
+    dim.data.forEach(function(it,ind) {
+        var code = it['LocalRepresentation'][0]['Enumeration'][0]['Ref'][0]['id'][0],
+            nomDim = it['id'][0];
+        body += '<li><a href=/'+ service + '/codelist/' + code + '?dsdId=' + dim.dsdId +'>' + nomDim + '</a></li>';
+    });
+    body += '</ul>';
+    body += '<h3> 2. List of the timeseries contained in the dataset</h3>';
+    var searchBar = '<div id="myTS"><input class="form-control" placeholder="Search"><br>';
+    
+    var theader = '<th>Series Id</th><th>Title</th><th>Last update</th>';
+    var tbody = '',
+        idSeries = '',
+        titleSeries ='',
+        lastUpdateSeries = '',
+        idBank = '',
+        error = '<p hidden></p>',
+        tableDef = '<table class="table table-hover">';
+    
+    vTS.forEach(function(item,index) {
+        idSeries = dataSet + '.';
+        dim.arrDim.forEach(function(it,ind,ar) {
+            idSeries += item[it][0];
+            if(ind<ar.length-1) {
+                idSeries += '.';
+            }
+        });
+        if (item.IDBANK != null) {
+            idBank = item.IDBANK[0];
+        } else {
+            idBank = idSeries;
+        }
+        tbody += '<tr><td class="id"><a href="/'+service+ '/series/' + idBank + '">' + idSeries +'</a></td><td class="name">';
+        if (item.TITLE != null) {
+            titleSeries = item.TITLE[0];
+        } else if (item.TITLE_COMPL != null) {
+            titleSeries = item.TITLE_COMPL[0];
+        } else if (item.TITLE_FR != null) {
+            titleSeries = item.TITLE_FR[0];
+        } else {
+            titleSeries = '&nbsp;';
+        };
+        if (item.LAST_UPDATE != null) {
+            lastUpdateSeries = item.LAST_UPDATE[0];
+        } else {
+            lastUpdateSeries = '&nbsp;';
+        };
+        
+        tbody += titleSeries + '</td><td>';
+        tbody += lastUpdateSeries + '</td></tr>';
+    });
+                 
+    
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header +  css+ '</header><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap + '</body></html>';
+    
     return myHtml;
 };

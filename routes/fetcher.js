@@ -14,7 +14,6 @@
 
 // PACKAGES
 var xml2js = require('xml2js'),
-    // http = require('http'),
     http = require('follow-redirects').http,
     https = require('https'),
     url = require('url'),
@@ -755,4 +754,129 @@ exports.redirectURL = function(req,res) {
 
 exports.getProviders = function(req,res) {
     res.send(buildHTML.listProviders(providers));
+};
+
+
+exports.getList = function(req,res) {    
+    var provider = req.params.provider.toUpperCase();
+    var protocol = providers[provider.toUpperCase()].protocol,
+        host = providers[provider.toUpperCase()].host,
+        path = providers[provider.toUpperCase()].path,
+        format = providers[provider.toUpperCase()].format,
+        agencyID = providers[provider.toUpperCase()].agencyID;
+    if (isInArray(provider,Object.keys(providers))) {
+        var dataSet = '';
+        if (provider !== 'EUROSTAT' && provider !== 'WEUROSTAT')  {
+            dataSet = req.params.dataset.toUpperCase();
+        } else {
+            dataSet = req.params.dataset;        
+        };
+        
+        // All keys to UpperCase
+        var key, keys = Object.keys(req.query);
+        var n = keys.length;
+        var reqParams={};
+        while (n--) {
+            key = keys[n];
+            var kkey = key; // name of the key before it get changed below
+            if (key.toUpperCase() === "FREQUENCY") {key = "FREQ";}
+            else {reqParams[key.toUpperCase()] = req.query[kkey];}
+        }      
+        var dimRequested = ''; // string fill with ordered dimensions passed by the user in req.params
+        if (provider === 'WEUROSTAT') {
+            var myPath = providers[provider].path + providers[provider].agencyID + '/data/' + dataSet;
+        } else {
+            var myPath = providers[provider].path + 'data/' + dataSet;
+        }
+        debug('getDataset with provider: %s, dataset: %s',provider,dataSet);
+        debug('getDataset with path=%s',myPath);
+        getDim(provider, null, null, dataSet, function(err,dim) {
+            if (err) {
+                res.status(500).send(dim); // if err, dim is the errorMessage
+            } else {
+                var authParams = dim.arrDim; // Authorised dimensions for the dataset.
+                var compt = 0;
+                authParams.forEach(function(it,ind){
+                    if(reqParams[it] != null) {
+                        if(ind<dim.nbDim-1) {dimRequested += reqParams[it]+'.';}
+                        else { dimRequested += reqParams[it];}
+                        delete reqParams[it];}
+                    else {
+                        if (ind<dim.nbDim-1) {
+                            dimRequested += '.';
+                        }
+                        compt ++;
+                    }
+                });
+                // When the whole dataSet is requested.
+                if (compt == dim.nbDim) {
+                    dimRequested = 'all';
+                };
+                myPath += '/' + dimRequested;
+                myPath += '?detail=nodata&';
+                Object.keys(reqParams).forEach(function(it,ind,arr) {
+                    if (ind === 0) {
+                        myPath += '?';
+                    }
+                    myPath += it.toString() + "=" + reqParams[it] ;
+                    if (ind < arr.length-1) {
+                        myPath += "&";
+                    }
+                });
+                var options = {
+                    url: protocol + '://' + host + myPath,
+                    headers: {
+                        'connection': 'keep-alive',
+                        'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
+                        'user-agent': 'nodeJS'
+                    }
+                };
+                debug('auth params: %s',authParams);
+                debug('dimensions: %s',dimRequested);
+                request(options, function(e,r,b) {
+                    if (r.statusCode >= 200 && r.statusCode < 400) {
+                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                                if(err === null) {
+                                    try {
+                                        var data = obj.StructureSpecificData.DataSet[0];
+                                        var vTS = data.Series; // vector of Time Series : vTS
+                                        if (!req.timedout) {
+                                            res.send(buildHTML.List(provider,vTS,dataSet,dim));
+                                        }
+                                    } catch(error) {
+                                        debug(error);
+                                        try {
+                                            var footer = obj.StructureSpecificData.Footer[0].Message[0].code[0]; // for handling Eurostat errors
+                                            if (footer === '413') {
+                                                res.redirect('/413.html');
+                                                debug('redirecting to 413');
+                                            } else {
+                                                var errorMessage = "Error parsing SDMX at: " + options.url;
+                                                res.status(500).send(errorMessage);
+                                                debug(errorMessage);
+                                            }
+                                        } catch(error2) {
+                                            debug(error2);
+                                            var errorMessage = "Error parsing SDMX at: " + options.url;
+                                            res.status(500).send(errorMessage);
+                                        }
+                                    }
+                                } else {
+                                    res.send(err);
+                                }
+                            });
+                    } else if (r.statusCode === 413) {
+                        res.redirect('/413.html');
+                    } else {
+                        var errorMessage = "Error retrieving data at: " + options.url + '\n';
+                        errorMessage += 'Code: ' + r.statusCode + '\n';
+                        errorMessage += 'Message: ' + r.statusMessage;
+                        res.status(r.statusCode).send(errorMessage);
+                        debug(r);
+                    }
+                });
+            }});
+    } else {
+        res.status(404).send("ERROR 404 - PROVIDER IS NOT SUPPORTED");
+    }
 };
