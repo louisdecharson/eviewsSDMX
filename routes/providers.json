@@ -21,7 +21,7 @@
         "path": "/service/",
         "agencyID": "ECB",
         "apiKey": "False",
-        "format":"format=compact_2_1"
+        "format":""
     },
     "WITS": {
         "protocol":"http",
