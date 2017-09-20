@@ -256,7 +256,7 @@ exports.getAllDataFlow = function(req,res) {
 // List the timeseries inside a dataset
 
 exports.getDataFlow = function(req,res) {
-    var provider = req.params.provider,
+    var provider = req.params.provider.toUpperCase(),
         dataSet = req.params.dataset,
         myTimeout = req.query.timeout;
     if (myTimeout === undefined) {
@@ -276,7 +276,12 @@ exports.getDataFlow = function(req,res) {
             if (err) {
                 res.status(500).send(dim); // if err, dim is the error message
             } else {
-                var myPath = path + 'data/' + dataSet + '?detail=nodata' + '&' + format;
+                if (provider === 'WEUROSTAT') {
+                    var myPath = path + providers[provider].agencyID + '/data/' + dataSet + '/all?detail=nodata' + '&' + format;
+                }
+                else {
+                    var myPath = path + 'data/' + dataSet + '?detail=nodata' + '&' + format;
+                }
                 var options = {
                     url: protocol + '://' +  host + myPath,
                     method: 'GET',
@@ -550,7 +555,11 @@ exports.getSeries = function(req,res) {
                 dataSet = arr[0];
             arr.shift();
             var userParams = arr.join('.');
-            var myPath = path+'data/'+dataSet+'/'+userParams + params;
+            if (provider.toUpperCase() === 'WEUROSTAT') {
+                var myPath = path + providers[provider].agencyID + '/data/' + dataSet+'/' + userParams + params;
+            } else {
+                var myPath = path + 'data/' + dataSet + '/'+ userParams + params;
+            }
             var options = {
                 url: protocol + '://' + host + myPath,
                 method: 'GET',
