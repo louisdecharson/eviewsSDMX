@@ -262,6 +262,8 @@ exports.detailDataset = function(service,vTS,dataSet,dim,errorDatasetTooBig) {
                 titleSeries = item.TITLE_COMPL[0];
             } else if (item.TITLE_FR != null) {
                 titleSeries = item.TITLE_FR[0];
+            } else if (item.WIDUKIND_NAME !=null) {
+                titleSeries = item.WIDUKIND_NAME[0];
             } else {
                 titleSeries = '&nbsp;';
             };

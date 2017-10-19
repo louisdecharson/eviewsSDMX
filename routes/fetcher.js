@@ -256,7 +256,7 @@ exports.getAllDataFlow = function(req,res) {
 // List the timeseries inside a dataset
 
 exports.getDataFlow = function(req,res) {
-    var provider = req.params.provider,
+    var provider = req.params.provider.toUpperCase(),
         dataSet = req.params.dataset,
         myTimeout = req.query.timeout;
     if (myTimeout === undefined) {
@@ -276,7 +276,12 @@ exports.getDataFlow = function(req,res) {
             if (err) {
                 res.status(500).send(dim); // if err, dim is the error message
             } else {
-                var myPath = path + 'data/' + dataSet + '?detail=nodata' + '&' + format;
+                if (provider === 'WEUROSTAT') {
+                    var myPath = path + providers[provider].agencyID + '/data/' + dataSet + '/all?detail=nodata' + '&' + format;
+                }
+                else {
+                    var myPath = path + 'data/' + dataSet + '?detail=nodata' + '&' + format;
+                }
                 var options = {
                     url: protocol + '://' +  host + myPath,
                     method: 'GET',
@@ -550,7 +555,11 @@ exports.getSeries = function(req,res) {
                 dataSet = arr[0];
             arr.shift();
             var userParams = arr.join('.');
-            var myPath = path+'data/'+dataSet+'/'+userParams + params;
+            if (provider.toUpperCase() === 'WEUROSTAT') {
+                var myPath = path + providers[provider].agencyID + '/data/' + dataSet+'/' + userParams + params;
+            } else {
+                var myPath = path + 'data/' + dataSet + '/'+ userParams + params;
+            }
             var options = {
                 url: protocol + '://' + host + myPath,
                 method: 'GET',
@@ -659,90 +668,54 @@ exports.getCodeList = function(req,res) {
 };
 
 // Retrieve data from SDMX URL
-exports.getDatafromURL = function(req,res) {
-
+exports.getDatafromURL = function(req,res) {    
     var myUrl = req.query.url.replace(/\'*/g,"").replace(/\s/g,'+'); // remove ''
-    var hostname = url.parse(myUrl).hostname,
+    var host = url.parse(myUrl).hostname,
         protocol = url.parse(myUrl).protocol,
         path = url.parse(myUrl).pathname;
-    
+    debug("Receive request for host: %s, with path: %s, over protcol: %s",host,protocol,path);  
     var options = {
-        protocol: protocol,
-        hostname: hostname,
-        port: 80,
-        path: path,
+        url: protocol+'//'+host+path,
+        method: 'GET',
         headers: {
             'connection': 'keep-alive',
             'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
             'user-agent': 'nodeJS'
-        }       
+        },
+        agentOptions: {
+            ciphers: 'ALL',
+            secureProtocol: 'TLSv1_1_method'
+        }
     };
-    if (protocol === 'http:') {
-        http.get(options, function(result) {
-            if (result.statusCode >= 200 && result.statusCode < 400) {
-                var xml = '';
-                result.on('data', function(chunk) {
-                    xml += chunk;
-                });
-
-                result.on('end',function() {
-                    xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+    request(options,function(e,r,b) {
+        if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+                    xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                         if(err === null) {
-                            if (!req.timedout) {
+                            try {
                                 if (typeof obj.StructureSpecificData !== 'undefined') {
                                     var data = obj.StructureSpecificData.DataSet[0],
                                         vTS = data.Series,
-                                        title = 'request to '+ hostname;
-                                    res.send(buildHTML.makeTable(vTS,title,[]));                      
+                                        title = 'request to '+ host;
+                                    if (!req.timedout) {
+                                        res.send(buildHTML.makeTable(vTS,title,[]));
+                                    }
                                 } else {
                                     res.set('Content-type','text/plain');
                                     res.send('The request could not be handled');
                                 }
+                            } catch(error) {
+                                debug(error);
+                                var errorMessage = "Error parsing SDMX at: " + options.url;
+                                res.status(500).send(errorMessage);
                             }
                         } else {
                             res.send(err);
                         }
                     });
-                });
             } else {
-                res.send(result.statusCode);
+                res.send(r.statusCode);
             }
         });
-    } else if (protocol === 'https:') {
-        https.get(options, function(result) {
-            if (result.statusCode >= 200 && result.statusCode < 400) {
-                var xml = '';
-                result.on('data', function(chunk) {
-                    xml += chunk;
-                });
-
-                result.on('end',function() {
-                    xml2js.parseString(xml, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                        if(err === null) {
-                            if (!req.timedout) {
-                                if (typeof obj.StructureSpecificData !== 'undefined') {
-                                    var data = obj.StructureSpecificData.DataSet[0],
-                                        vTS = data.Series,
-                                        title = 'request to '+ hostname;
-                                    res.send(buildHTML.makeTable(vTS,title,[]));                      
-                                } else {
-                                    res.set('Content-type','text/plain');
-                                    res.send('The request could not be handled');
-                                }
-                            }
-                        } else {
-                            res.send(err);
-                        }
-                    });
-                });
-            } else {
-                res.send(result.statusCode);
-            }
-        });
-    } else {
-        res.set('Content-Type', 'text/plain');
-        res.send('protocol '+protocol+' is not recognised');
-    }
 };
 
 
