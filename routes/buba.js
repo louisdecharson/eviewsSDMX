@@ -46,7 +46,7 @@ const urlBuba_pre = 'https://www.bundesbank.de/cae/servlet/StatisticDownload?tsI
 exports.getSeries = function(req,res) {
     var series = req.params.series,
         url = urlBuba_pre + series + urlBuba_post;
-    var dest = './tmp/temp.csv';
+    var dest = './temp.csv';
     var f = fs.createWriteStream(dest);
     request
         .get(url)
