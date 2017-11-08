@@ -169,7 +169,7 @@
         <hr></hr>
         <p>This API allows you to retrieve datasets or series in EViews from different SDMX providers.</p>
         <p>Currently, the app is supporting <strong>Insee</strong>, <strong>ECB</strong>, <strong>Eurostat</strong> & <strong>Worldbank</strong> data natively.</p>
-        <p>Requests to <strong>Quandl</strong>, <strong>BLS</strong> and <strong>FRED</strong> are also supported.</p>
+        <p>Requests to <strong>Quandl</strong>, <strong>BLS</strong>, <strong>FRED</strong> and the <strong>Deutsche Bundesbank</strong> are also supported.</p>
         <p>The complete list of supported providers is available <a href="./providers">here</a>.</p>
         <p>Alternatively, SDMX requests to others providers can be made <a href="./form.html">here</a>.</p>
         <p>Some <a href="./slides.pdf">slides.</a></p>
@@ -310,20 +310,21 @@
 
       <h3 id="others">4. Other providers</h3>
       <p>Data from others SDMX provides can be retrieved using:</p>
-      <center><strong><code>http://sdmx.herokuapp.com/?req='<span class="resource_id">sdmx_url</span>'</code></strong></center><br />
+      <center><strong><code>http://sdmx.herokuapp.com/?req='<span class="resource_id">sdmx_url</span>'</code></strong></center><br/>
 
-      <p>The app also supports requests to <strong>Fred</strong>, <strong>Quandl</strong> and the <strong>Bureau of Labor Statistics</strong>.<br />
+      <p>The app also supports requests to <strong>Fred</strong>, <strong>Quandl</strong>, the <strong>Bureau of Labor Statistics</strong> and the <strong>Deutsche Bundesbank</strong>.<br />
       The url to use is:</p>
-      <center><strong><code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/<span class="resource">api_key</span>/<span class="resource_id">resource_id</span></code></strong></center>
+      <center><strong><code>http://sdmx.herokuapp.com/<span class="provider">provider</span><span class="resource">(/api_key)</span>/<span class="resource_id">resource_id</span></code></strong></center>
 
       <strong class="provider">Providers</strong>
         <ul>
           <li><code>fred</code>: for data from <a href="http://fred.stlouisfed.org">Fred</a>.</li>
           <li><code>quandl</code>: for data from <a href="http://quandl.com">Quandl</a>.</li>
           <li><code>bls</code>: for data from the <a href="http://bls.gov">BLS</a>.</li>
+          <li><code>buba</code>: for data from the <a href="https://www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html">Deutsche Bundesbank</a></li>
         </ul>
 
-        <strong class="resource">api_key</strong>: your api_key for the provider.<br />
+        <strong class="resource">api_key</strong>: your api_key for the provider. <i>(Required only for Fred, Quandl and the BLS)</i><br/>
         <strong class="resource_id">resource_id</strong>: the id of the resource given by the provider.
        
 
