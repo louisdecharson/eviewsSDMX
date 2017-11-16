@@ -67,5 +67,11 @@
         "agencyID": "EUROSTAT",
         "apiKey": "False",
         "format":"format=compact_2_1"
+    },
+    "buba": {
+        "protocol":"https",
+        "host": "www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html",
+        "path": "",
+        "apiKey": "False"
     }
 }
