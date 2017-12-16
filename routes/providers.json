@@ -60,6 +60,12 @@
         "agencyID": "",
         "apiKey": "True"
     },
+    "buba": {
+        "protocol":"https",
+        "host": "www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html",
+        "path": "",
+        "apiKey": "False"
+    },
     "WEUROSTAT": {
         "protocol":"http",
         "host":"api.db.nomics.world",
