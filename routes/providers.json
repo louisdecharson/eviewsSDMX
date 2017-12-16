@@ -67,5 +67,13 @@
         "agencyID": "EUROSTAT",
         "apiKey": "False",
         "format":"format=compact_2_1"
+    },
+    "NORGES": {
+        "protocol":"https",
+        "host":"data.norges-bank.no",
+        "path":"/api/",
+        "agencyID":"all",
+        "apiKey":"False",
+        "format":"format=compact_2_1"
     }
 }
