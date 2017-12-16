@@ -73,5 +73,13 @@
         "host": "www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html",
         "path": "",
         "apiKey": "False"
+    },
+    "NORGES": {
+        "protocol":"https",
+        "host":"data.norges-bank.no",
+        "path":"/api/",
+        "agencyID":"all",
+        "apiKey":"False",
+        "format":"format=compact_2_1"
     }
 }
