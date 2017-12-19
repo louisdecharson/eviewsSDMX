@@ -126,8 +126,8 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                                     data.forEach(function(item,index) {
                                         arrDim.push(item['id'][0]);
                                     });
-                                    callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data,"dsdId":agencyInfo.dsdId});
                                     debug('nbDim: %s ; arrDim: %s, dsdId: %s',nbDim,arrDim,dsdId);
+                                    callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data,"dsdId":agencyInfo.dsdId});
                                 } catch(error) {
                                     var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
                                     debug(error);
@@ -203,7 +203,6 @@ exports.getAllDataFlow = function(req,res) {
         agencyID = providers[provider.toUpperCase()].agencyID;
     
     if (isInArray(provider.toUpperCase(),Object.keys(providers))) {
-        // var myPath = providers[provider.toUpperCase()].path+'dataflow/'+providers[provider.toUpperCase()].agencyID+'/all?format=compact_2_1';
         var myPath = path + 'dataflow/' + agencyID+ '?' + format;
         var options = {
             url: protocol + '://'+ host + myPath,
@@ -224,10 +223,19 @@ exports.getAllDataFlow = function(req,res) {
                                     var datasetId = it.id,
                                         dsdId = it.Structure[0]['Ref'][0]['id'],
                                         agency = it.Structure[0]['Ref'][0]['agencyID'],
-                                        name = it.Name;//[0]['_']
+                                        name = it.Name; //[0]['_']
                                     if (name.length > 1) {
                                         name.forEach(function(item,index){
-                                            if (item['xml:lang'][0] === 'fr') {name = it.Name[index]['_'];}
+                                            switch (item['xml:lang'][0]) {
+                                            case 'fr':
+                                                name = it.Name[index]['_'];
+                                                break;
+                                            case 'en':
+                                                name = it.Name[index]['_'];
+                                                break;
+                                            default:
+                                                name = it.Name[0]['_'];
+                                            }
                                         });
                                     } else {name = it.Name[0]['_'];}
                                     data.push([datasetId,dsdId,agency,name,provider]);
@@ -269,7 +277,8 @@ exports.getDataFlow = function(req,res) {
         host = providers[provider.toUpperCase()].host,
         path = providers[provider.toUpperCase()].path,
         format = providers[provider.toUpperCase()].format,
-        agencyID = providers[provider.toUpperCase()].agencyID;
+        agencyID = providers[provider.toUpperCase()].agencyID,
+        nodata = providers[provider.toUpperCase()].nodata;
     
     if (isInArray(provider.toUpperCase(),Object.keys(providers))) {
         getDim(provider,null,null,dataSet,function(err,dim) {
@@ -280,7 +289,11 @@ exports.getDataFlow = function(req,res) {
                     var myPath = path + providers[provider].agencyID + '/data/' + dataSet + '/all?detail=nodata' + '&' + format;
                 }
                 else {
-                    var myPath = path + 'data/' + dataSet + '?detail=nodata' + '&' + format;
+                    if (nodata === 'True') {
+                        var myPath = path + 'data/' + dataSet + '?detail=nodata&' + format;
+                    } else {
+                        var myPath = path + 'data/' + dataSet + '?' + format;   
+                    }
                 }
                 var options = {
                     url: protocol + '://' +  host + myPath,
@@ -292,8 +305,10 @@ exports.getDataFlow = function(req,res) {
                         'user-agent': 'nodeJS'
                     }
                 };
-                debug('get dataflow with path=%s',options.url);
+                debug('get dataflow with path=%s | timeout=%o',options.url,options.timeout);
+                if (debug.enabled) {var start = Date.now();}
                 request(options,function(e,r,b) {
+                    if (debug.enabled) {clearInterval(interval);}
                     if (!e) {
                         if (r.statusCode >= 200 && r.statusCode < 400) {
                             xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj) {
@@ -342,10 +357,16 @@ exports.getDataFlow = function(req,res) {
                             var error = r.statusMessage;
                             debug(e);
                             debug(error);
+                            debug(e.stack);
                             res.send(buildHTML.detailDataset(provider,null,dataSet,dim,error));
                         }
                     }
                 });
+                if (debug.enabled){
+                    var interval = setInterval(function(){
+                        console.log('Waiting: ', (Date.now() - start) / 1000);
+                    }, 1000);
+                }
             }});
     } else {res.status(404).send('ERROR 404 - PROVIDER IS NOT SUPPORTED');}
 };
@@ -736,7 +757,8 @@ exports.getList = function(req,res) {
         host = providers[provider.toUpperCase()].host,
         path = providers[provider.toUpperCase()].path,
         format = providers[provider.toUpperCase()].format,
-        agencyID = providers[provider.toUpperCase()].agencyID;
+        agencyID = providers[provider.toUpperCase()].agencyID,
+        nodata = providers[provider.toUpperCase()].nodata;
     if (isInArray(provider,Object.keys(providers))) {
         var dataSet = '';
         if (provider !== 'EUROSTAT' && provider !== 'WEUROSTAT')  {
@@ -786,7 +808,11 @@ exports.getList = function(req,res) {
                     dimRequested = 'all';
                 };
                 myPath += '/' + dimRequested;
-                myPath += '?detail=nodata&';
+                if (nodata === 'True') {
+                    myPath += '?detail=nodata&';
+                } else {
+                    myPath += '?';
+                }
                 Object.keys(reqParams).forEach(function(it,ind,arr) {
                     if (ind === 0) {
                         myPath += '?';

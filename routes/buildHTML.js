@@ -316,10 +316,15 @@ exports.listProviders = function(providers) {
         tbody += '<tr>';
         tbody += '<td>' + item + '</td>';
         tbody += '<td><a href="http://' + providers[item].host + '/">' + providers[item].host + '</a></td>';
-        if (providers[item].apiKey === 'True') {
-            tbody += '<td style="text-align:center">&#10006;</td><td style="text-align:center">&#10004;</td>';
+        if (providers[item].SDMX === 'True') {
+            tbody += '<td style="text-align:center">&#10004;</td>' ;
         } else {
-            tbody += '<td style="text-align:center">&#10004;</td><td style="text-align:center">&#10006;</td>';
+            tbody += '<td style="text-align:center">&#10006;</td>';
+        }
+        if (providers[item].apiKey === 'True'){
+            tbody += '<td style="text-align:center">&#10004;</td>';
+        } else {
+            tbody += '<td style="text-align:center">&#10006;</td>';
         }
         tbody += '</tr>';
     });
