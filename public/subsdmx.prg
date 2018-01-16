@@ -42,19 +42,28 @@ subroutine sdmx(string %provider, string %series, string %filters, string %renam
                         import(t=html) %__url
                 endif
         else
-                if @wintersect(%provider,%__providers) = %provider then
-                        %__url = %__url + %provider + "/" + "series/" + %series + %filters
+                if %provider = "oecd" then
+                        %__url = %__url + %provider + "/" + %series + %filters
                         if @len(%rename) > 0 then
                                 import(t=html) %__url colhead=2 namepos=none names=("date",{%__renlist})
                         else
                                 import(t=html) %__url colhead=2 namepos=first
                         endif
                 else
-                        %__url = %__url + "req?url=" + "'"  + %series + "'"
-                        if @len(%rename) > 0 then
-                                import(t=html) %__url colhead=2 namepos=none names=("date",{%__renlist})
+                        if @wintersect(%provider,%__providers) = %provider then
+                                %__url = %__url + %provider + "/" + "series/" + %series + %filters
+                                if @len(%rename) > 0 then
+                                        import(t=html) %__url colhead=2 namepos=none names=("date",{%__renlist})
+                                else
+                                        import(t=html) %__url colhead=2 namepos=first
+                                endif
                         else
-                                import(t=html) %__url colhead=2 namepos=first
+                                %__url = %__url + "req?url=" + "'"  + %series + "'"
+                                if @len(%rename) > 0 then
+                                        import(t=html) %__url colhead=2 namepos=none names=("date",{%__renlist})
+                                else
+                                        import(t=html) %__url colhead=2 namepos=first
+                                endif
                         endif
                 endif
         endif       
@@ -88,23 +97,32 @@ subroutine sdmx_v2(string %provider, string %ressource, string %series, string %
                         import(t=html) %__url
                 endif
         else
-                if @wintersect(%provider,%__providers) = %provider then
-			if %ressource = "dataset" then
-				%__url = %__url + %provider + "/" + "dataset/" + %series + %filters
-			else
-				%__url = %__url + %provider + "/" + "series/" + %series + %filters
-			endif
+                if %provider = "oecd" then
+                        %__url = %__url + %provider + "/" + %series + %filters
                         if @len(%rename) > 0 then
                                 import(t=html) %__url colhead=2 namepos=none names=("date",{%__renlist})
                         else
                                 import(t=html) %__url colhead=2 namepos=first
                         endif
                 else
-                        %__url = %__url + "req?url=" + "'"  + %series + "'"
-                        if @len(%rename) > 0 then
-                                import(t=html) %__url colhead=2 namepos=none names=("date",{%__renlist})
+                        if @wintersect(%provider,%__providers) = %provider then
+			        if %ressource = "dataset" then
+				        %__url = %__url + %provider + "/" + "dataset/" + %series + %filters
+			        else
+				        %__url = %__url + %provider + "/" + "series/" + %series + %filters
+			        endif
+                                if @len(%rename) > 0 then
+                                        import(t=html) %__url colhead=2 namepos=none names=("date",{%__renlist})
+                                else
+                                        import(t=html) %__url colhead=2 namepos=first
+                                endif
                         else
-                                import(t=html) %__url colhead=2 namepos=first
+                                %__url = %__url + "req?url=" + "'"  + %series + "'"
+                                if @len(%rename) > 0 then
+                                        import(t=html) %__url colhead=2 namepos=none names=("date",{%__renlist})
+                                else
+                                        import(t=html) %__url colhead=2 namepos=first
+                                endif
                         endif
                 endif
         endif       
