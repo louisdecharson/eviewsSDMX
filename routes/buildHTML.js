@@ -455,7 +455,7 @@ exports.makeTableBuba = function(data,cb) {
             tbody += '</tr>';
         }
     });
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + chapeau  +'<table>' + '<thead>'  + theader + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + bootstrap4 + sdmxCSS + gA + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau  +'<table>' + '<thead>'  + theader + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + bootstrap4 + sdmxCSS + gA + '</body></html>';
     cb(myHtml);
 };
 
