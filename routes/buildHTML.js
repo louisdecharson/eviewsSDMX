@@ -17,7 +17,10 @@
 const gA = "<script> (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){ (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m) })(window,document,'script','https://www.google-analytics.com/analytics.js','ga'); ga('create', 'UA-92058229-1', 'auto'); ga('send', 'pageview');</script>",
       jQuery = '<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="   crossorigin="anonymous"></script>',
       bootstrap = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>',
-      listJS = '<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.2.0/list.min.js"></script>';
+      bootstrap4 = '<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous"><script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js" integrity="sha384-a5N7Y/aK3qNeh15eJKGWxsqtnX/wWdSZSKp+81YjTmS15nvnvxKHuzaWwXHDli+4" crossorigin="anonymous"></script>',
+      listJS = '<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.2.0/list.min.js"></script>',
+      sdmxCSS = '<link rel="stylesheet" href="/css/sdmx.css"></link>',
+      chapeau = '<h1>SDMX in EViews</h1><p><i>Import data in EViews</i></p><a class="btn btn-sm btn-primary" href="/">More details</a><hr/>';
 
  
    
@@ -75,7 +78,7 @@ exports.dataFlow = function(data,service) {
 
 
 exports.makeTable = function(vTS,title,authParams){
-    var header = '<title>SDMX API for EViews / '+ title +'</title>';
+    var header = '<title>SDMX for EViews / '+ title +'</title>';
     var body = '';
     var table ='';
     var theader1 = '<th>Dates</th>';
@@ -150,40 +153,6 @@ exports.makeTable = function(vTS,title,authParams){
             vTsSR.push(vTsSorted[kk].Obs);
         }
     }    
-    
-    // for(var kk=0; kk<vTsSorted.length; kk++) {
-    //     if (vTsSorted[kk].IDBANK != null) {
-    //         theader1 += '<th>' + vTsSorted[kk].IDBANK[0] + '</th>';
-    //     } else {      // on construit un nom à partir des paramètres.
-    //         var monId = title;
-    //         if (authParams.length > 0) {
-    //             monId += '.';
-    //             authParams.forEach(function(it,ind,arr) {
-    //                 if (ind<arr.length-1) {
-    //                     monId += vTsSorted[kk][it][0]+'.';
-    //                 } else {
-    //                     monId +=vTsSorted[kk][it][0];
-    //                 };
-    //             });
-    //         }
-    //         theader1 += '<th>'+monId+'</th>';
-    //     };
-    //     var montitre = '';
-    //     if (vTsSorted[kk].TITLE != null){
-    //         montitre = vTsSorted[kk].TITLE[0];
-    //     } else if (vTsSorted[kk].TITLE_COMPL != null) {
-    //         montitre = vTsSorted[kk].TITLE_COMPL[0];
-    //     } else {
-    //         montitre = '&nbsp;';
-    //     }
-    //     theader2 += '<th>' + montitre + '</th>';
-    //     if (isReverse) {
-    //         vTsSR.push(vTsSorted[kk].Obs.reverse()); // sorted vector of timeseries
-    //     } else {
-    //         vTsSR.push(vTsSorted[kk].Obs);
-    //     }
-    // }
-    
     // BODY
     var i = 0;
 
@@ -206,7 +175,7 @@ exports.makeTable = function(vTS,title,authParams){
         tbody += '</tr>';
         i ++;
     };
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table>' + '<thead>'  + '<tr>' + theader1 + '</tr>' + '<tr>' + theader2 + '</tr>'  + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table>' + gA + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + '<table><thead><tr>' + theader1 + '</tr><tr>' + theader2 + '</tr></thead><tbody class="list">' + tbody + '</tbody></table>'+ bootstrap4 + sdmxCSS + gA + '</body></html>';
     
     return myHtml;
 };
@@ -282,7 +251,7 @@ exports.detailDataset = function(service,vTS,dataSet,dim,errorDatasetTooBig) {
     }
                  
     
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header +  css+ '</header><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header +  css+ '</head><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap + '</body></html>';
     
     return myHtml;
 };
@@ -302,7 +271,7 @@ exports.codeList = function (codes,title_dim) {
         tbody += '<td style="min-width:100px">' + item['Name'][item['Name'].length-1]['_']+'</td></tr>';
         
     });
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header  + css + '</header><body>' + '<table class="table table-hover table-condensed">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + gA + jQuery + bootstrap + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header  + css + '</head><body>' + '<table class="table table-hover table-condensed">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + gA + jQuery + bootstrap + '</body></html>';
     return myHtml;
 };
 
@@ -394,7 +363,7 @@ exports.List = function(service,vTS,dataSet,dim) {
     });
                  
     
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header +  css+ '</header><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header +  css+ '</head><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap4 + '</body></html>';
     
     return myHtml;
 };
@@ -463,6 +432,94 @@ exports.makeTableOECD = function(vTS,title,dataset){
         tbody += '</tr>';
         i ++;
     };
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table>' + '<thead>'  + '<tr>' + theader1 + '</tr>' + '<tr>' + theader2 + '</tr>'  + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table>' + gA + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + '<table>' + '<thead>'  + '<tr>' + theader1 + '</tr>' + '<tr>' + theader2 + '</tr>'  + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table>' + bootstrap4 + sdmxCSS + gA + '</body></html>';
     return myHtml;
+};
+
+exports.makeTableBuba = function(data,cb) {
+
+    var seriesID = data[0].value;
+    var header = '<title>SDMX in EViews / Deutsche Bundesbank / '+ seriesID +'</title>',
+        body = '',
+        table ='',
+        myHeader = '<h2>SDMX in EViews </h2><b> Provider: Deutsche Bundesbank</b><br/><b>Series: '+ seriesID +'</b><hr/>',
+        tbody = '';
+
+    var theader = '<tr><th>Dates</th><th>' + seriesID  + '</th></tr>';
+    theader += '<tr><th></th><th>' + data[1].value  + '</th></tr>';
+    data.forEach(function(it,ind) {
+        if (ind > 5){
+            tbody += '<tr>';
+            tbody += '<td style="text-align:center">' + it.date + '</td>';
+            tbody += '<td style="text-align:center">' + it.value +'</td>';
+            tbody += '</tr>';
+        }
+    });
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau  +'<table>' + '<thead>'  + theader + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + bootstrap4 + sdmxCSS + gA + '</body></html>';
+    cb(myHtml);
+};
+
+
+exports.makeTableFred = function(arr,nameSeries) {
+
+    var header = '<title>SDMX in EViews / '+ nameSeries +'</title>';
+    var body = '';
+    var table ='';
+    var myHeader = '<h4> FRED for EViews API</h4>',
+        theader2 = '<th>Dates</th><th>' + nameSeries  + '</th>';
+    var tbody = '';
+    
+    arr.forEach(function(it,ind) {
+        tbody += '<tr>';
+        tbody += '<td style="text-align:center">' + it.date  +'</td>';
+        tbody += '<td style="text-align:center">' + it.value  +'</td>';
+        tbody += '</tr>';
+    });
+
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + myHeader  +'<table>' + '<thead>'  + '<tr>' + theader2 +  '</tr></thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + bootstrap4 + sdmxCSS + gA + '</body></html>';
+    return myHtml;
+};
+
+exports.makeTableBLS = function(series) {
+    var data = series.data;
+    var header = '<title>SDMX API for EViews / BLS / '+ series.seriesID +'</title>',
+        body = '',
+        table ='',
+        myHeader = '<h4> Bureau of Labor Statistics - '+ series.seriesID +'</h4>',
+        theader2 = '',
+        tbody = '';
+
+    theader2 += '<th>Dates</th><th>' + series.seriesID  + '</th>';
+    data.forEach(function(it,ind) {
+        tbody += '<tr>';
+        tbody += '<td style="text-align:center">' + it.year + it.period +'</td>';
+        tbody += '<td style="text-align:center">' + it.value +'</td>';
+        tbody += '</tr>';
+    });
+
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + myHeader   +'<table>' + '<thead>'  + '<tr>' + theader2 +  '</tr></thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + bootstrap4 + sdmxCSS + gA + '</body></html>';
+    return myHtml;
+};
+
+exports.makeTableQuandl = function (arr,nameSeries,nameDataset) {
+
+    var header = '<title>SDMX API for EViews / '+ nameDataset +'</title>';
+    var body = '';
+    var myHeader = '<h4>'+ nameDataset +'</h4>',
+        theader2 = '';
+    var tbody = '';
+
+    nameSeries.forEach(function(it,ind) {
+        theader2 += '<th>' + it  + '</th>';
+    });
+    arr.forEach(function(it,ind) {
+        tbody += '<tr>';
+        it.forEach(function(i) {
+            tbody += '<td style="text-align:center">' + i  +'</td>';
+        });
+        tbody += '</tr>';
+    });
+
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + myHeader  +'<table>' + '<thead>'  + '<tr>' + theader2 +  '</tr></thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + bootstrap4 + sdmxCSS + gA + '</body></html>';
+    return myHtml;  
 };

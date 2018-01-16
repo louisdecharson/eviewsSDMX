@@ -14,32 +14,9 @@
 // =====================================================================
 
 // PACKAGES
-var https = require('https');
-
-
-function buildHMTL(arr,nameSeries,nameDataset) {
-
-    var header = '<title>SDMX API for EViews / '+ nameDataset +'</title>';
-    var body = '';
-    var myHeader = '<h4>'+ nameDataset +'</h4>',
-        theader2 = '';
-    var tbody = '';
-
-    nameSeries.forEach(function(it,ind) {
-        theader2 += '<th>' + it  + '</th>';
-    });
-    arr.forEach(function(it,ind) {
-        tbody += '<tr>';
-        it.forEach(function(i) {
-            tbody += '<td style="text-align:center">' + i  +'</td>';
-        });
-        tbody += '</tr>';
-    });
-
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + myHeader  +'<table>' + '<thead>'  + '<tr>' + theader2 +  '</tr></thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
-    return myHtml;
-    
-}
+var https = require('https'),
+    debug = require('debug')('quandl'),
+    buildHTML = require('./buildHTML.js');
 
 exports.getSeries = function(req,res) {
 
@@ -69,7 +46,7 @@ exports.getSeries = function(req,res) {
                     var nameDataset = json.dataset.database_code + ' ' + json.dataset.name;
                     var nameSeries = json.dataset.column_names;
                     var mySeries = json.dataset.data;
-                    res.send(buildHMTL(mySeries.reverse(),nameSeries,nameDataset));
+                    res.send(buildHTML.makeTableQuandl(mySeries.reverse(),nameSeries,nameDataset));
                 });
             } else {
                 if (result.statusCode === 429) {

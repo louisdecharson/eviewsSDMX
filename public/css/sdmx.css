@@ -1,0 +1,10 @@
+body {
+    margin: 1%;
+}
+th {
+    text-align:center;
+}
+td {
+    padding-left: 10px;
+    padding-right: 10px;
+}
