@@ -14,35 +14,13 @@
 // =====================================================================
 
 // PACKAGES
-var https = require('https');
-
-
-function buildHMTL(arr,nameSeries) {
-
-    var header = '<title>SDMX API for EViews / '+ nameSeries +'</title>';
-    var body = '';
-    var table ='';
-    var myHeader = '<h4> FRED API</h4>',
-        theader2 = '<th>Dates</th><th>' + nameSeries  + '</th>';
-    var tbody = '';
-    
-    arr.forEach(function(it,ind) {
-        tbody += '<tr>';
-        tbody += '<td style="text-align:center">' + it.date  +'</td>';
-        tbody += '<td style="text-align:center">' + it.value  +'</td>';
-        tbody += '</tr>';
-    });
-
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + myHeader  +'<table>' + '<thead>'  + '<tr>' + theader2 +  '</tr></thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
-    return myHtml;
-    
-}
+var https = require('https'),
+    debug = require('debug')('fred'),
+    buildHTML = require('./buildHTML.js');
 
 exports.getSeries = function(req,res) {
-
-    var series = req.params.series;
-    var apiKey = req.params.apiKey;
- 
+    var series = req.params.series,
+        apiKey = req.params.apiKey;
     var myPath = '/fred/series/observations?series_id='+ series + '&api_key='+apiKey+"&file_type=json";
     var options = {
         hostname: 'api.stlouisfed.org',
@@ -52,6 +30,7 @@ exports.getSeries = function(req,res) {
             'connection': 'keep-alive'
         }
     };
+    debug('getSeries FRED with path=%s',options.path);
     https.get(options, function(result) {
         if (result.statusCode >=200 && result.statusCode < 400) {
             var xml = '';
@@ -61,7 +40,7 @@ exports.getSeries = function(req,res) {
             result.on('end',function() {
                 var json = JSON.parse(xml);
                 var mySeries = json.observations;
-                res.send(buildHMTL(mySeries,series));
+                res.send(buildHTML.makeTableFred(mySeries,series));
             });
         } else {
             if (result.statusCode === 429) {

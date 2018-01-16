@@ -15,30 +15,9 @@
 // PACKAGES
 var request = require('request'),
     fs = require('fs'),
-    csv = require('fast-csv');
-
-function buildHTML(data,cb) {
-
-    var seriesID = data[0].value;
-    var header = '<title>SDMX API for EViews / Deutsche Bundesbank / '+ seriesID +'</title>',
-        body = '',
-        table ='',
-        myHeader = '<h2>SDMX in EViews </h2><b> Provider: Deutsche Bundesbank</b><br/><b>Series: '+ seriesID +'</b><hr/>',
-        tbody = '';
-
-    var theader = '<tr><th>Dates</th><th>' + seriesID  + '</th></tr>';
-    theader += '<tr><th></th><th>' + data[1].value  + '</th></tr>';
-    data.forEach(function(it,ind) {
-        if (ind > 5){
-            tbody += '<tr>';
-            tbody += '<td style="text-align:center">' + it.date + '</td>';
-            tbody += '<td style="text-align:center">' + it.value +'</td>';
-            tbody += '</tr>';
-        }
-    });
-    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + myHeader  +'<table>' + '<thead>'  + theader + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + '</body></html>';
-    cb(myHtml);
-}
+    debug = require('debug')('buba'),
+    csv = require('fast-csv'),
+    buildHTML = require('./buildHTML');
 
 const urlBuba_pre = 'https://www.bundesbank.de/cae/servlet/StatisticDownload?tsId=',
       urlBuba_post = '&its_csvFormat=en&its_fileFormat=csv&mode=its';
@@ -64,7 +43,7 @@ exports.getSeries = function(req,res) {
                         finalData.push(data);
                     })
                     .on("end",function() {
-                        buildHTML(finalData,function(html){res.send(html);});
+                        buildHTML.makeTableBuba(finalData,function(html){res.send(html);});
                         fs.unlink(dest,function(){});
                     });
             });
