@@ -175,7 +175,7 @@ exports.makeTable = function(vTS,title,authParams){
         tbody += '</tr>';
         i ++;
     };
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + '<table><thead><tr>' + theader1 + '</tr><tr>' + theader2 + '</tr></thead><tbody class="list">' + tbody + '</tbody></table>'+ bootstrap + sdmxCSS + gA + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + '<table><thead><tr>' + theader1 + '</tr><tr>' + theader2 + '</tr></thead><tbody class="list">' + tbody + '</tbody></table>'+ bootstrap4 + sdmxCSS + gA + '</body></html>';
     
     return myHtml;
 };
