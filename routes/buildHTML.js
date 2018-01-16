@@ -316,10 +316,15 @@ exports.listProviders = function(providers) {
         tbody += '<tr>';
         tbody += '<td>' + item + '</td>';
         tbody += '<td><a href="http://' + providers[item].host + '/">' + providers[item].host + '</a></td>';
-        if (providers[item].apiKey === 'True') {
-            tbody += '<td style="text-align:center">&#10006;</td><td style="text-align:center">&#10004;</td>';
+        if (providers[item].SDMX === 'True') {
+            tbody += '<td style="text-align:center">&#10004;</td>' ;
         } else {
-            tbody += '<td style="text-align:center">&#10004;</td><td style="text-align:center">&#10006;</td>';
+            tbody += '<td style="text-align:center">&#10006;</td>';
+        }
+        if (providers[item].apiKey === 'True'){
+            tbody += '<td style="text-align:center">&#10004;</td>';
+        } else {
+            tbody += '<td style="text-align:center">&#10006;</td>';
         }
         tbody += '</tr>';
     });
@@ -391,5 +396,73 @@ exports.List = function(service,vTS,dataSet,dim) {
     
     var myHtml = '<!DOCTYPE html>' + '<html><header>' + header +  css+ '</header><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap + '</body></html>';
     
+    return myHtml;
+};
+
+
+exports.makeTableOECD = function(vTS,title,dataset){
+    var header = '<title>SDMX API for EViews / '+ title +'</title>';
+    var body = '';
+    var table ='';
+    var theader1 = '<th>Dates</th>';
+    var theader2 = '<th>&nbsp;</th>';
+    var tbody = '';
+    var vInd = new Array(vTS.length).fill(0); // vector of cursors
+    var vTsSR = [];
+    if (vTS[0].Obs !== undefined) {
+        var vTsSorted = vTS.sort(function(a,b) { return b.Obs.length-a.Obs.length;}); // vector of timeseries
+        var nbObs = vTsSorted[0].Obs.length;
+        // Check if timeseries are in reverse position :
+        var isReverse = false;
+        if (vTsSorted[0].Obs.length > 1) {
+            var dateFirst = vTsSorted[0].Obs[0].Time[0],
+                dateLast = vTsSorted[0].Obs[1].Time[0];
+            if (dateFirst.substring(0,4) > dateLast.substring(0,4)) {
+                isReverse = true;
+            } else if (dateFirst.slice(-1) > dateLast.slice(-1)) {
+                isReverse = true;
+            }
+        }
+    } else {
+        var vTsSorted = vTS,
+            nbObs = 0,
+            isReverse = false;
+    }
+    // HEADER
+    for(var kk=0; kk<vTsSorted.length; kk++) {
+        // GET AN ID FOR THE TIMESERIES
+        var monId = dataset;
+        vTS[0].SeriesKey[0].Value.forEach(function(it,ind){
+            monId += '.'+ it.value[0];
+        });
+        theader1 += '<th>'+ monId +'</th>'; 
+
+        // REVERSE THE TIMESERIES TO GET DATE IT THE ASCENDING ORDER
+        if (isReverse && nbObs > 0) {
+            vTsSR.push(vTsSorted[kk].Obs.reverse()); // sorted vector of timeseries
+        } else {
+            vTsSR.push(vTsSorted[kk].Obs);
+        }
+    }    
+    var i = 0;
+    while (i < nbObs) {
+        tbody += '<tr><td>' + vTsSR[0][i].Time[0].replace('-Q','Q').replace('-S','S').replace('-B','S') + '</td>';
+        tbody += '<td style="text-align:center">' + vTsSR[0][i].ObsValue[0].value + '</td>';
+        for(var k=1; k<vTsSR.length; k++) {
+            if(vInd[k] < vTsSR[k].length) {
+                if(vTsSR[0][i].Time[0] === vTsSR[k][vInd[k]].Time[0]) {
+                    tbody += '<td style="text-align:center">' + vTsSR[k][vInd[k]].ObsValue[0].value + '</td>';
+                    vInd[k] =  vInd[k] + 1;
+                } else {
+                    tbody += '<td style="text-align:center"></td>';
+                }
+            } else {
+                tbody += '<td style="text-align:center"></td>';
+            }
+        }
+        tbody += '</tr>';
+        i ++;
+    };
+    var myHtml = '<!DOCTYPE html>' + '<html><header>' + header + '</header><body>' + '<table>' + '<thead>'  + '<tr>' + theader1 + '</tr>' + '<tr>' + theader2 + '</tr>'  + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table>' + gA + '</body></html>';
     return myHtml;
 };

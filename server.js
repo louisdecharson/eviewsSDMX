@@ -24,7 +24,8 @@ var fetcher = require('./routes/fetcher'),
     quandl = require('./routes/quandl'),
     bls = require('./routes/bls'),
     fred = require('./routes/fred'),
-    buba = require('./routes/buba');
+    buba = require('./routes/buba'),
+    oecd = require('./routes/oecd');
 
 
 var app = express();
@@ -67,6 +68,8 @@ app.get('/bls/:apiKey/:series',bls.getSeries);
 app.get('/fred/:apiKey/:series',fred.getSeries);
 // Bundesbank
 app.get('/buba/:series',buba.getSeries);
+// OECD
+app.get('/oecd/:dataset/:series',oecd.getSeries);
 
 // Calendar
 // --------
