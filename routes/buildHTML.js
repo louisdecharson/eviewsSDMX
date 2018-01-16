@@ -432,7 +432,7 @@ exports.makeTableOECD = function(vTS,title,dataset){
         tbody += '</tr>';
         i ++;
     };
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + '<table>' + '<thead>'  + '<tr>' + theader1 + '</tr>' + '<tr>' + theader2 + '</tr>'  + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table>' + gA + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + '<table>' + '<thead>'  + '<tr>' + theader1 + '</tr>' + '<tr>' + theader2 + '</tr>'  + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table>' + bootstrap4 + sdmxCSS + gA + '</body></html>';
     return myHtml;
 };
 
