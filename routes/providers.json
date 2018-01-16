@@ -103,5 +103,15 @@
         "apiKey": "False",
         "format":"",
         "nodata": "False"
+    },
+    "OECD": {
+        "protocol":"https",
+        "host":"data.oecd.org/api/sdmx-ml-documentation/",
+        "path":"",
+        "agencyID":"",
+        "SDMX": "True",
+        "apiKey": "False",
+        "format":"",
+        "nodata": ""
     }
 }
