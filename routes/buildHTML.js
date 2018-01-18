@@ -72,7 +72,7 @@ exports.dataFlow = function(data,service) {
         tbody += '<td class="desc">'+ item[3] + '</td>';
         tbody += '</tr>';
     });
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + body + '<table class="table table-condensed table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS  + jsforList + gA + jQuery + bootstrap +'</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + chapeau + body + '<table class="table table-sm table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS  + jsforList + gA + jQuery + bootstrap4 +'</body></html>';
     return myHtml;
 };
 
@@ -186,10 +186,9 @@ exports.detailDataset = function(service,vTS,dataSet,dim,errorDatasetTooBig) {
         css = '<style display:none>body {padding-left: 10px; padding-right:10px;}</style>';
     var jsforList = "<script>var options = {valueNames: ['name', 'id'], searchClass: 'form-control'}; var dataList = new List('myTS',options);</script>";
     
-    var body = '<h1>Dataset ' + dataSet  + '</h1><hr class="m-y-2">';
+    var body = '<h2>Dataset ' + dataSet  + '</h2><hr class="m-y-2">';
     var button = '<a href="http://sdmx.herokuapp.com/'+ service + '/dataset/' + dataSet +'" class="btn btn-primary" role="button">Download</a>';
-    
-    body += button;
+
     body += '<h3> 1. Dimensions of the data </h3>';
     body += 'Dataset has ' + dim.nbDim + ' dimensions :';
     body += '<ul>';
@@ -200,7 +199,7 @@ exports.detailDataset = function(service,vTS,dataSet,dim,errorDatasetTooBig) {
     });
     body += '</ul>';
     body += '<h3> 2. List of the timeseries contained in the dataset</h3>';
-    var searchBar = '<div id="myTS"><input class="form-control" placeholder="Search"><br>';
+    var searchBar = '<div id="myTS"><strong>Search: </strong><input class="form-control" placeholder="Search"><br>';
     
     var theader = '<th>Series Id</th><th>Title</th><th>Last update</th>';
     var tbody = '',
@@ -208,7 +207,7 @@ exports.detailDataset = function(service,vTS,dataSet,dim,errorDatasetTooBig) {
         titleSeries ='',
         lastUpdateSeries = '',
         error = '<p hidden></p>',
-        tableDef = '<table class="table table-hover">';
+        tableDef = '<table class="table table-hover table-sm">';
     
     
     if (errorDatasetTooBig == null) {
@@ -251,7 +250,7 @@ exports.detailDataset = function(service,vTS,dataSet,dim,errorDatasetTooBig) {
     }
                  
     
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header +  css+ '</head><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header +  css+ '</head><body>' + chapeau + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap4 + sdmxCSS +  '</body></html>';
     
     return myHtml;
 };
@@ -271,7 +270,7 @@ exports.codeList = function (codes,title_dim) {
         tbody += '<td style="min-width:100px">' + item['Name'][item['Name'].length-1]['_']+'</td></tr>';
         
     });
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header  + css + '</head><body>' + '<table class="table table-hover table-condensed">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + gA + jQuery + bootstrap + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header  + css + '</head><body>' + chapeau + '<table class="table table-sm table-condensed">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + gA + jQuery + bootstrap4 + sdmxCSS + '</body></html>';
     return myHtml;
 };
 
@@ -297,7 +296,7 @@ exports.listProviders = function(providers) {
         }
         tbody += '</tr>';
     });
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + body + '<hr/><table class="table table-condensed table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + gA + jQuery + bootstrap +'</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + chapeau + body + '<hr/><table class="table table-sm table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + gA + jQuery + bootstrap4 + sdmxCSS +'</body></html>';
     return myHtml;
 };
 
@@ -363,7 +362,7 @@ exports.List = function(service,vTS,dataSet,dim) {
     });
                  
     
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header +  css+ '</head><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap4 + '</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header +  css+ '</head><body>' + body + error + searchBar  + tableDef + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + gA + jQuery + bootstrap4 + sdmxCSS + '</body></html>';
     
     return myHtml;
 };
@@ -523,3 +522,40 @@ exports.makeTableQuandl = function (arr,nameSeries,nameDataset) {
     var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + myHeader  +'<table>' + '<thead>'  + '<tr>' + theader2 +  '</tr></thead>' + '<tbody>' + tbody + '</tbody>'  +'</table>' + bootstrap4 + sdmxCSS + gA + '</body></html>';
     return myHtml;  
 };
+
+exports.OECDDimensions = function(dim,nameDataset) {
+    var header = '<title>SDMX API for EViews / '+ nameDataset +'</title>',
+        body = '<h1>Dataset ' + nameDataset  + '</h1><hr class="m-y-2">';
+    body += '<h3>Dimensions of the data </h3>',
+    body += 'Dataset has ' + dim.length + ' dimensions :',
+    body += '<ul>';
+    dim.forEach(function(it,ind) {
+        body += '<li><a href=/oecd/codelist/' + it.conceptRef + '?Dataset=' + nameDataset +'>' + it.conceptRef + '</a></li>';
+    });
+    body += '</ul>';
+    body += '<hr><div class="alert alert-primary" role="alert"><h4>Build a request</h4>';
+    body += '<p>Request for OECD data has the form: <code>/oecd/dataset_code/Dimensions_separated_by_dots</code>.<br/>Note that <ul><li>multiple dimensions can be selected by separated them by a "+".</li><li>Order of dimensions in the URL <strong>do matter</strong>.</li></ul> <br/><strong>Example</strong>: <br/><code>http://sdmx.herokuapp.com/oecd/QNA/AUS+AUT.B1_GE.VOBARSA.Q</code></p></div>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + body + bootstrap4 + sdmxCSS + gA + '</body></html>';
+    return myHtml;  
+};
+
+exports.OECDCodeList = function(codes,codeList,nameDataset) {
+    var header = '<title>SDMX API for EViews / '+ nameDataset +'</title>',
+        body = '<h4>Available values for dimension '+ codeList + ' in dataset ' + nameDataset  + '</h4><hr class="m-y-2">',
+        tbody = '',
+        theader = '<th>Code</th><th>Description</th>',
+        jsforList = "<script>var options = {valueNames: ['code', 'desc'], searchClass: 'form-control'}; var dataList = new List('myCodesList',options);</script>";
+
+    body += '<div id="myCodesList">';
+    body += '<input class="form-control" placeholder="Search"><br>';
+    
+    codes.Code.forEach(function(i) {
+        tbody += '<tr><td class="code" style="text-align:center">' + i.value +'</td>';
+        tbody += '<td class="desc" style="text-align:center">' + i.Description[0]['_']  +'</td></tr>';
+    });
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + body +'<table class="table table-hover table-sm">' + '<thead>'  + '<tr>' + theader +  '</tr></thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + jQuery +  bootstrap4 + sdmxCSS + gA + '</body></html>';
+    return myHtml;  
+
+};
+
+    

@@ -45,6 +45,13 @@ app.use(timeout(29900,{"respond":true}));
 
 // SDMX PROVIDER
 // -----------------------
+// OECD
+app.get('/oecd/dataflow/:dataset',oecd.getDataflow);
+app.get('/oecd/codelist/:codelist',oecd.getCodeList);
+app.get('/oecd/:dataset/:series',oecd.getSeries);
+app.get('/oecd/dataflow',oecd.getAllDataFlow);
+
+
 // Timeseries from supported providers
 app.get('/:provider/dataflow', fetcher.getAllDataFlow);
 app.get('/:provider/dataflow/:dataset', fetcher.getDataFlow);
@@ -68,8 +75,7 @@ app.get('/bls/:apiKey/:series',bls.getSeries);
 app.get('/fred/:apiKey/:series',fred.getSeries);
 // Bundesbank
 app.get('/buba/:series',buba.getSeries);
-// OECD
-app.get('/oecd/:dataset/:series',oecd.getSeries);
+
 
 // Calendar
 // --------
