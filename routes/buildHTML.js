@@ -190,7 +190,7 @@ exports.detailDataset = function(service,vTS,dataSet,dim,errorDatasetTooBig) {
     var button = '<a href="http://sdmx.herokuapp.com/'+ service + '/dataset/' + dataSet +'" class="btn btn-primary" role="button">Download</a>';
 
     body += '<h3> 1. Dimensions of the data </h3>';
-    body += 'Dataset has ' + dim.nbDim + ' dimensions :';
+    body += 'Dataset has ' + dim.nbDim + ' dimensions (click on a dimension to see its available values):';
     body += '<ul>';
     dim.data.forEach(function(it,ind) {
         var code = it['LocalRepresentation'][0]['Enumeration'][0]['Ref'][0]['id'][0],
@@ -308,7 +308,7 @@ exports.List = function(service,vTS,dataSet,dim) {
     
     var body = '<h1>Dataset ' + dataSet  + '</h1><hr class="m-y-2">';
     body += '<h3> 1. Dimensions of the data </h3>';
-    body += 'Dataset has ' + dim.nbDim + ' dimensions :';
+    body += 'Dataset has ' + dim.nbDim + ' dimensions (click on a dimension to see its available values):';
     body += '<ul>';
     dim.data.forEach(function(it,ind) {
         var code = it['LocalRepresentation'][0]['Enumeration'][0]['Ref'][0]['id'][0],
@@ -527,7 +527,7 @@ exports.OECDDimensions = function(dim,nameDataset) {
     var header = '<title>SDMX API for EViews / '+ nameDataset +'</title>',
         body = '<h1>Dataset ' + nameDataset  + '</h1><hr class="m-y-2">';
     body += '<h3>Dimensions of the data </h3>',
-    body += 'Dataset has ' + dim.length + ' dimensions :',
+    body += 'Dataset has ' + dim.length + ' dimensions (click on a dimension to see its available values):',
     body += '<ul>';
     dim.forEach(function(it,ind) {
         body += '<li><a href=/oecd/codelist/' + it.conceptRef + '?Dataset=' + nameDataset +'>' + it.conceptRef + '</a></li>';
