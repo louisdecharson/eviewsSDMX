@@ -38,7 +38,7 @@ exports.getSeries = function(req,res) {
             params += "&";
         }
     });
-    var myURL = urlOECD + 'GetData' + dataset + '/' + series + params,
+    var myURL = urlOECD + 'GetData/' + dataset + '/' + series + params,
         options = {
             url: myURL,
             method: 'GET',
