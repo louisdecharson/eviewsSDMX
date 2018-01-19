@@ -18,8 +18,7 @@ var request = require('request'),
     debug = require('debug')('oecd'),
     buildHTML = require('./buildHTML');
 
-const urlOECD = 'http://stats.oecd.org/restsdmx/sdmx.ashx/GetData/'; 
-
+const urlOECD = 'http://stats.oecd.org/restsdmx/sdmx.ashx/';
 
 function stripPrefix(str){
     var prefixMatch;
@@ -39,7 +38,7 @@ exports.getSeries = function(req,res) {
             params += "&";
         }
     });
-    var myURL = urlOECD + dataset + '/' + series + params,
+    var myURL = urlOECD + 'GetData' + dataset + '/' + series + params,
         options = {
             url: myURL,
             method: 'GET',
@@ -74,3 +73,123 @@ exports.getSeries = function(req,res) {
         }
     }); 
 };
+
+exports.getAllDataFlow = function(req,res) {
+    var myURL = urlOECD + 'GetDataStructure/all?format=SDMX-ML',
+        options = {
+            url: myURL,
+            method: 'GET',
+            headers: {
+                'connection': 'keep-alive'
+            }
+        };
+    debug('getAllDataflow OECD with path=%s',options.url);
+    request(options,function(e,r,b){
+        if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                if(err === null) {
+                    var data = [];
+                    try {
+                        obj.Structure.KeyFamilies[0].KeyFamily.forEach(function(it,ind) {
+                            data.push([it.id,it.id,it.agencyID,it.Name[0]['_'],'oecd']);
+                        });
+                        if (!req.timedout) {
+                            res.send(buildHTML.dataFlow(data,'oecd'));
+                        }}
+                    catch(error) {
+                        debug(error);
+                        var errorMessage = "Error parsing SDMX at: " + options.url;
+                        res.status(500).send(errorMessage);
+                    }
+                } else {
+                    res.send(err);
+                }
+            });
+        } else {
+            res.status(r.statusCode).send(r.statusMessage);
+            debug(e);
+        }
+    }); 
+};
+
+exports.getDataflow = function(req,res) {
+    var dataset = req.params.dataset,
+        myURL = urlOECD + 'GetDataStructure/'+ dataset,
+        options = {
+            url: myURL,
+            method: 'GET',
+            headers: {
+                'connection': 'keep-alive'
+            }
+        };
+    debug('getDataflow OECD with path=%s',options.url);
+    request(options,function(e,r,b){
+        if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                if(err === null) {
+                    try {
+                        // get Dimensions
+                        var dim = obj.Structure.KeyFamilies[0].KeyFamily[0].Components[0].Dimension;
+                        if (!req.timedout) {
+                            res.send(buildHTML.OECDDimensions(dim,dataset));
+                        }}
+                    catch(error) {
+                        debug(error);
+                        var errorMessage = "Error parsing SDMX at: " + options.url;
+                        res.status(500).send(errorMessage);
+                    }
+                } else {
+                    res.send(err);
+                }
+            });
+        } else {
+            res.status(r.statusCode).send(r.statusMessage);
+            debug(e);
+        }
+    }); 
+};
+
+exports.getCodeList = function(req,res) {
+    var codeList = req.params.codelist,
+        dataset = req.query.Dataset,
+        fullCodeList = "CL_" + dataset + "_" + codeList,
+        myURL = urlOECD + 'GetDataStructure/'+ dataset + '/all?format=SDMX-ML',
+        options = {
+            url: myURL,
+            method: 'GET',
+            headers: {
+                'connection': 'keep-alive'
+            }
+        };
+    debug('getCodeList OECD with path=%s,codelist=%s for dataset=%s',options.url,codeList,dataset);
+    request(options,function(e,r,b){
+        if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                if(err === null) {
+                    try {
+                        // get Dimensions
+                        //var codelists = obj.Structure.CodeList;
+                        obj.Structure.CodeLists[0].CodeList.forEach(function(it,ind){                       
+                            if (it.id[0] === fullCodeList) {
+                                if (!req.timedout) {
+                                    res.send(buildHTML.OECDCodeList(it,codeList,dataset));
+                                }
+                            }
+                        });
+                    }
+                    catch(error) {
+                        debug(error);
+                        var errorMessage = "Error parsing SDMX at: " + options.url;
+                        res.status(500).send(errorMessage);
+                    }
+                } else {
+                    res.send(err);
+                }
+            });
+        } else {
+            res.status(r.statusCode).send(r.statusMessage);
+            debug(e);
+        }
+    }); 
+};
+
