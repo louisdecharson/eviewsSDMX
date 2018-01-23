@@ -25,7 +25,8 @@ var fetcher = require('./routes/fetcher'),
     bls = require('./routes/bls'),
     fred = require('./routes/fred'),
     buba = require('./routes/buba'),
-    oecd = require('./routes/oecd');
+    oecd = require('./routes/oecd'),
+    explore = require('./routes/explore');
 
 
 var app = express();
@@ -59,7 +60,6 @@ app.get('/:provider/dataset/:dataset',fetcher.getDataSet);
 app.get('/:provider/series/:series',fetcher.getSeries);
 app.get('/:provider/list/:dataset',fetcher.getList);
 app.get('/:provider/codelist/:codelist',fetcher.getCodeList);
-app.get('/providers',fetcher.getProviders);
 
 // Timeseries from sdmx url
 app.get('/req',fetcher.getDatafromURL);
@@ -76,6 +76,8 @@ app.get('/fred/:apiKey/:series',fred.getSeries);
 // Bundesbank
 app.get('/buba/:series',buba.getSeries);
 
+// Other functions
+app.get('/providers',explore.getProviders);
 
 // Calendar
 // --------

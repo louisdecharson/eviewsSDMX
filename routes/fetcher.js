@@ -746,9 +746,9 @@ exports.redirectURL = function(req,res) {
     res.redirect(route);
 };
 
-exports.getProviders = function(req,res) {
-    res.send(buildHTML.listProviders(providers));
-};
+// exports.getProviders = function(req,res) {
+//     res.send(buildHTML.listProviders(providers));
+// };
 
 
 exports.getList = function(req,res) {    

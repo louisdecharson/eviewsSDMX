@@ -8,3 +8,62 @@ td {
     padding-left: 10px;
     padding-right: 10px;
 }
+span.badge {
+    margin-left: 5px;
+}
+
+ul.providers {
+  list-style: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+li.provider:before {
+    content: "+";
+    padding-right: 20px;
+}
+li.provider {
+    margin-bottom: 10px;
+}
+
+.listProviders {
+    margin-top: 2%;
+    margin-left: 20%;
+    margin-right: 20%;
+}
+
+.badge-home {
+    background-color:#12896d;
+
+}
+.badge-home a {
+    color:white;
+    text-decoration: none;
+}
+
+h4 {
+    font-size: 20px;
+}
+
+.provider {
+    margin-bottom: 3%;
+}
+
+.providercolor {
+    color: #e57e22;
+}
+
+.resource {
+    color: #2ecb71;
+}
+
+.resource_id {
+    color: #9a59b5;
+}
+.url {
+    color: black;
+}
+
+.content {
+    margin-top: 1%;
+    margin-left: 3%;
+}

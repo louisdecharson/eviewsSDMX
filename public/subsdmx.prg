@@ -12,7 +12,7 @@
 ' You should have received a copy of the GNU General Public License
 ' along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-%__providers = "ecb insee eurostat buba norges weurostat oecd"
+%__providers = "ecb insee eurostat buba norges weurostat"
 
 subroutine sdmx(string %provider, string %series, string %filters, string %rename)
 

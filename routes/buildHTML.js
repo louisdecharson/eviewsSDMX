@@ -274,31 +274,31 @@ exports.codeList = function (codes,title_dim) {
     return myHtml;
 };
 
-exports.listProviders = function(providers) {
-    var header = '<title> SDMX API for EViews / supported providers</title>',
-        css = '<style display:none>body {padding-left: 5%; padding-right: 5%; } </style>',
-        body = '<h2>Supported Providers</h2>',
-        theader = '<th>Id</th><th>Website</th><th style="text-align:center">SDMX</th><th style="text-align:center">API Key</th>',
-        tbody = '';
-    Object.keys(providers).forEach(function(item,index){
-        tbody += '<tr>';
-        tbody += '<td>' + item + '</td>';
-        tbody += '<td><a href="http://' + providers[item].host + '/">' + providers[item].host + '</a></td>';
-        if (providers[item].SDMX === 'True') {
-            tbody += '<td style="text-align:center">&#10004;</td>' ;
-        } else {
-            tbody += '<td style="text-align:center">&#10006;</td>';
-        }
-        if (providers[item].apiKey === 'True'){
-            tbody += '<td style="text-align:center">&#10004;</td>';
-        } else {
-            tbody += '<td style="text-align:center">&#10006;</td>';
-        }
-        tbody += '</tr>';
-    });
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + chapeau + body + '<hr/><table class="table table-sm table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + gA + jQuery + bootstrap4 + sdmxCSS +'</body></html>';
-    return myHtml;
-};
+// exports.listProviders = function(providers) {
+//     var header = '<title> SDMX API for EViews / supported providers</title>',
+//         css = '<style display:none>body {padding-left: 5%; padding-right: 5%; } </style>',
+//         body = '<h2>Supported Providers</h2>',
+//         theader = '<th>Id</th><th>Website</th><th style="text-align:center">SDMX</th><th style="text-align:center">API Key</th>',
+//         tbody = '';
+//     Object.keys(providers).forEach(function(item,index){
+//         tbody += '<tr>';
+//         tbody += '<td>' + item + '</td>';
+//         tbody += '<td><a href="http://' + providers[item].host + '/">' + providers[item].host + '</a></td>';
+//         if (providers[item].SDMX === 'True') {
+//             tbody += '<td style="text-align:center">&#10004;</td>' ;
+//         } else {
+//             tbody += '<td style="text-align:center">&#10006;</td>';
+//         }
+//         if (providers[item].apiKey === 'True'){
+//             tbody += '<td style="text-align:center">&#10004;</td>';
+//         } else {
+//             tbody += '<td style="text-align:center">&#10006;</td>';
+//         }
+//         tbody += '</tr>';
+//     });
+//     var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + chapeau + body + '<hr/><table class="table table-sm table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + gA + jQuery + bootstrap4 + sdmxCSS +'</body></html>';
+//     return myHtml;
+// };
 
 
 exports.List = function(service,vTS,dataSet,dim) {

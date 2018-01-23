@@ -6,7 +6,9 @@
         "agencyID": "FR1",
         "SDMX": "True",
         "apiKey": "False",
-        "format":""
+        "format":"",
+        "native": "True",
+        "resources": ["dataflow","dataset","series","list","codelist"]
     },
     "EUROSTAT": {
         "protocol":"http",
@@ -15,7 +17,9 @@
         "agencyID": "ESTAT",
         "SDMX": "True",
         "apiKey": "False",
-        "format":""
+        "format":"",
+        "native": "True",
+        "ressources": ["dataflow","dataset","series","list","codelist"]
     },
     "ECB": {
         "protocol":"http",
@@ -24,85 +28,9 @@
         "agencyID": "ECB",
         "SDMX": "True",
         "apiKey": "False",
-        "format":""
-    },
-    "WITS": {
-        "protocol":"http",
-        "host": "wits.worldbank.org",
-        "path": "/API/V1/SDMX/V21/rest/",
-        "agencyID": "WBG_WITS",
-        "SDMX": "True",
-        "apiKey": "False",
-        "format":"format=compact_2_1",
-        "nodata": "True"
-    },
-    "ILO": {
-        "protocol":"http",
-        "host": "www.ilo.org",
-        "path": "/ilostat/sdmx/ws/rest/",
-        "agencyID": "ILO",
-        "SDMX": "True",
-        "apiKey": "False",
-        "format":"format=compact_2_1",
-        "nodata": "True"
-    },
-    "Quandl": {
-        "protocol":"https",
-        "host": "www.quandl.com",
-        "path": "",
-        "SDMX": "False",
-        "apiKey": "True"
-    },
-    "Fred": {
-        "protocol":"https",
-        "host": "api.stlouisfed.org",
-        "path": "",
-        "SDMX":"False",
-        "apiKey": "True"
-    },
-    "BLS": {
-        "protocol":"https",
-        "host": "api.bls.gov",
-        "path": "",
-        "SDMX":"False",
-        "apiKey": "True"
-    },
-    "WEUROSTAT": {
-        "protocol":"http",
-        "host":"api.db.nomics.world",
-        "path": "/api/v1/sdmx/",
-        "agencyID": "EUROSTAT",
-        "SDMX":"True",
-        "apiKey": "False",
-        "format":"format=compact_2_1",
-        "nodata":"True"
-    },
-    "buba": {
-        "protocol":"https",
-        "host": "www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html",
-        "path": "",
-        "SDMX":"False",
-        "apiKey": "False"
-    },
-    "NORGES": {
-        "protocol":"https",
-        "host":"data.norges-bank.no",
-        "path":"/api/",
-        "agencyID":"all",
-        "SDMX":"True",
-        "apiKey":"False",
-        "format":"format=compact_2_1",
-        "nodata": "True"
-    },
-    "ISTAT": {
-        "protocol":"http",
-        "host":"sdmx.istat.it",
-        "path":"/SDMXWS/rest/",
-        "agencyID":"all",
-        "SDMX": "True",
-        "apiKey": "False",
         "format":"",
-        "nodata": "False"
+        "native": "True",
+        "resources": ["dataflow","dataset","series","list","codelist"]
     },
     "OECD": {
         "protocol":"https",
@@ -112,6 +40,104 @@
         "SDMX": "True",
         "apiKey": "False",
         "format":"",
-        "nodata": ""
+        "nodata": "",
+        "native": "True",
+        "resources": ["dataflow","dataset","series","list","codelist"]
+    },
+    "WITS": {
+        "protocol":"http",
+        "host": "wits.worldbank.org",
+        "path": "/API/V1/SDMX/V21/rest/",
+        "agencyID": "WBG_WITS",
+        "SDMX": "True",
+        "apiKey": "False",
+        "format":"format=compact_2_1",
+        "nodata": "True",
+        "native": "True",
+        "resources": ["dataflow","dataset","series","list","codelist"]
+    },
+    "ILO": {
+        "protocol":"http",
+        "host": "www.ilo.org",
+        "path": "/ilostat/sdmx/ws/rest/",
+        "agencyID": "ILO",
+        "SDMX": "True",
+        "apiKey": "False",
+        "format":"format=compact_2_1",
+        "nodata": "True",
+        "native": "True",
+        "resources": ["dataflow","dataset","series","list","codelist"]
+    },
+    "NORGES": {
+        "protocol":"https",
+        "host":"data.norges-bank.no",
+        "path":"/api/",
+        "agencyID":"all",
+        "SDMX":"True",
+        "apiKey":"False",
+        "format":"format=compact_2_1",
+        "nodata": "True",
+        "native": "True",
+        "resources": ["dataflow","dataset","series","list","codelist"]
+    },
+    "ISTAT": {
+        "protocol":"http",
+        "host":"sdmx.istat.it",
+        "path":"/SDMXWS/rest/",
+        "agencyID":"all",
+        "SDMX": "True",
+        "apiKey": "False",
+        "format":"",
+        "nodata": "False",
+        "native": "True",
+        "resources": ["dataflow","dataset","series","list","codelist"]
+    },
+    "WEUROSTAT": {
+        "protocol":"http",
+        "host":"api.db.nomics.world",
+        "path": "/api/v1/sdmx/",
+        "agencyID": "EUROSTAT",
+        "SDMX":"True",
+        "apiKey": "False",
+        "format":"format=compact_2_1",
+        "nodata":"True",
+        "native": "True",
+        "resources": ["dataflow","dataset","series","list","codelist"]
+    },
+    "Quandl": {
+        "protocol":"https",
+        "host": "www.quandl.com",
+        "path": "",
+        "SDMX": "False",
+        "apiKey": "True",
+        "native": "False",
+        "resources": [""]
+    },
+    "Fred": {
+        "protocol":"https",
+        "host": "api.stlouisfed.org",
+        "path": "",
+        "SDMX":"False",
+        "apiKey": "True",
+        "native": "False",
+        "resources": [""]
+    },
+    "BLS": {
+        "protocol":"https",
+        "host": "api.bls.gov",
+        "path": "",
+        "SDMX":"False",
+        "apiKey": "True",
+        "native": "False",
+        "resources": [""]
+    },
+    "buba": {
+        "protocol":"https",
+        "host": "www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html",
+        "path": "",
+        "SDMX":"True",
+        "apiKey": "False",
+        "native": "False",
+        "resources": ["series"]
     }
 }
