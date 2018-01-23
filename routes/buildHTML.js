@@ -59,7 +59,7 @@ exports.dataFlow = function(data,service) {
         css = '<style display:none>body {padding-left: 10px; padding-right: 10px; } </style>';
     var jsforList = "<script>var options = {valueNames: ['name', 'desc'], searchClass: 'form-control'}; var dataList = new List('myDataflows',options);</script>";
    
-    var body = '<h2>List of all the datasets of '+ service.toUpperCase() + '</h2><hr class="m-y-2">',
+    var body = '<h2>List of all the datasets of '+ service.toUpperCase() + '</h2>',
         theader = '<th>Id</th><th>Description</th>',
         tbody = '';
 
@@ -262,7 +262,7 @@ exports.codeList = function (codes,title_dim) {
     var body ='',
         table = '',
         theader = '<th>Id</th><th>Description</th>',
-        tbody = '<h2>List of codes potentially available for the dimension ' + sliceCL(title_dim)  + '</h2><hr class="m-y-2">';
+        tbody = '<h2>List of codes potentially available for the dimension ' + sliceCL(title_dim)  + '</h2><br/>';
 
 
     codes.forEach(function(item,index) {
