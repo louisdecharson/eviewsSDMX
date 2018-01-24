@@ -22,21 +22,24 @@ const providers = require('./providers.json');
 
 
 exports.getProviders = function(req,res) {
-    var body = '<body><span class="badge badge-pill badge-primary badge-home"><a href="/">Back</a></span><div class="listProviders"><h1 style="text-align:center;">Providers</h1><ul class="providers">';
+    var body = '<body><span class="badge badge-pill badge-primary badge-home"><a href="/">Back</a></span><div class="listProviders"><h1 style="text-align:center;">Providers</h1><h3>List of supported providers</h3><hr/><ul class="providers">';
     Object.keys(providers).forEach(function(provider,index) {
         var title = '<li class="provider" data-toggle="collapse" data-target="#'+ provider + '">' + providers[provider].name,
-            content = '<div class="collapse content" id="'+ provider + '"><p class="key">Provider key:<span class="badge badge-dark">'+ provider +'</span></p>';
+            content = '<div class="collapse content" id="'+ provider + '">';
+        content += '<h4>' + providers[provider].name + '</h4>';
+        content += '<p class="key">Provider key:<span class="badge badge-pill badge-dark">'+ provider.toLowerCase() +'</span></p>';
+        
         if (providers[provider].native === "True") {
             title += '<span class="badge badge-pill badge-primary">native</span>';
-            content += '<h4>List datasets</h4><p>The list of available datasets is available at <a href="/' + provider + '/dataflow">/'+ provider.toLowerCase() + '/dataflow</a></p>';
-            content += '<h4>Get data</h4><div>';
+            content += '<h5>List datasets</h5><p>The list of available datasets is available at <a href="/' + provider + '/dataflow">/'+ provider.toLowerCase() + '/dataflow</a></p>';
+            content += '<h5>Get data</h5><div>';
             content += '<p>Url to retrieve data is:<br/><strong><center><code><span class="url">http://sdmx.herokuapp.com/</span><span class="providercolor">'+ provider.toLowerCase()  +'</span>/<span class="resource">resource</span>/<span class="resource_id">resource_id</span></code></center></strong><br/>';
             content += '<strong class="resource">resource</strong><ul style="margin-bottom: 5px;"><li><code>dataset</code>: for retreiving a dataset.</li><li><code>series</code>: for retreiving a timeseries.</li></ul>';
             content += '<strong class="resource_id">resource_id</strong> is the <strong>id</strong> of either the dataset or the timeseries.';
         } else if (provider === "OECD") {
             title += '<span class="badge badge-pill badge-secondary">non-native</span>';
-            content += '<h4>List datasets</h4><p>The list of available datasets is available at <a href="/' + provider + '/dataflow">/'+ provider.toLowerCase() + '/dataflow</a></p>';
-            content += '<h4>Get data</h4><div>';
+            content += '<h5>List datasets</h5><p>The list of available datasets is available at <a href="/' + provider + '/dataflow">/'+ provider.toLowerCase() + '/dataflow</a></p>';
+            content += '<h5>Get data</h5><div>';
             content += '<p>Url to retrieve data is:<br/><strong><center><code><span class="url">http://sdmx.herokuapp.com/</span><span class="providercolor">'+ provider.toLowerCase()  +'</span>/<span class="resource">dataset_id</span>/<span class="resource_id">resource_id</span></code></center></strong><br/>';
             content += '<strong class="resource_id">resource_id</strong> is the <strong>id</strong> of either the dataset or the timeseries.';
         } else  {
@@ -44,8 +47,8 @@ exports.getProviders = function(req,res) {
             if (providers[provider].apiKey === "True") {
                 content += '<p><span style="color:#da3749; font-weight: bold;">&#9888; An API key is required to access the data.</span><p/>';
             }
-            content += '<h4>List datasets</h4><p>Available data is listed on the providers website.</p>';
-            content += '<h4>Get data</h4><div>';
+            content += '<h5>List datasets</h5><p>Available data is listed on the providers website.</p>';
+            content += '<h5>Get data</h5><div>';
             content += '<p>Url to retrieve data is: <center><strong><code><span class="url">http://sdmx.herokuapp.com/</span><span class="providercolor">'+ provider.toLowerCase()  +'</span>/';
             if (providers[provider].apiKey === "True") {
                 content += '<span class="resource">api_key</span>/';
@@ -55,7 +58,7 @@ exports.getProviders = function(req,res) {
         }
         if (providers[provider].apiKey === "True") {
             title += '<span class="badge badge-pill badge-danger">apiKey</span>';
-            content += '<strong class="resource">api_key</strong>: your API key. Find one on the provider <a href="'+ providers[provider].host + '">website</a>';
+            content += '<strong class="resource">api_key</strong>: your API key. Find one on the provider <a href="'+ providers[provider].protocol + "://" + providers[provider].host + '">website</a>';
         }
         body += title + content + '</div>';
     });

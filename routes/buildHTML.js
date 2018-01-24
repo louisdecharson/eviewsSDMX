@@ -55,8 +55,7 @@ function findTitle(json,str,callback) {
 
 
 exports.dataFlow = function(data,service) {
-    var header = '<title>SDMX API for EViews / DATAFLOWS </title>',
-        css = '<style display:none>body {padding-left: 10px; padding-right: 10px; } </style>';
+    var header = '<title>SDMX API for EViews / DATAFLOWS </title>';
     var jsforList = "<script>var options = {valueNames: ['name', 'desc'], searchClass: 'form-control'}; var dataList = new List('myDataflows',options);</script>";
    
     var body = '<h2>List of all the datasets of '+ service.toUpperCase() + '</h2>',
@@ -72,7 +71,7 @@ exports.dataFlow = function(data,service) {
         tbody += '<td class="desc">'+ item[3] + '</td>';
         tbody += '</tr>';
     });
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + chapeau + body + '<table class="table table-sm table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS  + jsforList + gA + jQuery + bootstrap4 +'</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header +  '</head><body>' + chapeau + body + '<table class="table table-sm table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS  + jsforList + gA + jQuery + bootstrap4 + sdmxCSS +'</body></html>';
     return myHtml;
 };
 
@@ -550,8 +549,8 @@ exports.OECDCodeList = function(codes,codeList,nameDataset) {
     body += '<input class="form-control" placeholder="Search"><br>';
     
     codes.Code.forEach(function(i) {
-        tbody += '<tr><td class="code" style="text-align:center">' + i.value +'</td>';
-        tbody += '<td class="desc" style="text-align:center">' + i.Description[0]['_']  +'</td></tr>';
+        tbody += '<tr><td class="code">' + i.value +'</td>';
+        tbody += '<td class="desc">' + i.Description[0]['_']  +'</td></tr>';
     });
     var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + body +'<table class="table table-hover table-sm">' + '<thead>'  + '<tr>' + theader +  '</tr></thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + jQuery +  bootstrap4 + sdmxCSS + gA + '</body></html>';
     return myHtml;  
