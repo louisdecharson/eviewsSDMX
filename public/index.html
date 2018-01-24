@@ -1,392 +1,426 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
-  <head>
-    <title>SDMX in EViews</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"></meta>
-    <!-- CSS /-->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/css/bootstrap.min.css" integrity="sha384-2hfp1SzUoho7/TsGGGDaFdsuuDL0LX2hnUp6VkX3CUQ2K4K+xjboZdsXyp4oUHZj" crossorigin="anonymous"></link>
-    <link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
+    <head>
+        <title>SDMX in EViews</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"></meta>
+        <!-- CSS /-->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/css/bootstrap.min.css" integrity="sha384-2hfp1SzUoho7/TsGGGDaFdsuuDL0LX2hnUp6VkX3CUQ2K4K+xjboZdsXyp4oUHZj" crossorigin="anonymous"></link> -->
+        <link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
 
-    <style>
+        <style>
+         
+         body {
+             margin-top: 2%;
+             margin-right: 5%;
+             margin-left: 5%
+         }
 
-      body {
-      margin-top: 2%;
-      margin-right: 5%;
-      margin-left: 5%
-      }
+         h2, h3, h6 {
+             font-weight: bold ;
+         }
 
-      h2, h3, h6 {
-      font-weight: bold ;
-      }
+         h3 {
+             margin-bottom: 20px;
+         }
 
-      h3 {
-      margin-bottom: 20px;
-      }
+         h5 {
+             font-style: oblique;
+             margin-bottom: 15px;
+             text-decoration: underline;
+         }
+         
+         .jumbotron {
+             background-color: white;
+             padding-bottom: 0px;
+         }
 
-      h5 {
-      font-style: oblique;
-      margin-bottom: 15px;
-      text-decoration: underline;
-      }
-      
-      .jumbotron {
-      background-color: white;
-      padding-bottom: 0px;
-      }
+         .keyw {
+             color: #85981C;
+             color: #0000ff;
+         }
+         .string {
+             color: #2E8CCF;
+             color: #000;
+         }
+         .comment {
+             color: #93A1A1
+             color: #00963a
+         }
+         .str {
+             color: #32A198;
+             color: #dc0000;
+         }
 
-      .keyw {
-      color: #85981C;
-      }
-      .string {
-      color: #2E8CCF;
-      }
-      .comment {
-      color: #93A1A1;
-      }
-      .str {
-      color: #32A198;
-      }
+         pre {
+             background-color: #FDF6E4;
+             background-color: #f5f5ff;
+             background-color: white;
+             border: solid 1px rgba(0,0,0,0.1);
+             border-radius: 25px;
+         }
 
-      pre {
-      background-color: #FDF6E4;
-      }
+         .menu {
+             padding-top:20px;
+         }
 
-      .menu {
-      padding-top:20px;
-      }
+         .menu a {
+             color: black;
+         }
 
-      .menu a {
-      color: black;
-      }
+         .navbar {
+             padding-left: 0;
+             padding-right: 0;
+         }
+         
+         .sub-nav {
+             padding-left:5px;
+             font-size:11px;
+         }
 
-      .navbar-fixed-left {
-      position: fixed;
-      }
+         .border {
+             border: 0;
+             border-top: 1px solid rgba(0,0,0,0.1);
+             width: 95%;
+             margin-top: 0.5rem;
+             margin-bottom: 0.5rem;
+             padding: 0px;
+             
+         }
+         .navbar li {
+             width: 100%;
+         }
+         .navbar-toggler {
+             background-color: white;
+             color: rgba(0, 0, 0, 0.901961);
+         }
+         .provider {
+             color: #e57e22;
+         }
 
-      .sub-nav {
-      padding-left:5px;
-      font-size:11px;
-      }
-      
-      .provider {
-      color: #e57e22;
-      }
+         .resource {
+             color: #2ecb71;
+         }
 
-      .resource {
-      color: #2ecb71;
-      }
+         .resource_id {
+             color: #9a59b5;
+         }
 
-      .resource_id {
-      color: #9a59b5;
-      }
+         .subpart{
+             padding-left: 20px;
+         }
 
-      .subpart{
-      padding-left: 20px;
-      }
+         .concept {
+             padding: 8px;
+             background-color: #ebeff0;
+         }
 
-      .concept {
-      padding: 8px;
-      background-color:#ebeff0;
-      }
+         .footer {
+             color: #7f8b8c;
+         }
 
-      .footer {
-      color: #7f8b8c;
-      }
+         .logo {
+             margin-top: 64px;
+             width: 95%;
+             ratio: 1;
+             max-width: 200px;
+             
+         }
+         .gitlogo {
+             opacity: 0.7;
+             mix-blend-mode: multiply;
+         }
+         img.gitlogo:hover {
+             opacity:1;
+         }
+         .b_w {
+             -webkit-filter: grayscale(100%); /* Chrome, Safari, Opera */
+             filter: grayscale(100%);
+             opacity: 0.7;
+         }
+         i.b_w:hover{
+             filter:grayscale(50%);
+             opacity:1;
+         }
+         
+        </style>
+        
+    </head>
 
-      .logo {
-      margin-top: 64px;
-      width: 95%;
-      ratio: 1;
-      
-      }
-      .gitlogo {
-      opacity: 0.7;
-      mix-blend-mode: multiply;
-      }
-      img.gitlogo:hover {
-      opacity:1;
-      }
-      .b_w {
-      -webkit-filter: grayscale(100%); /* Chrome, Safari, Opera */
-      filter: grayscale(100%);
-      opacity: 0.7;
-      }
-      i.b_w:hover{
-      filter:grayscale(50%);
-      opacity:1;
-      }
-      
-    </style>
-      
-  </head>
+    <body>
+        <div class="container-fluid">
+            <div class="row">
 
-  <body>
-<div class="container-fluid">
-  <div class="row">
+                <!-- MENU -->
+                
+                <div class="col-md-2">
+                    <a href="/"><img class="logo" src="sdmx_eviews.png"></a><br />
+                    <div class="menu">
+                        <div class="navbar fixed-left navbar-expand-lg">
+                            <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navTogglerTarget" aria-controls="navTogglerTarget" aria-expanded="false" aria-label="Toggle navigation">
+                                <span class="navbar-toggler-icon"></span>
+                            </button>
+                            <div class="collapse navbar-collapse flex-column" id="navTogglerTarget">
+                                <h6><a class="navbar-brand" href="#">SDMX + EViews</a></h6>
+                                <ul class="nav">
+                                    <li class="nav-item"><a href="#concept">1. The concept</a></li>
+                                    <li class="nav-item"><a href="#geturl">2. Get the url</a></li>
+                                    <li class="nav-item sub-nav"><a href="#url">a. The url</a></li>
+                                    <li class="nav-item sub-nav"><a href="#idres">b. Get the id of the resource</a></li>
+                                    <li class="nav-item"><a href="#filters">3. Filters</a></li>
+                                    <li class="nav-item sub-nav"><a href="#limit">a. Limit nb of obs</a></li>
+                                    <li class="nav-item sub-nav"><a href="#cut">b. Cut a dataset</a></li>
+                                    <li class="nav-item"><a href="#others">4. Non-native providers</a></li>
+                                    <div class="border"></div>
+                                    <li class="nav-item">
+                                        <a href="./sub.html">EViews subroutine</a>
+                                    </li>
+                                    <div class="border"></div>
+                                    <li class="nav-item">
+                                        <a href="./form.html">SDMX Request</a>
+                                    </li>
+                                    <div class="border"></div>
+                                    <li class="nav-item">
+                                        <a href="./providers" style="color:#dc0000; #">List of providers</a>
+                                    </li>
+                                    <div class="border"></div>
+                                    <li class="nav-item"><a href="#credits">Credits</a></li>
+                                    <br/>
+                                    <li class="nav-item">
+                                        <a href="http://github.com/louisdecharson/eviewsSDMX"><img src="https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTMVofxkPmsP8yt6HGgzL5k7YLN-lDQcScKrk1MsMEHeP3Lyqkq" style="width:25px;height:25px;" class="gitlogo" hspace="-20" title="see on Github"></a>
+                                        <a href="https://hub.docker.com/r/louisdecharson/eviewssdmx/" title="see on Docker"><i class="em em-whale b_w"></i></a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
 
-    <!-- MENU -->
-   
-    <div class="col-md-2">
-        <a href="/"><img class="logo" src="sdmx_eviews.png"></a><br />
-        <div class="menu">
-            <div class="navbar-fixed-left">
-                <h6><a href="#">SDMX + EViews</a></h6>
-                <ul class="nav">
-                    <li class="nav-item"><a href="#concept">1. The concept</a></li>
-                    <li class="nav-item"><a href="#geturl">2. Get the url</a></li>
-                    <li class="nav-item sub-nav"><a href="#url">a. The url</a></li>
-                    <li class="nav-item sub-nav"><a href="#idres">b. Get the id of the resource</a></li>
-                    <li class="nav-item"><a href="#filters">3. Filters</a></li>
-                    <li class="nav-item sub-nav"><a href="#limit">a. Limit nb of obs</a></li>
-                    <li class="nav-item sub-nav"><a href="#cut">b. Cut a dataset</a></li>
-                    <li class="nav-item"><a href="#others">4. Non-native providers</a></li>
-                    <hr>
-                    <li class="nav-item">
-                        <a href="./sub.html">EViews subroutine</a>
-                    </li>
-                    <hr>
-                    <li class="nav-item">
-                        <a href="./form.html">SDMX Request</a>
-                    </li>
-                    <hr>
-                    <li class="nav-item">
-                        <a href="./providers">List of providers</a>
-                    </li>
-                    <hr>
-                    <li class="nav-item"><a href="#credits">Credits</a></li>
-                    <br />
-                    <li class="nav-item"><a href="http://github.com/louisdecharson/eviewsSDMX"><img src="https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTMVofxkPmsP8yt6HGgzL5k7YLN-lDQcScKrk1MsMEHeP3Lyqkq" style="width:25px;height:25px;" class="gitlogo" hspace="-20" title="see on Github"></a> <a href="https://hub.docker.com/r/louisdecharson/eviewssdmx/" title="see on Docker"><i class="em em-whale b_w"></i></a></li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    
+                <!-- CONTENT -->
+                <div class="col-md-10">
+                    
+                    <!-- JUMBOTRON -->
+                    <div class="jumbotron">
+                        <h1 class="display-3">SDMX in EViews</h1>
+                        <hr></hr>
+                        <p>SDMX in EViews is a webapp that allows you to retrieve datasets or series in EViews from different SDMX providers.</p>
+                        <p>Currently, the app is supporting <strong>Insee</strong>, <strong>ECB</strong>, <strong>Eurostat</strong>, <strong>Worldbank</strong> and <strong>Norges Bank</strong> data natively.</p><p> Requests to <strong>Quandl</strong>, <strong>BLS</strong>, <strong>FRED</strong>, <strong>OECD</strong> and <strong>Deutsche Bundesbank</strong> are also supported.</p>
+                        <p><strong>The complete list of supported providers is available <a href="./providers">here</a>.</strong></p>
+                        <p>Alternatively, SDMX requests to others providers can be made <a href="./form.html">here</a>.</p>
+                    </div>
+                    <hr></hr>
+                    <!-- END JUMBOTRON -->
 
-    <!-- CONTENT -->
-    <div class="col-md-10">
-      
-      <!-- JUMBOTRON -->
-      <div class="jumbotron">
-        <h1 class="display-3">SDMX in EViews</h1>
-        <hr></hr>
-        <p>This API allows you to retrieve datasets or series in EViews from different SDMX providers.</p>
-        <p>Currently, the app is supporting <strong>Insee</strong>, <strong>ECB</strong>, <strong>Eurostat</strong>, <strong>Worldbank</strong> and <strong>Norges Bank</strong> data natively.</p>
-        <p>Requests to <strong>Quandl</strong>, <strong>BLS</strong>, <strong>FRED</strong>, <strong>OECD</strong> and <strong>Deutsche Bundesbank</strong> are also supported.</p>
-        <p>The complete list of <u>supported providers</u> is available <a href="./providers">here</a>.</p>
-        <p>Alternatively, SDMX requests to others providers can be made <a href="./form.html">here</a>.</p>
-        <p>Some <a href="./slides.pdf">slides.</a></p>
-      </div>
-      <hr></hr>
-      <!-- END JUMBOTRON -->
-
-      <p><strong>Importing SDMX data in EViews becomes as easy as:</strong></p>
-      <pre><code>
+                    <p><strong>Importing SDMX data in EViews becomes as easy as:</strong></p>
+                    <pre><code>
         <span class="string">%url</span> = <span class="str">"http://sdmx.herokuapp.com/ecb/series/EXR.A.E2.USD.EN00.A"</span>
         <span class="keyw">import</span>(t=html) <span class="string">%url</span> colhead=2 namepos=first
-      </code></pre>
-      <p>You can even use the <a href="/sub.html">subroutine</a>:</p>
-      <pre><code>
-        <span class="keyw">include</span><span class="string"> "./subsdmx.prg"</span>
+                    </code></pre>
+                    <p>You can even use the <a href="/sub.html">subroutine</a>:</p>
+                    <pre><code>
+        <span class="keyw">include</span><span class="str"> "./subsdmx.prg"</span>
         <span class="keyw">call</span> sdmx(<span class="str">"ecb"</span>,<span class="str">"EXR.A.E2.USD.EN00.A"</span>,<span class="str">""</span>,<span class="str">"usdeer19"</span>)
-      </code></pre>
-      
-      
-      <br></br>
-      
-      <!-- CONCEPT -->
-      <h3 id="concept">1. The concept</h3>
+                    </code></pre>
+                    
+                    
+                    <br></br>
+                    
+                    <!-- CONCEPT -->
+                    <h3 id="concept">1. The concept</h3>
 
-      <p class="concept"><i>The app is transforming <a href="https://sdmx.org">SDMX</a> flows from providers website in an HTML table that can be read by EViews. The app provides you with a stable URL that you can use in your EViews code.</i></p>
-      <p>Downloading data to EViews is done in <b>two steps</b>:</p>
-      <ol>
-        <li>get the <code>url</code>of the HTML table containing the data.</li>
-        <li>import the data into EViews with <code>import(t=html) url</code></li>
-      </ol>
-      <br></br>
-      
-      <!-- GET THE URL  -->
-      <h3 id="geturl">2. Get the url</h3>
+                    <p class="concept"><i>The app is transforming <a href="https://sdmx.org">SDMX</a> flows from providers website in an HTML table that can be read by EViews. The app provides you with a stable URL that you can use in your EViews code.</i></p>
+                    <p>Downloading data to EViews is done in <b>two steps</b>:</p>
+                    <ol>
+                        <li>get the <code>url</code> of the HTML table containing the data.</li>
+                        <li>import the data into EViews with <code>import(t=html) url</code></li>
+                    </ol>
+                    <br></br>
+                    
+                    <!-- GET THE URL  -->
+                    <h3 id="geturl">2. Get the url</h3>
 
-      <!-- THE URL -->
-      <div class="subpart">
-          <div class="alert alert-info" role="alert">
-              There are two kind of providers:
-              <ul>
-                  <li><strong>native providers</strong> for which more information on top of the timeseries are available: list of datasets available, dimensions of datasets, list of timeseries available (see infra for more information on how to retrieve such information).</li>
-                  <li><strong>non-native providers</strong> for which the only service provided by sdmx.herokuapp.com is downloading timeseries.</li>
-              </ul>
-          </div>
-        <h5 id="url"> a. The url</h5>
-        <p>An url looks like:</p>
-        <strong><center><code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/<span class="resource">resource</span>/<span class="resource_id">resource_id</span></code></center></strong>
-        <strong class="provider">Providers</strong>
-        <ul>
-          <li><code>eurostat</code>: for data from <a href="http://ec.europa.eu/eurostat/data/database">Eurostat</a>.</li>
-          <li><code>ecb</code>: for data from the <a href="https://www.ecb.europa.eu/home/html/index.en.html">European Central Bank</a>.</li>
-          <li><code>insee</code>: for data from the French national statistical institute <a href="http://www.bdm.insee.fr/bdm2/index">Insee</a>.</li>
-          <li><code>wits</code>: for data from <a href="http://wits.worldbank.org">World Integrated Trade Solution</a>, the trade database of the World Bank.</li>
-        </ul>
-        <strong class="resource">resource</strong>
-        <ul>
-          <li><code>dataset</code>: for retreiving a dataset.</li>
-          <li><code>series</code>: for retreiving a timeseries.</li>
-        </ul>
-        <strong class="resource_id">resource_id</strong> is the <strong>id</strong> of either the dataset or the timeseries.    
-        <br></br>
-      </div>
-      <!-- THE URL -->
+                    <!-- THE URL -->
+                    <div class="subpart">
+                        <div class="alert alert-info" role="alert">
+                            There are two kind of providers:
+                            <ul>
+                                <li><strong>native providers</strong> for which more information on top of the timeseries are available: list of datasets available, dimensions of datasets, list of timeseries available (see infra for more information on how to retrieve such information).</li>
+                                <li><strong>non-native providers</strong> for which the only service provided by sdmx.herokuapp.com is downloading timeseries.</li>
+                            </ul>
+                        </div>
+                        <h5 id="url"> a. The url</h5>
+                        <p>An url looks like:</p>
+                        <strong><center><code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/<span class="resource">resource</span>/<span class="resource_id">resource_id</span></code></center></strong>
+                        <strong class="provider">Providers</strong>
+                        <p>
+                            For instance <code>eurostat</code>: for data from <a href="http://ec.europa.eu/eurostat/data/database">Eurostat</a>. Complete list of providers is <a href="/providers">here</a>.
+                        </p>
+                        
+                        <strong class="resource">resource</strong>
+                        <ul>
+                            <li><code>dataset</code>: for retreiving a dataset.</li>
+                            <li><code>series</code>: for retreiving a timeseries.</li>
+                        </ul>
+                        <strong class="resource_id">resource_id</strong> is the <strong>id</strong> of either the dataset or the timeseries.    
+                        <br></br>
+                    </div>
+                    <!-- THE URL -->
 
-      
-      <!-- GET THE ID  -->
-      <div class="subpart">
+                    
+                    <!-- GET THE ID  -->
+                    <div class="subpart">
 
-        <h5 id="idres"> b. Get the id of the resource</h5>
+                        <h5 id="idres"> b. Get the id of the resource</h5>
 
-        <p>There are two ways to get the id of your resource:</p>
-        <ul>
-          <li>Get it on the provider website. It is the same for sdmx.herokuapp.com.</li>
-          <li>Get it on the app:</li>
-          <ul>
-            <li>List of all datasets for a provider at: <code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/dataflow</code></li>
-            <li>List of all series for a dataset at: <code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/dataflow/<span class="resource_id">dataset_id</span>/</code></li>
-          </ul>
-        </ul>
-      </div>
-      <!-- GET THE ID  -->
+                        <p>There are two ways to get the id of your resource:</p>
+                        <ul>
+                            <li>Get it on the provider website. It is the same for sdmx.herokuapp.com.</li>
+                            <li>Get it on the app:</li>
+                            <ul>
+                                <li>List of all datasets for a provider at: <code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/dataflow</code></li>
+                                <li>List of all series for a dataset at: <code>http://sdmx.herokuapp.com/<span class="provider">provider</span>/dataflow/<span class="resource_id">dataset_id</span>/</code></li>
+                            </ul>
+                        </ul>
+                    </div>
+                    <!-- GET THE ID  -->
 
-      <br />
-      
-      <!-- FILTERS -->
-      <h3 id="filters">3. Filters</h3>
+                    <br />
+                    
+                    <!-- FILTERS -->
+                    <h3 id="filters">3. Filters</h3>
 
-      <p>The app allows to apply the standard SDMX filters, namely:</p>
-      <ol>
-        <li>limit the number of observations retrieved. For example, retrieve data since 2014 or the last 10 observations.</li>
-        <li>cut a dataset along its <i>dimensions</i>.</li>
-      </ol>
+                    <p>The app allows to apply the standard SDMX filters, namely:</p>
+                    <ol>
+                        <li>limit the number of observations retrieved. For example, retrieve data since 2014 or the last 10 observations.</li>
+                        <li>cut a dataset along its <i>dimensions</i>.</li>
+                    </ol>
 
-      <p>
-        A filter is applied by adding at the end of the url: <code>?name_filter=value_filter</code><br />
-        Multiple filters can be used by separating them by <code>&</code>
-      </p>
-      <br />
+                    <p>
+                        A filter is applied by adding at the end of the url: <code>?name_filter=value_filter</code><br />
+                        Multiple filters can be used by separating them by <code>&</code>
+                    </p>
+                    <br />
 
-      
-      <!-- LIMIT THE NUMBER OF OBS -->
-      <div class="subpart">
+                    
+                    <!-- LIMIT THE NUMBER OF OBS -->
+                    <div class="subpart">
 
-        <h5 id="limit">a. Limit the number of observations</h5>
-        <p>There are four filters to limit the number of observations retrieved:</p>
-        <ul>
-          <li>startPeriod: <code>?startPeriod=2004</code></li>
-          <li>endPeriod: <code>?endPeriod=2010Q3</code></li>
-          <li>firstNObservations: <code>?firstNObservations=12</code></li>
-          <li>lastNObservations: <code>?lastNObservations=24</code></li>
-        </ul>
-        <strong>Example</strong><br />
-        The code below retrieve data from 2000 to 2010 of annual average of the ECB Nominal effective exch. rate.
-        <pre><code>
+                        <h5 id="limit">a. Limit the number of observations</h5>
+                        <p>There are four filters to limit the number of observations retrieved:</p>
+                        <ul>
+                            <li>startPeriod: <code>?startPeriod=2004</code></li>
+                            <li>endPeriod: <code>?endPeriod=2010Q3</code></li>
+                            <li>firstNObservations: <code>?firstNObservations=12</code></li>
+                            <li>lastNObservations: <code>?lastNObservations=24</code></li>
+                        </ul>
+                        <strong>Example</strong><br />
+                        The code below retrieve data from 2000 to 2010 of annual average of the ECB Nominal effective exch. rate.
+                        <pre><code>
         <span class="string">%url</span> = <span class="str">"http://sdmx.herokuapp.com/ecb/series/EXR.A.E2.USD.EN00.A?startPeriod=2000&endPeriod=2010"</span>
         <span class="keyw">import</span>(t=html) <span class="string">%url</span> colhead=2 namepos=first
-        </code></pre>     
-      </div>
-      <br />
-      <!-- LIMIT THE NUMBER OF OBS -->
-      
+                        </code></pre>     
+                    </div>
+                    <br />
+                    <!-- LIMIT THE NUMBER OF OBS -->
+                    
 
-      <!-- CUT A DATASET -->
-      <div class="subpart">
-        <h5 id="cut">b. Cut a dataset </h5>
-        <p><i>"A dataset can be described as a container of ordered observations. Observations are classified by dimensions such as country, age, sex, and time period. Observations may be clustered into series, in particular, time series."</i></p>
-        <p>Subgroups of data can be retrieve by restricting dimensions (only monthly data for instance).
-        It can be done by adding a filter at the end of the url.</p>
-        <center><strong><code>http://sdmx.herokuapp.com/...?<span class="provider">name_dimension</span>=<span class="resource_id">code_dimension</span></code></strong></center>
-        <br />
-        <p>To apply the filter, you need:
-        <ol>
-          <li>the name of the dimension. Get it at <code>http://sdmx.herokuapp.com/provider/dataflow/dataset_id</code></li>
-          <li>the dimension code. Get it by clicking on the name of the dimension.</li>
-        </ol>
-        </p>
-        <strong>Example</strong><br />
-        The code below retrieve <i>monthly</i> data of French HICP.
-        <pre><code>
+                    <!-- CUT A DATASET -->
+                    <div class="subpart">
+                        <h5 id="cut">b. Cut a dataset </h5>
+                        <p><i>"A dataset can be described as a container of ordered observations. Observations are classified by dimensions such as country, age, sex, and time period. Observations may be clustered into series, in particular, time series."</i></p>
+                        <p>Subgroups of data can be retrieve by restricting dimensions (only monthly data for instance).
+                            It can be done by adding a filter at the end of the url.</p>
+                        <center><strong><code>http://sdmx.herokuapp.com/...?<span class="provider">name_dimension</span>=<span class="resource_id">code_dimension</span></code></strong></center>
+                        <br />
+                        <p>To apply the filter, you need:
+                            <ol>
+                                <li>the name of the dimension. Get it at <code>http://sdmx.herokuapp.com/provider/dataflow/dataset_id</code></li>
+                                <li>the dimension code. Get it by clicking on the name of the dimension.</li>
+                            </ol>
+                        </p>
+                        <strong>Example</strong><br />
+                        The code below retrieve <i>monthly</i> data of French HICP.
+                        <pre><code>
         <span class="string">%url</span> = <span class="str">"http://sdmx.herokuapp.com/insee/dataset/ipch-2015-fr-coicop?freq=M"</span>
         <span class="keyw">import</span>(t=html) <span class="string">%url</span> colhead=2 namepos=first
-        </code></pre>
-      </div>
-      <!-- CUT A DATASET -->
-      
-      <br />
+                        </code></pre>
+                    </div>
+                    <!-- CUT A DATASET -->
+                    
+                    <br />
 
-      
-      <!-- NON-SDMX PROVIDERS -->
+                    
+                    <!-- NON-SDMX PROVIDERS -->
 
-      <h3 id="others">4. Non-native providers</h3>
-      <p>Data from others SDMX providers can be retrieved using:</p>
-      <center><strong><code>http://sdmx.herokuapp.com/?req='<span class="resource_id">sdmx_url</span>'</code></strong></center><br/>
+                    <h3 id="others">4. Non-native providers</h3>
+                    <p>Data from others SDMX providers can be retrieved using:</p>
+                    <center><strong><code>http://sdmx.herokuapp.com/?req='<span class="resource_id">sdmx_url</span>'</code></strong></center><br/>
 
-      <p>The app also supports requests to <strong>Fred</strong>, <strong>Quandl</strong>, the <strong>Bureau of Labor Statistics</strong>, the <strong>OECD</strong> and the <strong>Deutsche Bundesbank</strong>.<br />
-      The url to use is:</p>
-      <center><strong><code>http://sdmx.herokuapp.com/<span class="provider">provider</span><span class="resource">(/api_key)</span>/<span class="resource_id">resource_id</span></code></strong></center>
+                    <p>The app also supports requests to <strong>Fred</strong>, <strong>Quandl</strong>, the <strong>Bureau of Labor Statistics</strong>, the <strong>OECD</strong> and the <strong>Deutsche Bundesbank</strong>.<br />
+                        The url to use is:</p>
+                    <center><strong><code>http://sdmx.herokuapp.com/<span class="provider">provider</span><span class="resource">(/api_key)</span>/<span class="resource_id">resource_id</span></code></strong></center>
 
-      <strong class="provider">Providers</strong>
-        <ul>
-          <li><code>fred</code>: for data from <a href="http://fred.stlouisfed.org">Fred</a>.</li>
-          <li><code>quandl</code>: for data from <a href="http://quandl.com">Quandl</a>.</li>
-          <li><code>bls</code>: for data from the <a href="http://bls.gov">BLS</a>.</li>
-          <li><code>buba</code>: for data from the <a href="https://www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html">Deutsche Bundesbank</a></li>
-          <li><code>oecd</code>: for data from the <a href="https://data.oecd.org/searchresults/?hf=20&b=0&r=f/type/datasets/api+access&l=en">OECD</a></li>
-        </ul>
+                    <strong class="provider">Providers</strong>
+                    <ul>
+                        <li><code>fred</code>: for data from <a href="http://fred.stlouisfed.org">Fred</a>.</li>
+                        <li><code>quandl</code>: for data from <a href="http://quandl.com">Quandl</a>.</li>
+                        <li><code>bls</code>: for data from the <a href="http://bls.gov">BLS</a>.</li>
+                        <li><code>buba</code>: for data from the <a href="https://www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html">Deutsche Bundesbank</a></li>
+                        <li><code>oecd</code>: for data from the <a href="https://data.oecd.org/searchresults/?hf=20&b=0&r=f/type/datasets/api+access&l=en">OECD</a></li>
+                    </ul>
 
-        <strong class="resource">api_key</strong>: your api_key for the provider. <i>(Required only for Fred, Quandl and the BLS)</i><br/>
-        <strong class="resource_id">resource_id</strong>: the id of the resource given by the provider.
-       
+                    <strong class="resource">api_key</strong>: your api_key for the provider. <i>(Required only for Fred, Quandl and the BLS)</i><br/>
+                    <strong class="resource_id">resource_id</strong>: the id of the resource given by the provider.
+                    
 
-        <br /><br />
-      
-      <!-- CODE AND CREDITS -->
-      <h3 id="credits">Credits</h3>
-      <p>
-        The code is available on <a href="https://github.com/louisdecharson/eviewsSDMX">Github.</a><br/>
-        The app is written in <a href="https://nodejs.org">nodeJS</a> and use <a href="http://expressjs.com">Express</a> web framework.<br/>
-        The HTML table technique is borrowed from the wonderful <a href="https://github.com/Widukind">Widukind project</a>.<br>
-      </p>
+                    <br /><br />
+                    
+                    <!-- CODE AND CREDITS -->
+                    <h3 id="credits">Credits</h3>
+                    <p>
+                        The code is available on <a href="https://github.com/louisdecharson/eviewsSDMX">Github.</a><br/>
+                        The app is written in <a href="https://nodejs.org">nodeJS</a> and use <a href="http://expressjs.com">Express</a> web framework.<br/>
+                        The HTML table technique is borrowed from the wonderful <a href="https://github.com/Widukind">Widukind project</a>.<br>
+                    </p>
 
 
-      
-    </div>
-    <!-- END CONTENT -->
+                    
+                </div>
+                <!-- END CONTENT -->
+                
+            </div>
+            <!-- END ROW -->
+        </div>
+        <!-- END CONTAINER-FLUID -->
+
+        
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <div class="container">
+                <hr></hr>
+                <center><span class="text-muted footer">Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html">GNU Affero General Public License</a> - coded with love by <a href="https://github.com/louisdecharson">louisdecharson</a></span></center>
+            </div>
+        </footer>
+        <!-- JAVASCRIPT -->
+        <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/js/bootstrap.min.js" integrity="sha384-VjEeINv9OSwtWFLAtmc4JCtEJXXBub00gtSnszmspDLCtC0I4z4nqz7rEFbIZLLU" crossorigin="anonymous"></script> -->
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+        <!-- GOOGLE ANALYTICS -->
+        <script>
+         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+             (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                                  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+         })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+         ga('create', 'UA-92058229-1', 'auto');
+         ga('send', 'pageview');
+        </script>
+    </body>
     
-  </div>
-  <!-- END ROW -->
-</div>
-<!-- END CONTAINER-FLUID -->
-
     
-
-    <!-- FOOTER -->
-    <footer class="footer">
-      <div class="container">
-        <hr></hr>
-        <center><span class="text-muted footer">Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html">GNU Affero General Public License</a> - coded with love by <a href="https://github.com/louisdecharson">louisdecharson</a></span></center>
-      </div>
-    </footer>
-    <!-- JAVASCRIPT -->
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/js/bootstrap.min.js" integrity="sha384-VjEeINv9OSwtWFLAtmc4JCtEJXXBub00gtSnszmspDLCtC0I4z4nqz7rEFbIZLLU" crossorigin="anonymous"></script>
-
-  <!-- GOOGLE ANALYTICS -->
-  <script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-  ga('create', 'UA-92058229-1', 'auto');
-  ga('send', 'pageview');
-  </script>
-  </body>
-  
-  
 </html>

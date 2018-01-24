@@ -55,11 +55,10 @@ function findTitle(json,str,callback) {
 
 
 exports.dataFlow = function(data,service) {
-    var header = '<title>SDMX API for EViews / DATAFLOWS </title>',
-        css = '<style display:none>body {padding-left: 10px; padding-right: 10px; } </style>';
+    var header = '<title>SDMX API for EViews / DATAFLOWS </title>';
     var jsforList = "<script>var options = {valueNames: ['name', 'desc'], searchClass: 'form-control'}; var dataList = new List('myDataflows',options);</script>";
    
-    var body = '<h2>List of all the datasets of '+ service.toUpperCase() + '</h2><hr class="m-y-2">',
+    var body = '<h2>List of all the datasets of '+ service.toUpperCase() + '</h2>',
         theader = '<th>Id</th><th>Description</th>',
         tbody = '';
 
@@ -72,7 +71,7 @@ exports.dataFlow = function(data,service) {
         tbody += '<td class="desc">'+ item[3] + '</td>';
         tbody += '</tr>';
     });
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + chapeau + body + '<table class="table table-sm table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS  + jsforList + gA + jQuery + bootstrap4 +'</body></html>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header +  '</head><body>' + chapeau + body + '<table class="table table-sm table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS  + jsforList + gA + jQuery + bootstrap4 + sdmxCSS +'</body></html>';
     return myHtml;
 };
 
@@ -262,7 +261,7 @@ exports.codeList = function (codes,title_dim) {
     var body ='',
         table = '',
         theader = '<th>Id</th><th>Description</th>',
-        tbody = '<h2>List of codes potentially available for the dimension ' + sliceCL(title_dim)  + '</h2><hr class="m-y-2">';
+        tbody = '<h2>List of codes potentially available for the dimension ' + sliceCL(title_dim)  + '</h2><br/>';
 
 
     codes.forEach(function(item,index) {
@@ -274,31 +273,31 @@ exports.codeList = function (codes,title_dim) {
     return myHtml;
 };
 
-exports.listProviders = function(providers) {
-    var header = '<title> SDMX API for EViews / supported providers</title>',
-        css = '<style display:none>body {padding-left: 5%; padding-right: 5%; } </style>',
-        body = '<h2>Supported Providers</h2>',
-        theader = '<th>Id</th><th>Website</th><th style="text-align:center">SDMX</th><th style="text-align:center">API Key</th>',
-        tbody = '';
-    Object.keys(providers).forEach(function(item,index){
-        tbody += '<tr>';
-        tbody += '<td>' + item + '</td>';
-        tbody += '<td><a href="http://' + providers[item].host + '/">' + providers[item].host + '</a></td>';
-        if (providers[item].SDMX === 'True') {
-            tbody += '<td style="text-align:center">&#10004;</td>' ;
-        } else {
-            tbody += '<td style="text-align:center">&#10006;</td>';
-        }
-        if (providers[item].apiKey === 'True'){
-            tbody += '<td style="text-align:center">&#10004;</td>';
-        } else {
-            tbody += '<td style="text-align:center">&#10006;</td>';
-        }
-        tbody += '</tr>';
-    });
-    var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + chapeau + body + '<hr/><table class="table table-sm table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + gA + jQuery + bootstrap4 + sdmxCSS +'</body></html>';
-    return myHtml;
-};
+// exports.listProviders = function(providers) {
+//     var header = '<title> SDMX API for EViews / supported providers</title>',
+//         css = '<style display:none>body {padding-left: 5%; padding-right: 5%; } </style>',
+//         body = '<h2>Supported Providers</h2>',
+//         theader = '<th>Id</th><th>Website</th><th style="text-align:center">SDMX</th><th style="text-align:center">API Key</th>',
+//         tbody = '';
+//     Object.keys(providers).forEach(function(item,index){
+//         tbody += '<tr>';
+//         tbody += '<td>' + item + '</td>';
+//         tbody += '<td><a href="http://' + providers[item].host + '/">' + providers[item].host + '</a></td>';
+//         if (providers[item].SDMX === 'True') {
+//             tbody += '<td style="text-align:center">&#10004;</td>' ;
+//         } else {
+//             tbody += '<td style="text-align:center">&#10006;</td>';
+//         }
+//         if (providers[item].apiKey === 'True'){
+//             tbody += '<td style="text-align:center">&#10004;</td>';
+//         } else {
+//             tbody += '<td style="text-align:center">&#10006;</td>';
+//         }
+//         tbody += '</tr>';
+//     });
+//     var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + css + '</head><body>' + chapeau + body + '<hr/><table class="table table-sm table-hover">' + '<thead>'  + '<tr>' + theader + '</tr>' + '</thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + gA + jQuery + bootstrap4 + sdmxCSS +'</body></html>';
+//     return myHtml;
+// };
 
 
 exports.List = function(service,vTS,dataSet,dim) {
@@ -550,8 +549,8 @@ exports.OECDCodeList = function(codes,codeList,nameDataset) {
     body += '<input class="form-control" placeholder="Search"><br>';
     
     codes.Code.forEach(function(i) {
-        tbody += '<tr><td class="code" style="text-align:center">' + i.value +'</td>';
-        tbody += '<td class="desc" style="text-align:center">' + i.Description[0]['_']  +'</td></tr>';
+        tbody += '<tr><td class="code">' + i.value +'</td>';
+        tbody += '<td class="desc">' + i.Description[0]['_']  +'</td></tr>';
     });
     var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + body +'<table class="table table-hover table-sm">' + '<thead>'  + '<tr>' + theader +  '</tr></thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + jQuery +  bootstrap4 + sdmxCSS + gA + '</body></html>';
     return myHtml;  

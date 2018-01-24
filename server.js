@@ -25,8 +25,11 @@ var fetcher = require('./routes/fetcher'),
     bls = require('./routes/bls'),
     fred = require('./routes/fred'),
     buba = require('./routes/buba'),
-    oecd = require('./routes/oecd');
+    oecd = require('./routes/oecd'),
+    explore = require('./routes/explore');
 
+// Providers
+var providers = require('./routes/providers.json');
 
 var app = express();
 var port = process.env.PORT || 8080;
@@ -59,7 +62,7 @@ app.get('/:provider/dataset/:dataset',fetcher.getDataSet);
 app.get('/:provider/series/:series',fetcher.getSeries);
 app.get('/:provider/list/:dataset',fetcher.getList);
 app.get('/:provider/codelist/:codelist',fetcher.getCodeList);
-app.get('/providers',fetcher.getProviders);
+
 
 // Timeseries from sdmx url
 app.get('/req',fetcher.getDatafromURL);
@@ -76,6 +79,8 @@ app.get('/fred/:apiKey/:series',fred.getSeries);
 // Bundesbank
 app.get('/buba/:series',buba.getSeries);
 
+// Other functions
+app.get('/providers',explore.getProviders);
 
 // Calendar
 // --------
@@ -83,14 +88,24 @@ app.get('/cal',function(req,res) {
     res.set('Content-Type', 'text/plain');
     res.send("NO LONGER SUPPORTED");
 });
-// app.get('/cal/:cals', cal.getCals);
-// app.get('/cal',cal.getFormCal);
-// app.post('/createCal',cal.sendCal);
-// app.post('/cal/createCal',cal.sendCal);
 
 app.get('/status',function(req,res){
     res.set('Content-Type','text/plain');
     res.send('OK');
+});
+
+// Error 404 and function isInArray
+var err404 = '<html><head><title>SDMX in EViews - Error 404</title></head><body style="background-color:black; color:white; text-align:center; font-size: 100px; margin-top: 20%; width: 100%; font-family: Menlo; text-align:center;">404</body></html>';
+function isInArray(it,arr) {
+    return arr.indexOf(it) > -1;
+}
+
+app.get('/:provider',function(req,res){
+    if (isInArray(req.params.provider.toUpperCase(),Object.keys(providers))) {
+        res.redirect('/'+req.params.provider+'/dataflow');
+    } else {
+        res.status(404).send(err404);
+    }
 });
 
 // TIMEOUT
@@ -110,7 +125,7 @@ function haltOnTimedout(err,req,res,next) {
 
 // 404
 app.get('*', function(req, res){
-    res.status(404).send("ERROR 404 - NO ROUTES");
+    res.status(404).send(err404);
 });
 
 app.listen(port, function() {
