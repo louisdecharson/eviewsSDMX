@@ -75,6 +75,17 @@ exports.dataFlow = function(data,service) {
     return myHtml;
 };
 
+function getTimePeriod(vTS) {
+    var vObs = [];
+    vTS.forEach(function(item,index) {
+        item.Obs.forEach(function(it,ind){
+            vObs.push(it.TIME_PERIOD[0]);
+        });
+    });
+    vObs = [...new Set(vObs)];
+    return vObs.sort(function(a,b){return parseInt(a.match(/\d/g).join(''))-parseInt(b.match(/\d/g).join(''));});
+}
+
 
 exports.makeTable = function(vTS,title,authParams){
     var header = '<title>SDMX for EViews / '+ title +'</title>';
@@ -85,9 +96,11 @@ exports.makeTable = function(vTS,title,authParams){
     var tbody = '';
     var vInd = new Array(vTS.length).fill(0); // vector of cursors
     var vTsSR = [];
+    var vObs = getTimePeriod(vTS);
     if (vTS[0].Obs !== undefined) {
         var vTsSorted = vTS.sort(function(a,b) { return b.Obs.length-a.Obs.length;}); // vector of timeseries
-        var nbObs = vTsSorted[0].Obs.length;
+        // var nbObs = vTsSorted[0].Obs.length;
+        var nbObs = vObs.length;
         // Check if timeseries are in reverse position :
         var isReverse = false;
         if (vTsSorted[0].Obs.length > 1) {
@@ -154,14 +167,13 @@ exports.makeTable = function(vTS,title,authParams){
     }    
     // BODY
     var i = 0;
-
     while (i < nbObs) {
-        // tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0] + '</td>';
-        tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0].replace('-Q','Q').replace('-S','S').replace('-B','S') + '</td>';
-        tbody += '<td style="text-align:center">' + vTsSR[0][i].OBS_VALUE[0] + '</td>';
-        for(var k=1; k<vTsSR.length; k++) {
+        // tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0].replace('-Q','Q').replace('-S','S').replace('-B','S') + '</td>';
+        tbody += '<tr><td>' + vObs[i].replace('-Q','Q').replace('-S','S').replace('-B','S') + '</td>';
+        // tbody += '<td style="text-align:center">' + vTsSR[0][i].OBS_VALUE[0] + '</td>';
+        for(var k=0; k<vTsSR.length; k++) {
             if(vInd[k] < vTsSR[k].length) {
-                if(vTsSR[0][i].TIME_PERIOD[0] === vTsSR[k][vInd[k]].TIME_PERIOD[0]) {
+                if(vObs[i] === vTsSR[k][vInd[k]].TIME_PERIOD[0]) {
                     tbody += '<td style="text-align:center">' + vTsSR[k][vInd[k]].OBS_VALUE[0] + '</td>';
                     vInd[k] =  vInd[k] + 1;
                 } else {
