@@ -82,8 +82,11 @@ function getTimePeriod(vTS) {
             vObs.push(it.TIME_PERIOD[0]);
         });
     });
+    // Delete duplicates in vObs:
     vObs = [...new Set(vObs)];
+    // We return a chronological vector of observations:
     return vObs.sort(function(a,b){return parseInt(a.match(/\d/g).join(''))-parseInt(b.match(/\d/g).join(''));});
+    
 }
 
 
@@ -99,18 +102,18 @@ exports.makeTable = function(vTS,title,authParams){
     var vObs = getTimePeriod(vTS);
     if (vTS[0].Obs !== undefined) {
         var vTsSorted = vTS.sort(function(a,b) { return b.Obs.length-a.Obs.length;}); // vector of timeseries
-        // var nbObs = vTsSorted[0].Obs.length;
         var nbObs = vObs.length;
         // Check if timeseries are in reverse position :
         var isReverse = false;
         if (vTsSorted[0].Obs.length > 1) {
-            var dateFirst = vTsSorted[0].Obs[0].TIME_PERIOD[0],
-                dateLast = vTsSorted[0].Obs[1].TIME_PERIOD[0];
-            if (dateFirst.substring(0,4) > dateLast.substring(0,4)) {
-                isReverse = true;
-            } else if (dateFirst.slice(-1) > dateLast.slice(-1)) {
-                isReverse = true;
-            }
+            var dateFirst = parseInt(vTsSorted[0].Obs[0].TIME_PERIOD[0].match(/\d/g).join('')),
+                dateLast = parseInt(vTsSorted[0].Obs[1].TIME_PERIOD[0].match(/\d/g).join(''));
+            isReverse = dateFirst > dateLast;
+            // if (dateFirst.substring(0,4) > dateLast.substring(0,4)) {
+            //     isReverse = true;
+            // } else if (dateFirst.slice(-1) > dateLast.slice(-1)) {
+            //     isReverse = true;
+            // }
         }
     } else {
         var vTsSorted = vTS,
@@ -120,7 +123,6 @@ exports.makeTable = function(vTS,title,authParams){
 
     // HEADER
     for(var kk=0; kk<vTsSorted.length; kk++) {
-
         // GET AN ID FOR THE TIMESERIES
         findTitle(vTsSorted[kk],'ID', function(res) {
             if (res != null) { // un parametre contient ID on l'utilise comme ID
@@ -140,7 +142,6 @@ exports.makeTable = function(vTS,title,authParams){
                 theader1 += '<th>'+monId+'</th>'; 
             }
         });
-
         // GET A TITLE OR DESCRIPTION FOR THE TIMESERIES
         var montitre = '';
         findTitle(vTsSorted[kk],'TITLE', function(res) {
@@ -157,7 +158,6 @@ exports.makeTable = function(vTS,title,authParams){
             }
         });
         theader2 += '<th>' + montitre + '</th>';
-
         // REVERSE THE TIMESERIES TO GET DATE IT THE ASCENDING ORDER
         if (isReverse && nbObs > 0) {
             vTsSR.push(vTsSorted[kk].Obs.reverse()); // sorted vector of timeseries
@@ -168,9 +168,7 @@ exports.makeTable = function(vTS,title,authParams){
     // BODY
     var i = 0;
     while (i < nbObs) {
-        // tbody += '<tr><td>' + vTsSR[0][i].TIME_PERIOD[0].replace('-Q','Q').replace('-S','S').replace('-B','S') + '</td>';
         tbody += '<tr><td>' + vObs[i].replace('-Q','Q').replace('-S','S').replace('-B','S') + '</td>';
-        // tbody += '<td style="text-align:center">' + vTsSR[0][i].OBS_VALUE[0] + '</td>';
         for(var k=0; k<vTsSR.length; k++) {
             if(vInd[k] < vTsSR[k].length) {
                 if(vObs[i] === vTsSR[k][vInd[k]].TIME_PERIOD[0]) {
