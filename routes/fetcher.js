@@ -30,7 +30,7 @@ const providers = require('./providers.json');
 // RABBIT MQ
 var urlrabbit = process.env.CLOUDAMQP_URL || "amqp://localhost",
     q = 'tasks',
-    dirTempFiles = './../public/temp/';
+    dirTempFiles = './public/temp/';
 
 // Utilitaries
 function stripPrefix(str){
@@ -1006,7 +1006,7 @@ exports.getTemp = function(req,res){
     var id = req.params.id,
         route = './../temp/' + id + '.html',
         file = './public/temp/' + id + '.html';
-    if (id.slice(-4)) {
+    if (id.slice(-4) === "html") {
         res.send(buildHTML.wait(id));
     } else {
         setTimeout(function() {
