@@ -44,7 +44,7 @@ app.use('/',express.static(__dirname + '/public/'));
 app.use(favicon(path.join(__dirname,'public','favicon.ico')));
 
 // TIMEOUT
-app.use(timeout(29900,{"respond":true}));
+app.use(timeout(299000,{"respond":true}));
 
 // SDMX PROVIDER
 // -----------------------
@@ -54,11 +54,11 @@ app.get('/oecd/codelist/:codelist',oecd.getCodeList);
 app.get('/oecd/:dataset/:series',oecd.getSeries);
 app.get('/oecd/dataflow',oecd.getAllDataFlow);
 
-
 // Timeseries from supported providers
 app.get('/:provider/dataflow', fetcher.getAllDataFlow);
 app.get('/:provider/dataflow/:dataset', fetcher.getDataFlow);
 app.get('/:provider/dataset/:dataset',fetcher.getDataSet);
+app.get('/:provider/bigdataset/:dataset',fetcher.getBigDataSet);
 app.get('/:provider/series/:series',fetcher.getSeries);
 app.get('/:provider/list/:dataset',fetcher.getList);
 app.get('/:provider/codelist/:codelist',fetcher.getCodeList);
@@ -67,6 +67,10 @@ app.get('/:provider/codelist/:codelist',fetcher.getCodeList);
 // Timeseries from sdmx url
 app.get('/req',fetcher.getDatafromURL);
 app.post('/requestbyURL',fetcher.redirectURL);
+
+// Big datasets
+app.get('/temp/:id',fetcher.getTemp);
+
 
 // OTHER NON-SDMX PROVIDER
 // -----------------------
