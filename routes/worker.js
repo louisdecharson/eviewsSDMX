@@ -55,6 +55,8 @@ amqp.connect(url,function(err,conn) {
                                 fs.writeFile(file,buildHTML.makeTable(vTS,dataSet,authParams),function(er) {
                                     if (er) {
                                         console.log(er);
+                                    } else {
+                                        console.log("Data received. HTML written.");
                                     };
                                 });
                             } catch(error) {
