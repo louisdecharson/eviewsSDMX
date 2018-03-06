@@ -12,19 +12,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // =====================================================================
 
+// Worker listen for work on queue tasks and
+// reply on queue done;
+
 var amqp = require('amqplib/callback_api'),
     request = require('request'),
     debug = require('debug')('worker'),
     xml2js = require('xml2js'),
     buildHTML = require('./buildHTML.js'),
-    shortid = require('shortid'),
     fs = require('fs');
 
 // Define parameters for Rabbit MQ
 var url = process.env.CLOUDAMQP_URL || "amqp://localhost",
-    q = 'tasks';  // channel
-
-
+    queueTasks = 'tasks',
+    queueDone = 'done'; // queue for Tasks
 
 // Utilitaries
 function stripPrefix(str){
@@ -35,55 +36,70 @@ function stripPrefix(str){
 
 amqp.connect(url,function(err,conn) {
     conn.createChannel(function(err,ch){
-        ch.assertQueue(q, {durable:false});
-        ch.consume(q,function(msg){
+        ch.assertQueue(queueTasks, {durable:false});
+        ch.consume(queueTasks,function(msg){
             var req = JSON.parse(msg.content),
                 options = req.options,
                 dataSet = req.dataSet,
                 authParams = req.authParams,
-                file = req.file; // where the file should be stored
+                fileID = req.file; // where the file should be stored
             debug("Received message for url: %s",options.url);
-            debug("File to be written at location: %s",file);
+            debug("Id: %s",fileID);
             request(options,function(e,r,b){
+                var reply = {};
                 if (r.statusCode >= 200 && r.statusCode < 400) {
                     xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                         if(err === null) {
-                            debug("Data received, writing html file");
+                            debug("Data received, sending reply");
                             try {
                                 var data = obj.StructureSpecificData.DataSet[0];
                                 var vTS = data.Series; // vector of Time Series : vTS
-                                fs.writeFile(file,buildHTML.makeTable(vTS,dataSet,authParams),function(er) {
-                                    if (er) {
-                                        console.log(er);
-                                    } else {
-                                        console.log("Data received. HTML written.");
-                                    };
-                                });
+                                reply = {
+                                    code: 200,
+                                    data: buildHTML.makeTable(vTS,dataSet,authParams).toString(),
+                                    id: fileID
+                                };
+                                ch.sendToQueue(queueDone,
+                                               new Buffer(JSON.stringify(reply))
+                                               );
                             } catch(error) {
                                 debug(error);
                                 var errorMessage = "Error parsing SDMX at: " + options.url;
-                                fs.writeFile(file,errorMessage,function(er) {
-                                    if (er) {
-                                        console.log(er);
-                                    }
-                                });
+                                reply = {
+                                    code: 500,
+                                    data: errorMessage
+                                };
+                                ch.sendToQueue(queueDone,
+                                               new Buffer(JSON.stringify(reply)));
+                                
                                 debug(errorMessage);
                             }
                         } else {
-                            fs.writeFile(file,err,function(er){
-                                if (er) {
-                                    console.log(er);
-                                }
-                            });
+                            reply = {
+                                code: 500,
+                                data: err
+                            };
+                            ch.sendToQueue(queueDone,
+                                           new Buffer(JSON.stringify(reply)));
                         }
                     });
                 } else if (r.statusCode === 413) {
-                    res.redirect('/413.html');
+                    reply = {
+                        code: 413,
+                        data: ''
+                    };
+                    ch.sendToQueue(queueDone,
+                                   new Buffer(JSON.stringify(reply)));
                 } else {
                     var errorMessage = "Error retrieving data at: " + options.url + '\n';
                     errorMessage += 'Code: ' + r.statusCode + '\n';
                     errorMessage += 'Message: ' + r.statusMessage;
-                    res.status(r.statusCode).send(errorMessage);
+                    reply = {
+                        code: 500,
+                        data: errorMessage
+                    };
+                    ch.sendToQueue(queueDone,
+                                   new Buffer(JSON.stringify(reply)));
                     debug(r);
                 }
             });

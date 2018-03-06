@@ -28,9 +28,10 @@ const providers = require('./providers.json');
 
 
 // RABBIT MQ
-var urlrabbit = process.env.CLOUDAMQP_URL || "amqp://localhost",
-    q = 'tasks',
-    dirTempFiles = './public/temp/';
+// var urlrabbit = process.env.CLOUDAMQP_URL || "amqp://localhost",
+//     q = 'tasks',
+//     dirTempFiles = './public/temp/';
+var rabbit = require('./../rabbit');
 
 // Utilitaries
 function stripPrefix(str){
@@ -970,31 +971,16 @@ exports.getBigDataSet = function(req,res) {
                 debug('auth params: %s',authParams);
                 debug('dimensions: %s',dimRequested);
 
-                amqp.connect(urlrabbit,function(err,conn){
-                    if (err) {
-                        res.status(500).send('Interal Error while processing your request');
-                        debug(err);
-                    } else {
-                        conn.createChannel(function(err,ch) {
-                            if (err) {
-                                res.status(500).send('Interal Error while processing your request');
-                                debug(err);
-                            } else {
-                                ch.assertQueue(q,{durable:false});
-                                var id = shortid.generate();
-                                var file = dirTempFiles + id + '.html';
-                                var task = {
-                                    options: options,
-                                    dataSet: dataSet,
-                                    authParams: authParams,
-                                    file: file
-                                };
-                                ch.sendToQueue(q, new Buffer(JSON.stringify(task)));
-                                res.send(buildHTML.bigDataset(id));
-                            }
-                        });
-                    }
-                });
+                var conn = rabbit.get(),
+                    id = shortid.generate();
+                var task = {
+                    options: options,
+                    dataSet: dataSet,
+                    authParams: authParams,
+                    file: id
+                };
+                rabbit.sendMessage(conn,JSON.stringify(task));
+                res.send(buildHTML.bigDataset(id));
             }
         });
     } else {
@@ -1002,22 +988,15 @@ exports.getBigDataSet = function(req,res) {
     }
 };
             
-exports.getTemp = function(req,res){
-    var id = req.params.id,
-        route = './../temp/' + id + '.html',
-        file = './public/temp/' + id + '.html';
+exports.getTemp = function(req,res){   
+    var id = req.params.id;
+    debug('Request for temporary file with id: %s', id);
     if (id.slice(-4) === "html") {
         res.send(buildHTML.wait(id));
     } else {
-        setTimeout(function() {
-            fs.unlink(file,function(err){
-                if (err) {
-                    console.log(err);
-                } else {
-                    debug('File %s deleted',file);
-                }
-            });
-        }, 1000);
-        res.redirect(route);
+        rabbit.sendTempFile(id,function(route){
+            console.log(route);
+            res.redirect(route);
+        });
     }
 };

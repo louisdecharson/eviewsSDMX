@@ -28,6 +28,9 @@ var fetcher = require('./routes/fetcher'),
     oecd = require('./routes/oecd'),
     explore = require('./routes/explore');
 
+// RABBIT MQ
+var rabbit = require('./rabbit');
+
 // Providers
 var providers = require('./routes/providers.json');
 
@@ -132,9 +135,15 @@ app.get('*', function(req, res){
     res.status(404).send(err404);
 });
 
-app.listen(port, function() {
-    console.log('Our app is running on port '+ port);
+// Rabbit MQ
+rabbit.connect(function(c) {
+    var conn = rabbit.get();
+    rabbit.consumeReply(conn);
+    app.listen(port, function() {
+        console.log('Our app is running on port '+ port);
+    });
 });
+
 
 // Very dangerous
 process.on('uncaughtException', (err) => {
