@@ -54,17 +54,15 @@ exports.consumeReply = function(conn) {
                 code = reply.code,
                 data = reply.data;
             debug('Received reply with code: ' + code);
-            if (code === 200) {
-                var fileID = reply.id,
-                    file = dirTempFiles + fileID + '.html';
-                fs.writeFile(file,data,function(er) {
-                    if (er) {
-                        console.log(er);
-                    } else {
-                        console.log("Data received. HTML written.");
-                    };
-                });
-            } 
+            var fileID = reply.id,
+                file = dirTempFiles + fileID + '.html';
+            fs.writeFile(file,data,function(er) {
+                if (er) {
+                    console.log(er);
+                } else {
+                    console.log("Data received. HTML written.");
+                };
+            });
         },{noAck: true});
     });
 };
@@ -77,7 +75,7 @@ exports.sendMessage = function(conn,m) {
     });
 };
 
-// Send Temporary file
+// Send Temporary file and delete it
 exports.sendTempFile = function(fileID,cb) {
     var file = dirTempFiles + fileID + '.html',
         route = './../temp/' + fileID + '.html';

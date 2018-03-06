@@ -46,7 +46,7 @@ amqp.connect(url,function(err,conn) {
             debug("Received message for url: %s",options.url);
             debug("Id: %s",fileID);
             request(options,function(e,r,b){
-                var reply = {};
+                var reply = {id: fileID};
                 if (r.statusCode >= 200 && r.statusCode < 400) {
                     xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                         if(err === null) {
@@ -54,50 +54,39 @@ amqp.connect(url,function(err,conn) {
                             try {
                                 var data = obj.StructureSpecificData.DataSet[0];
                                 var vTS = data.Series; // vector of Time Series : vTS
-                                reply = {
-                                    code: 200,
-                                    data: buildHTML.makeTable(vTS,dataSet,authParams).toString(),
-                                    id: fileID
-                                };
+                                reply.code = 200;
+                                reply.data = buildHTML.makeTable(vTS,dataSet,authParams).toString();
                                 ch.sendToQueue(queueDone,
                                                new Buffer(JSON.stringify(reply))
                                                );
                             } catch(error) {
                                 debug(error);
                                 var errorMessage = "Error parsing SDMX at: " + options.url;
-                                reply = {
-                                    code: 500,
-                                    data: errorMessage
-                                };
+                                reply.code = 500;
+                                reply.data = buildHTML.bigDatasetError(errorMessage);
                                 ch.sendToQueue(queueDone,
                                                new Buffer(JSON.stringify(reply)));
                                 
                                 debug(errorMessage);
                             }
                         } else {
-                            reply = {
-                                code: 500,
-                                data: err
-                            };
+                            reply.code = 500;
+                            reply.data = buildHTML.bigDatasetError('Internal server error. ' + err);
                             ch.sendToQueue(queueDone,
                                            new Buffer(JSON.stringify(reply)));
                         }
                     });
                 } else if (r.statusCode === 413) {
-                    reply = {
-                        code: 413,
-                        data: ''
-                    };
+                    reply.code = 413;
+                    reply.data = buildHTML.bigDatasetError('Error 413.');
                     ch.sendToQueue(queueDone,
                                    new Buffer(JSON.stringify(reply)));
                 } else {
                     var errorMessage = "Error retrieving data at: " + options.url + '\n';
                     errorMessage += 'Code: ' + r.statusCode + '\n';
                     errorMessage += 'Message: ' + r.statusMessage;
-                    reply = {
-                        code: 500,
-                        data: errorMessage
-                    };
+                    reply.code = 500;
+                    reply.data = buildHTML.bigDatasetError(errorMessage);
                     ch.sendToQueue(queueDone,
                                    new Buffer(JSON.stringify(reply)));
                     debug(r);

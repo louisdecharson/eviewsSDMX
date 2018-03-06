@@ -570,6 +570,13 @@ exports.bigDataset = function(url) {
     var myHtml = '<!DOCTYPE html>' + '<html><head><title>Big dataset</title></head><body>' + chapeau + msg + alert + jQuery +  bootstrap4 + sdmxCSS + gA + '</body></html>';
     return myHtml;  
 };
+// Function to display an error when a big dataset request has failed
+exports.bigDatasetError = function(e) {
+    var msg = '<div class="alert alert-danger" role="alert">Your request has not been processed. <br/> Error:';
+    msg += e + '</div>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head><title>Big dataset</title></head><body>' + chapeau + msg + jQuery +  bootstrap4 + sdmxCSS + gA + '</body></html>';
+    return myHtml;  
+};
 
 // Function to send when the file is not yet available but requested by user.
 exports.wait = function(url) {

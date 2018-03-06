@@ -987,15 +987,19 @@ exports.getBigDataSet = function(req,res) {
         res.status(404).send("ERROR 404 - PROVIDER IS NOT SUPPORTED");
     }
 };
-            
+
+// Send temporary file
 exports.getTemp = function(req,res){   
     var id = req.params.id;
     debug('Request for temporary file with id: %s', id);
     if (id.slice(-4) === "html") {
+        // Being here means the file does not exist yet (or does
+        // not exist anymore).
+        // Send wait to the user
         res.send(buildHTML.wait(id));
     } else {
+        // else let Rabbit send us the route
         rabbit.sendTempFile(id,function(route){
-            console.log(route);
             res.redirect(route);
         });
     }
