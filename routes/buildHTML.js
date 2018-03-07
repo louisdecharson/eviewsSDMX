@@ -109,11 +109,6 @@ exports.makeTable = function(vTS,title,authParams){
             var dateFirst = parseInt(vTsSorted[0].Obs[0].TIME_PERIOD[0].match(/\d/g).join('')),
                 dateLast = parseInt(vTsSorted[0].Obs[1].TIME_PERIOD[0].match(/\d/g).join(''));
             isReverse = dateFirst > dateLast;
-            // if (dateFirst.substring(0,4) > dateLast.substring(0,4)) {
-            //     isReverse = true;
-            // } else if (dateFirst.slice(-1) > dateLast.slice(-1)) {
-            //     isReverse = true;
-            // }
         }
     } else {
         var vTsSorted = vTS,
@@ -564,7 +559,28 @@ exports.OECDCodeList = function(codes,codeList,nameDataset) {
     });
     var myHtml = '<!DOCTYPE html>' + '<html><head>' + header + '</head><body>' + chapeau + body +'<table class="table table-hover table-sm">' + '<thead>'  + '<tr>' + theader +  '</tr></thead>' + '<tbody class="list">' + tbody + '</tbody>'  +'</table></div>' + listJS + jsforList + jQuery +  bootstrap4 + sdmxCSS + gA + '</body></html>';
     return myHtml;  
-
 };
 
-    
+
+// Function to send when a big dataset has been requested
+exports.bigDataset = function(url) {
+    var msg = '<div class="alert alert-primary" role="alert">Wait... You have asked to download a big dataset. Your dataset is going to be available for download in a few minutes';
+    msg += '<a href="/temp/'+ url +'"> here</a>.</div>';
+    var alert = '<div class="alert alert-danger" role="alert"><strong>Important to notice:</strong>This file will only be accessible once. Once downloaded, it will be deleted from our servers. Save it locally.</div>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head><title>Big dataset</title></head><body>' + chapeau + msg + alert + jQuery +  bootstrap4 + sdmxCSS + gA + '</body></html>';
+    return myHtml;  
+};
+// Function to display an error when a big dataset request has failed
+exports.bigDatasetError = function(e) {
+    var msg = '<div class="alert alert-danger" role="alert">Your request has not been processed. <br/> Error:';
+    msg += e + '</div>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head><title>Big dataset</title></head><body>' + chapeau + msg + jQuery +  bootstrap4 + sdmxCSS + gA + '</body></html>';
+    return myHtml;  
+};
+
+// Function to send when the file is not yet available but requested by user.
+exports.wait = function(url) {
+    var wait = '<div class="alert alert-warning" role="alert"> <strong>The requested file is not available. </strong> If you have just made the request, come back in a few minutes.</div>';
+    var myHtml = '<!DOCTYPE html>' + '<html><head><title>Big dataset</title></head><body>' + chapeau +  wait + jQuery +  bootstrap4 + sdmxCSS + gA + '</body></html>';
+    return myHtml;  
+};

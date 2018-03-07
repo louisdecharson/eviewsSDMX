@@ -4,6 +4,7 @@
   "author": "Louis de Charsonville <louisdecharson@gmail.com>",
   "license": "AGPL-3.0",
   "dependencies": {
+    "amqplib": "^0.5.2",
     "assert": "^1.4.1",
     "body-parser": "^1.17.1",
     "connect-timeout": "^1.7.0",
@@ -19,6 +20,7 @@
     "path": "^0.12.7",
     "request": "^2.79.0",
     "serve-favicon": "^2.3.2",
+    "shortid": "^2.2.8",
     "url": "^0.11.0",
     "xml2js": "^0.4.17"
   },

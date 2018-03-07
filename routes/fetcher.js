@@ -17,12 +17,21 @@ var xml2js = require('xml2js'),
     http = require('follow-redirects').http,
     https = require('https'),
     url = require('url'),
+    fs = require('fs'),
     buildHTML = require('./buildHTML'),
     request = require('request'),
-    debug = require('debug')('fetcher');
+    debug = require('debug')('fetcher'),
+    amqp = require('amqplib/callback_api'),
+    shortid = require('shortid');
 
 const providers = require('./providers.json');
 
+
+// RABBIT MQ
+// var urlrabbit = process.env.CLOUDAMQP_URL || "amqp://localhost",
+//     q = 'tasks',
+//     dirTempFiles = './public/temp/';
+var rabbit = require('./../rabbit');
 
 // Utilitaries
 function stripPrefix(str){
@@ -63,7 +72,7 @@ function getAgency(provider,dataset,callback) {
         }
     };
     debug('call getAgency; provider: %s, dataset: %s',provider,dataset);
-    debug('url: %s%s%s',options.url);
+    debug('url: %s',options.url);
     request(options,function(e,r,b) {
         if (r.statusCode >=200 && r.statusCode < 400 && !e) {
             xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
@@ -877,5 +886,121 @@ exports.getList = function(req,res) {
             }});
     } else {
         res.status(404).send("ERROR 404 - PROVIDER IS NOT SUPPORTED");
+    }
+};
+
+
+exports.getBigDataSet = function(req,res) {    
+    var provider = req.params.provider.toUpperCase();
+    var protocol = providers[provider.toUpperCase()].protocol,
+        host = providers[provider.toUpperCase()].host,
+        path = providers[provider.toUpperCase()].path,
+        format = providers[provider.toUpperCase()].format,
+        agencyID = providers[provider.toUpperCase()].agencyID;
+    if (isInArray(provider,Object.keys(providers))) {
+        var dataSet = '';
+        if (provider !== 'EUROSTAT' && provider !== 'WEUROSTAT')  {
+            dataSet = req.params.dataset.toUpperCase();
+        } else {
+            dataSet = req.params.dataset;        
+        };
+        
+        // All keys to UpperCase
+        var key, keys = Object.keys(req.query);
+        var n = keys.length;
+        var reqParams={};
+        while (n--) {
+            key = keys[n];
+            var kkey = key; // name of the key before it get changed below
+            if (key.toUpperCase() === "FREQUENCY") {key = "FREQ";}
+            if (key === 'startPeriod') {reqParams[key] = req.query[key];}
+            else if (key === 'firstNObservations') {reqParams[key] = req.query[key];}
+            else if (key === 'lastNObservations') {reqParams[key] = req.query[key];}
+            else if (key === 'endPeriod') {reqParams[key] = req.query[key];}
+            else {reqParams[key.toUpperCase()] = req.query[kkey];}
+        }      
+        var dimRequested = ''; // string fill with ordered dimensions passed by the user in req.params
+        if (provider === 'WEUROSTAT') {
+            var myPath = providers[provider].path + providers[provider].agencyID + '/data/' + dataSet;
+        } else {
+            var myPath = providers[provider].path + 'data/' + dataSet;
+        }
+        debug('getDataset with provider: %s, dataset: %s',provider,dataSet);
+        debug('getDataset with path=%s',myPath);
+        getDim(provider, null, null, dataSet, function(err,dim) {
+            if (err) {
+                res.status(500).send(dim); // if err, dim is the errorMessage
+            } else {
+                var authParams = dim.arrDim; // Authorised dimensions for the dataset.
+                var compt = 0;
+                authParams.forEach(function(it,ind){
+                    if(reqParams[it] != null) {
+                        if(ind<dim.nbDim-1) {dimRequested += reqParams[it]+'.';}
+                        else { dimRequested += reqParams[it];}
+                        delete reqParams[it];}
+                    else {
+                        if (ind<dim.nbDim-1) {
+                            dimRequested += '.';
+                        }
+                        compt ++;
+                    }
+                });
+                // When the whole dataSet is requested.
+                if (compt == dim.nbDim) {
+                    dimRequested = 'all';
+                };
+                myPath += '/' + dimRequested;
+
+                Object.keys(reqParams).forEach(function(it,ind,arr) {
+                    if (ind === 0) {
+                        myPath += '?';
+                    }
+                    myPath += it.toString() + "=" + reqParams[it] ;
+                    if (ind < arr.length-1) {
+                        myPath += "&";
+                    }
+                });
+                var options = {
+                    url: protocol + '://' + host + myPath,
+                    headers: {
+                        'connection': 'keep-alive',
+                        'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
+                        'user-agent': 'nodeJS'
+                    }
+                };
+                debug('auth params: %s',authParams);
+                debug('dimensions: %s',dimRequested);
+
+                var conn = rabbit.get(),
+                    id = shortid.generate();
+                var task = {
+                    options: options,
+                    dataSet: dataSet,
+                    authParams: authParams,
+                    file: id
+                };
+                rabbit.sendMessage(conn,JSON.stringify(task));
+                res.send(buildHTML.bigDataset(id));
+            }
+        });
+    } else {
+        res.status(404).send("ERROR 404 - PROVIDER IS NOT SUPPORTED");
+    }
+};
+
+// Send temporary file
+exports.getTemp = function(req,res){   
+    var id = req.params.id;
+    debug('Request for temporary file with id: %s', id);
+    if (id.slice(-4) === "html") {
+        // Being here means the file does not exist yet (or does
+        // not exist anymore).
+        // Send wait to the user
+        res.send(buildHTML.wait(id));
+    } else {
+        // else let Rabbit send us the route
+        rabbit.sendTempFile(id,function(route){
+            res.redirect(route);
+        });
     }
 };
