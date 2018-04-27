@@ -34,12 +34,14 @@ const providers = require('./providers.json');
 var rabbit = require('./../rabbit');
 
 // Utilitaries
+// ===========
 function stripPrefix(str){
     var prefixMatch;
     prefixMatch = new RegExp(/(?!xmlns)^.*:/);
     return str.replace(prefixMatch, '');
 }
 
+// We embed the error message in a beautiful HTML webpage
 function embedErrorMessage(message) {
     var header = '<html><link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous"><body style="margin: 5%;">';
     header += '<div class="alert alert-danger" role="alert"><h4 class="alert-heading">Error</h4>';
@@ -56,10 +58,12 @@ function getErrorMessage(errorCode) {
         return message;
     }
 }
-
+// Check if element is an array
 function isInArray(it,arr) {
     return arr.indexOf(it) > -1;
 }
+
+// =============================================================================
 
 // On récupére le nom de l'agence que l'on utilise pour récupérer la DSD d'un dataset
 function getAgency(provider,dataset,callback) {
@@ -592,9 +596,11 @@ exports.getSeries = function(req,res) {
                             }
                         });
                 } else {
-                    var errorMessage = '<p>Request to ' + provider + ' servers failed with code '+ r.statusCode +' <br/>';
+
+                    var errorMessage = '<p>Request to ' + provider + ' servers failed with code '+ r.statusCode +'.<br/>';
                     errorMessage += 'We tried to retrieve data at <a href="' + options.url + '">'+ options.url + '</a> but get the following error message:</p>';
-                    errorMessage += '<p><i>"' + r.statusMessage + '".</i></p>';
+                    var errorProvider = r.statusMessage || b ;
+                    errorMessage += '<p><i>"' + errorProvider +'"</i></p>';
                     res.status(r.statusCode).send(embedErrorMessage(errorMessage));
                     debug(e);debug('[getSeries] request failed with code %d',r.statusCode);
                 }
@@ -643,7 +649,8 @@ exports.getSeries = function(req,res) {
                     debug('[getSeries] request failed with code %d',r.statusCode);
                     var errorMessage = '<p>Request to ' + provider + ' servers failed with code '+ r.statusCode +' <br/>';
                     errorMessage += 'We tried to retrieve data at <a href="' + options.url + '">'+ options.url + '</a> but get the following error message:</p>';
-                    errorMessage += '<p><i>"' + r.statusMessage + '".</i></p>';
+                    var errorProvider = r.statusMessage || b ;
+                    errorMessage += '<p><i>"' + errorProvider +'"</i></p>';
                     res.status(r.statusCode).send(embedErrorMessage(errorMessage));
                     
                 }
