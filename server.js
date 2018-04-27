@@ -102,7 +102,7 @@ app.get('/status',function(req,res){
 });
 
 // Error 404 and function isInArray
-var err404 = '<html><head><title>SDMX in EViews - Error 404</title></head><body style="background-color:black; color:white; text-align:center; font-size: 100px; margin-top: 20%; width: 100%; font-family: Menlo; text-align:center;">404</body></html>';
+var err404 = '<html><head><title>SDMX in EViews - Error 404</title></head><body style="background-color:black; color:white; text-align:center; margin-top: 20%; width: 100%; font-family: Menlo; text-align:center;"><p style="font-size: 100px;">404</p><br/><p>The page you have requested does not exist.</p></body></html>';
 function isInArray(it,arr) {
     return arr.indexOf(it) > -1;
 }

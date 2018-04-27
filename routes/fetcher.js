@@ -34,10 +34,19 @@ const providers = require('./providers.json');
 var rabbit = require('./../rabbit');
 
 // Utilitaries
+// ===========
 function stripPrefix(str){
     var prefixMatch;
     prefixMatch = new RegExp(/(?!xmlns)^.*:/);
     return str.replace(prefixMatch, '');
+}
+
+// We embed the error message in a beautiful HTML webpage
+function embedErrorMessage(message) {
+    var header = '<html><link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous"><body style="margin: 5%;">';
+    header += '<div class="alert alert-danger" role="alert"><h4 class="alert-heading">Error</h4>';
+    var footer = '<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script><script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script></body></html>';
+    return header + message + footer;
 }
 
 function getErrorMessage(errorCode) {
@@ -49,10 +58,12 @@ function getErrorMessage(errorCode) {
         return message;
     }
 }
-
+// Check if element is an array
 function isInArray(it,arr) {
     return arr.indexOf(it) > -1;
 }
+
+// =============================================================================
 
 // On récupére le nom de l'agence que l'on utilise pour récupérer la DSD d'un dataset
 function getAgency(provider,dataset,callback) {
@@ -90,12 +101,12 @@ function getAgency(provider,dataset,callback) {
                     }
                 } else {
                     var errorMessage = "Error retrieving datastructure at: "+ options.url;
-                    callback(true,errorMessage);
+                    callback(true,embedErrorMessage(errorMessage));
                 };
             });
         } else {
             var errorMessage = "Error " + r.statusCode + " retrieving datastructure at: " + options.url;
-            callback(true,errorMessage);
+            callback(true,embedErrorMessage(errorMessage));
             debug(r.statusCode);
         }
     });
@@ -113,7 +124,7 @@ function getDim(provider, agency, dsdId, dataset, callback) {
     if ((agency === null && dsdId === null) && dataset !== null) {
         getAgency(provider,dataset,function(err,agencyInfo) {
             if (err) {
-                callback(true,agencyInfo);
+                callback(true,agencyInfo); // if err == true, agencyInfo == error's message
             } else {
                 var myPath = path + 'datastructure/'+agencyInfo.agency+'/'+agencyInfo.dsdId + '?'+ format;
                 var options = {
@@ -145,12 +156,12 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                             } else {
                                 var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
                                 debug(err);
-                                callback(true, errorMessage);
+                                callback(true, embedErrorMessage(errorMessage));
                             }
                         });
                     } else {
                         var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
-                        callback(true, errorMessage);
+                        callback(true, embedErrorMessage(errorMessage));
                         debug(errorMessage);
                         debug(e);
                     } 
@@ -181,20 +192,20 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                             });
                             callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data});
                         } catch(error) {
-                            var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer "+options.url;
+                            var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
                             debug(error);
-                            callback(true, errorMessage);
+                            callback(true, embedErrorMessage(errorMessage));
                         }
                     } else {
                         var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
                         debug(err);
-                        callback(true, errorMessage);
+                        callback(true, embedErrorMessage(errorMessage));
                     }
                 });
             } else {
                 var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
                 debug(e);
-                callback(true, errorMessage);
+                callback(true, embedErrorMessage(errorMessage));
             }
         });           
     }
@@ -252,7 +263,8 @@ exports.getAllDataFlow = function(req,res) {
                                 res.send(buildHTML.dataFlow(data,provider));
                             }
                             catch(error) {
-                                res.status(500).send('Failed to retrieve dataflows. Could not parse SDMX answer at '+options.url);
+                                var errorMessage = 'Failed to retrieve dataflows. Could not parse SDMX answer at '+options.url;
+                                res.status(500).send(embedErrorMessage(errorMessage));
                                 debug(error);
                             }
                         } else {
@@ -264,7 +276,9 @@ exports.getAllDataFlow = function(req,res) {
             }
         });
     } else {
-        res.status(404).send('ERROR 404 - PROVIDER IS NOT SUPPORTED.');
+        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
+        res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
@@ -343,7 +357,7 @@ exports.getDataFlow = function(req,res) {
                                         debug(errorMessage);
                                         debug('-------------------------');
                                         debug(error);
-                                        res.status(500).send(errorMessage);
+                                        res.status(500).send(embedErrorMessage(errorMessage));
                                     }
                                 }
                                 else {
@@ -377,7 +391,11 @@ exports.getDataFlow = function(req,res) {
                     }, 1000);
                 }
             }});
-    } else {res.status(404).send('ERROR 404 - PROVIDER IS NOT SUPPORTED');}
+    } else {
+        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
+        res.status(404).send(embedErrorMessage(errorMessage));
+    }
 };
 
 // Download a Dataset
@@ -494,13 +512,13 @@ exports.getDataSet = function(req,res) {
                                                 debug('redirecting to 413');
                                             } else {
                                                 var errorMessage = "Error parsing SDMX at: " + options.url;
-                                                res.status(500).send(errorMessage);
+                                                res.status(500).send(embedErrorMessage(errorMessage));
                                                 debug(errorMessage);
                                             }
                                         } catch(error2) {
                                             debug(error2);
                                             var errorMessage = "Error parsing SDMX at: " + options.url;
-                                            res.status(500).send(errorMessage);
+                                            res.status(500).send(embedErrorMessage(errorMessage));
                                         }
                                     }
                                 } else {
@@ -510,16 +528,18 @@ exports.getDataSet = function(req,res) {
                     } else if (r.statusCode === 413) {
                         res.redirect('/413.html');
                     } else {
-                        var errorMessage = "Error retrieving data at: " + options.url + '\n';
-                        errorMessage += 'Code: ' + r.statusCode + '\n';
-                        errorMessage += 'Message: ' + r.statusMessage;
-                        res.status(r.statusCode).send(errorMessage);
+                        var errorMessage = '<p>Request to ' + provider + ' servers failed with code '+ r.statusCode +' <br/>';
+                        errorMessage += 'We tried to retrieve data at <a href="' + options.url + '">'+ options.url + '</a> but get the following error message:</p>';
+                        errorMessage += '<p><i>"' + r.statusMessage + '".</i></p>';
+                        res.status(r.statusCode).send(embedErrorMessage(errorMessage));
                         debug(r);
                     }
                 });
             }});
     } else {
-        res.status(404).send("ERROR 404 - PROVIDER IS NOT SUPPORTED");
+        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
+        res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
@@ -568,16 +588,21 @@ exports.getSeries = function(req,res) {
                                     }}
                                 catch(error) {
                                     debug(error);
-                                    var errorMessage = "Error parsing SDMX at: " + options.url;
-                                    res.status(500).send(errorMessage);
+                                    var errorMessage = "Error when parsing SDMX at: " + options.url;
+                                    res.status(500).send(embedErrorMessage(errorMessage));
                                 }
                             } else{
                                 res.send(err);
                             }
                         });
                 } else {
-                    res.status(r.statusCode).send(r.statusMessage);
-                    debug(e);
+
+                    var errorMessage = '<p>Request to ' + provider + ' servers failed with code '+ r.statusCode +'.<br/>';
+                    errorMessage += 'We tried to retrieve data at <a href="' + options.url + '">'+ options.url + '</a> but get the following error message:</p>';
+                    var errorProvider = r.statusMessage || b ;
+                    errorMessage += '<p><i>"' + errorProvider +'"</i></p>';
+                    res.status(r.statusCode).send(embedErrorMessage(errorMessage));
+                    debug(e);debug('[getSeries] request failed with code %d',r.statusCode);
                 }
             });        
         } else {
@@ -599,6 +624,7 @@ exports.getSeries = function(req,res) {
                     'user-agent': 'nodeJS'
                 }
             };
+            debug('getSeries with path=%s',options.url);
             request(options, function(e,r,b) {
                 if (r.statusCode >= 200 && r.statusCode < 400) {
                         xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
@@ -620,13 +646,20 @@ exports.getSeries = function(req,res) {
                             }
                         });
                 } else {
-                    res.status(r.statusCode).send(r.statusMessage);
-                    debug(e);
+                    debug('[getSeries] request failed with code %d',r.statusCode);
+                    var errorMessage = '<p>Request to ' + provider + ' servers failed with code '+ r.statusCode +' <br/>';
+                    errorMessage += 'We tried to retrieve data at <a href="' + options.url + '">'+ options.url + '</a> but get the following error message:</p>';
+                    var errorProvider = r.statusMessage || b ;
+                    errorMessage += '<p><i>"' + errorProvider +'"</i></p>';
+                    res.status(r.statusCode).send(embedErrorMessage(errorMessage));
+                    
                 }
             });
         };
     } else {
-        res.status(404).send('ERROR 404 - PROVIDER IS NOT SUPPORTED');
+        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
+        res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
@@ -693,7 +726,9 @@ exports.getCodeList = function(req,res) {
             }
         });                   
     } else {
-        res.status(404).send('ERROR 404 - PROVIDER IS NOT SUPPORTED');
+        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
+        res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
@@ -885,7 +920,9 @@ exports.getList = function(req,res) {
                 });
             }});
     } else {
-        res.status(404).send("ERROR 404 - PROVIDER IS NOT SUPPORTED");
+        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
+        res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
@@ -984,7 +1021,9 @@ exports.getBigDataSet = function(req,res) {
             }
         });
     } else {
-        res.status(404).send("ERROR 404 - PROVIDER IS NOT SUPPORTED");
+        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
+        res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
