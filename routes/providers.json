@@ -152,5 +152,17 @@
         "apiKey": "False",
         "native": "False",
         "resources": ["series"]
+    },
+    "TEST":{
+        "name": "Test Errors",
+        "protocol": "https",
+        "host":"quiet-brook-31657.herokuapp.com",
+        "path":"/",
+        "agencyID": "agency",
+        "SDMX": "True",
+        "apiKey": "False",
+        "format":"",
+        "native": "True",
+        "resources": [""]
     }
 }
