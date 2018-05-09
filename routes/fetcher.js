@@ -24,7 +24,8 @@ var xml2js = require('xml2js'),
     amqp = require('amqplib/callback_api'),
     shortid = require('shortid');
 
-const providers = require('./providers.json');
+const providers = require('./providers.json'),
+      appTimeout = 29500; // TimeOut for Request
 
 
 // RABBIT MQ
@@ -42,12 +43,53 @@ function stripPrefix(str){
 }
 
 // We embed the error message in a beautiful HTML webpage
-function embedErrorMessage(message) {
+function embedErrorMessage(type, provider, code, data, url, message) {
+    var text = '<h1>SDMX in EViews</h1><br/><br/><div class="alert alert-danger" role="alert">';
+    if (type === "fetcher") {
+        text += '<h4 class="alert-heading">Fetcher error</h4><hr/>';
+        text += '<p>Request to ' + provider + ' failed with code ' + code + '.<br/>';
+        text += 'We have tried to retrieve ' + data + ' at ';
+        text += '<a href="' + url + '">' + url + '</a>';
+        text += ' but got the following error message from ' + provider + ' servers: <br/><i>"' + message + '"</i>';
+        text += '<br/><hr/><h6>Possible causes:</h6> <ul>';
+        if (code !== 500) {
+            text += '<li>the data you are trying to download does not exist.</li>';
+            text += '<li>the filters or dimensions you have entered are incorrect.</li></ul>';
+        }  else {
+            text += '<li>' + provider + ' servers are not working right now.</li></ul>';
+        }
+    }
+    if (type === "timeout") {
+        text += '<h4 class="alert-heading">Timeout error</h4><hr/>';
+        text += '<p>Request to ' + provider + ' timed out.<br/>';
+        text += 'We have tried to retrieve ' + data + ' at ';
+        text += '<a href="' + url + '">' + url + '</a>';
+        text += ' but ' + provider + ' servers were too long to respond and we had to stop the request.<br/>';
+        text += '<hr/><h6>Possible causes:</h6> <ul>';
+        text += '<li>' + provider + ' servers are too busy. Try again later.</li></ul>';
+    }
+    if (type === "parser") {
+        text += '<h4 class="alert-heading">Parser error</h4><hr/>';
+        text += '<p>We successfully obtained data from ' + provider + ' servers ';
+        text += 'but we are not able to decipher the answer. ';
+        text += 'The error occured when retrieveing ' + data + ' at ';
+        text += '<a href="' + url + '">' + url + '</a>.<br/>';
+        text += '<hr/><h6>Possible causes:</h6> <ul>';
+        text += '<li>Error might be on our side if our parser is not up-to-date. Raise an issue on <a href="https://github.com/dgei-sdmx/eviewsSDMX/issues">Github project page</a>.</li></ul>';
+    }
+    if (type === "request") {
+        text += '<h4 class="alert-heading">Request error</h4><hr/>';
+        text += '<p>We were unable to make a request to ' + provider + ' servers. Request failed with code '+ code + '.<br/>';
+        text += 'Request was tried with url ';
+        text += '<a href="' + url + '">' + url + '</a> while retrieving ' + data + '.<br/>';
+        text += '<hr/><h6>Possible causes:</h6> <ul>';
+        text += '<li>Error is on our side. Our parser is not up-to-date. Raise an issue on <a href="https://github.com/dgei-sdmx/eviewsSDMX/issues">Github project page</a>.</li></ul>';
+    }
     var header = '<html><link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous"><body style="margin: 5%;">';
-    header += '<div class="alert alert-danger" role="alert"><h4 class="alert-heading">Error</h4>';
-    var footer = '<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script><script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script></body></html>';
-    return header + message + footer;
+    var footer = '</div><script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script><script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script></body></html>';
+    return header + text + footer;
 }
+
 
 function getErrorMessage(errorCode) {
     var message = '';
@@ -80,34 +122,49 @@ function getAgency(provider,dataset,callback) {
             'connection' : 'keep-alive',
             'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
             'user-agent': 'nodeJS'
-        }
+        },
+        timeout: appTimeout
     };
     debug('call getAgency; provider: %s, dataset: %s',provider,dataset);
     debug('url: %s',options.url);
     request(options,function(e,r,b) {
-        if (r.statusCode >=200 && r.statusCode < 400 && !e) {
-            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                if (err === null) {
-                    try {
-                        var agency = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['agencyID'],
-                            dsdId = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['id'];
-                        callback(false,{"agency":agency,"dsdId":dsdId});
-                        debug('agency: %s; dsdId: %s',agency, dsdId);
-                        debug('getAgency: done.');
-                    } catch(error) {
-                        var errorMessage = "Error parsing SDMX when retrieving datastructure at: "+ options.url;
-                        callback(true,errorMessage);
-                        debug(error);
-                    }
-                } else {
-                    var errorMessage = "Error retrieving datastructure at: "+ options.url;
-                    callback(true,embedErrorMessage(errorMessage));
-                };
-            });
+        if (e) {
+            var errorMessage;
+            if (e.code === 'ETIMEDOUT') {
+               errorMessage  = embedErrorMessage("timeout",provider,null,"agency ID",options.url,null);
+            } else {
+                errorMessage = embedErrorMessage("request",provider,e.code,"agency ID",options.url,null);
+            }
+            debug('Request Error at url %s with code %s',options.url,e);
+            callback(true,errorMessage);
         } else {
-            var errorMessage = "Error " + r.statusCode + " retrieving datastructure at: " + options.url;
-            callback(true,embedErrorMessage(errorMessage));
-            debug(r.statusCode);
+            if (r.statusCode >=200 && r.statusCode < 400) {
+                xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                    if (err === null) {
+                        try {
+                            var agency = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['agencyID'],
+                                dsdId = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['id'];
+                            callback(false,{"agency":agency,"dsdId":dsdId});
+                            debug('agency: %s; dsdId: %s',agency, dsdId);
+                            debug('getAgency: done.');
+                        } catch(error) {
+                            debug("Parser error. Error: %s",error);
+                            var errorMessage = embedErrorMessage("parser",provider,null,"agency ID",options.url,null);
+                            // var errorMessage = "Error parsing SDMX when retrieving datastructure at: "+ options.url;
+                            callback(true,errorMessage);
+                        }
+                    } else {
+                        debug("Parser error. Error: %s",err);
+                        var errorMessage = embedErrorMessage("parser",provider,null,"agency ID",options.url,null);
+                        callback(true,errorMessage);
+                    };
+                });
+            } else {
+                var errorProvider = r.statusMessage || b ;
+                var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"agency ID",options.url,errorProvider);
+                callback(true,errorMessage);
+                debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s",r.statusCode,errorProvider,options.url);
+            }
         }
     });
 };
@@ -134,37 +191,51 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                         'connection' : 'keep-alive',
                         'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                         'user-agent': 'nodeJS'
-                    }
+                    },
+                    timeout: appTimeout
                 };
                 request(options,function(e,r,b) { // e: error, r: response, b:body
-                    if (r.statusCode >=200 && r.statusCode < 400 && !e) {
-                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                            if(err === null) {
-                                try {
-                                    var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
-                                    nbDim = data.length;
-                                    data.forEach(function(item,index) {
-                                        arrDim.push(item['id'][0]);
-                                    });
-                                    debug('nbDim: %s ; arrDim: %s, dsdId: %s',nbDim,arrDim,dsdId);
-                                    callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data,"dsdId":agencyInfo.dsdId});
-                                } catch(error) {
-                                    var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
-                                    debug(error);
-                                    callback(true,errorMessage);
-                                }
-                            } else {
-                                var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
-                                debug(err);
-                                callback(true, embedErrorMessage(errorMessage));
-                            }
-                        });
+                    if (e) {
+                        debug('Request Error at url %s with code %s',options.url,e);
+                        var errorMessage;
+                        if (e.code === "ETIMEDOUT") {
+                            errorMessage = embedErrorMessage("timeout",provider,null,"dimensions",options.url,null);
+                        } else {
+                            errorMessage = embedErrorMessage("request",provider,e.code,"dimensions",options.url,null);
+                        }
+                        callback(true,errorMessage);
                     } else {
-                        var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
-                        callback(true, embedErrorMessage(errorMessage));
-                        debug(errorMessage);
-                        debug(e);
-                    } 
+                        if (r.statusCode >=200 && r.statusCode < 400) {
+                            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                                if(err === null) {
+                                    try {
+                                        var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
+                                        nbDim = data.length;
+                                        data.forEach(function(item,index) {
+                                            arrDim.push(item['id'][0]);
+                                        });
+                                        debug('nbDim: %s ; arrDim: %s, dsdId: %s',nbDim,arrDim,dsdId);
+                                        callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data,"dsdId":agencyInfo.dsdId});
+                                    } catch(error) {
+                                        var errorMessage = embedErrorMessage("parser",provider,null,"dimensions of the data",options.url,null);
+                                        // var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
+                                        debug(error);
+                                        callback(true,errorMessage);
+                                    }
+                                } else {
+                                    var errorMessage = embedErrorMessage("parser",provider,null,"dimensions of the data",options.url,null);
+                                    debug(err);
+                                    callback(true, errorMessage);
+                                }
+                            });
+                        } else {
+                            var errorProvider = r.statusMessage || b ;
+                            var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"dimensions of the data",options.url,errorProvider);
+                            callback(true, errorMessage);
+                            debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s",r.statusCode,errorProvider,options.url);
+                            debug(e);
+                        }
+                    }
                 });
             }});
     } else if (agency === null && dataset === null) {
@@ -178,34 +249,48 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                 'connection' : 'keep-alive',
                 'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                 'user-agent': 'nodeJS'
-            }
+            },
+            timeout: appTimeout
         };
         request(options, function(e,r,b) {
-            if (r.statusCode >=200 && r.statusCode < 400 && !e) {
-                xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                    if(err === null) {
-                        try {
-                            var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
-                            nbDim = data.length;
-                            data.forEach(function(item,index) {
-                                arrDim.push(item['id'][0]);
-                            });
-                            callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data});
-                        } catch(error) {
-                            var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
-                            debug(error);
-                            callback(true, embedErrorMessage(errorMessage));
-                        }
-                    } else {
-                        var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
-                        debug(err);
-                        callback(true, embedErrorMessage(errorMessage));
-                    }
-                });
+            if (e) {
+                debug('Request Error at url %s with code %s',options.url,e);
+                var errorMessage;
+                if (e.code === "ETIMEDOUT") {
+                    errorMessage = embedErrorMessage("timeout",provider,null,"dimensions",options.url,null);
+                } else {
+                    errorMessage = embedErrorMessage("request",provider,e.code,"dimensions",options.url,null);
+                }
+                callback(true,errorMessage);
             } else {
-                var errorMessage = "Failed to retrieve dimensions - error when retrieving data at: "+options.url;
-                debug(e);
-                callback(true, embedErrorMessage(errorMessage));
+                if (r.statusCode >=200 && r.statusCode < 400) {
+                    xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                        if(err === null) {
+                            try {
+                                var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
+                                nbDim = data.length;
+                                data.forEach(function(item,index) {
+                                    arrDim.push(item['id'][0]);
+                                });
+                                callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data});
+                            } catch(error) {
+                                var errorMessage = embedErrorMessage("parser",provider,null,"dimensions of the data",options.url,null);
+                                // var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
+                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,error);
+                                callback(true, errorMessage);
+                            }
+                        } else {
+                            var errorMessage = embedErrorMessage("parser",provider,null,"dimensions of the data",options.url,null);
+                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,err);
+                            callback(true, errorMessage);
+                        }
+                    });
+                } else {
+                    var errorProvider = r.statusMessage || b ;
+                    var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"dimensions of the data",options.url,errorProvider);
+                    debug("Fetcher ERROR \n Code: %d \n Message: %s \n Url: %s",r.statusCode,r.statusMessage,options.url);
+                    callback(true, errorMessage);
+                }
             }
         });           
     }
@@ -230,11 +315,22 @@ exports.getAllDataFlow = function(req,res) {
                 'connection':'keep-alive',
                 'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                 'user-agent': 'nodeJS'
-            }
+            },
+            timeout: appTimeout
         };
         debug('get dataflow with path=%s',options.url);
         request(options,function(e,r,b) {
-            if (r.statusCode >=200 && r.statusCode < 400 && !e) {
+            if (e) {
+                debug('Request Error at url %s with code %s',options.url,e);
+                var errorMessage;
+                if (e.code === "ETIMEDOUT") {
+                    errorMessage = embedErrorMessage("timeout",provider,null,"dataflow",options.url,null);
+                } else {
+                    errorMessage = embedErrorMessage("request",provider,e.code,"dataflow",options.url,null);
+                }
+                res.statusCode(500).send(errorMessage);
+            } else {
+                if (r.statusCode >=200 && r.statusCode < 400 && !e) {
                     xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                         if (err === null) {
                             var data = [];
@@ -263,29 +359,35 @@ exports.getAllDataFlow = function(req,res) {
                                 res.send(buildHTML.dataFlow(data,provider));
                             }
                             catch(error) {
-                                var errorMessage = 'Failed to retrieve dataflows. Could not parse SDMX answer at '+options.url;
-                                res.status(500).send(embedErrorMessage(errorMessage));
-                                debug(error);
+                                var errorMessage = embedErrorMessage("parser",provider,null,"dataflow (list of the datasets)",options.url,null);
+                                res.status(500).send(errorMessage);
+                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,error);
                             }
                         } else {
-                            res.send(err);
+                            var errorMessage = embedErrorMessage("parser",provider,null,"dataflow (list of the datasets)",options.url,null);
+                            res.status(500).send(errorMessage);
+                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,err);
                         }
                     });
-            } else {
-                res.send(r.statusCode);
+                } else {
+                    debug("The code while requesting dataflow at %s",options.url);
+                    debug(r.statusCode);
+                    debug(r.statusMessage);
+                    var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"dataflow (list of the datasets)",options.url,r.statusMessage);
+                    res.send(errorMessage);
+                }
             }
         });
     } else {
         var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
         errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
-        res.status(404).send(embedErrorMessage(errorMessage));
+        res.status(404).send(errorMessage);
     }
 };
 
 
 
 // List the timeseries inside a dataset
-
 exports.getDataFlow = function(req,res) {
     var provider = req.params.provider.toUpperCase(),
         dataSet = req.params.dataset,
@@ -306,7 +408,7 @@ exports.getDataFlow = function(req,res) {
     if (isInArray(provider.toUpperCase(),Object.keys(providers))) {
         getDim(provider,null,null,dataSet,function(err,dim) {
             if (err) {
-                res.status(500).send(dim); // if err, dim is the error message
+                res.send(dim); // if err, dim is the error message
             } else {
                 if (provider === 'WEUROSTAT') {
                     var myPath = path + providers[provider].agencyID + '/data/' + dataSet + '/all?detail=nodata' + '&' + format;
@@ -353,15 +455,17 @@ exports.getDataFlow = function(req,res) {
                                                     res.send(buildHTML.detailDataset(provider,vTS,dataSet,dim,null));
                                                 };}}
                                     } catch(error) {
-                                        var errorMessage = "Error retrieving data at: " + options.url;
+                                        // var errorMessage = "Error retrieving data at: " + options.url;
+                                        var errorMessage = embedErrorMessage("parser",provider,null,"dataset information",options.url,null);
                                         debug(errorMessage);
                                         debug('-------------------------');
                                         debug(error);
-                                        res.status(500).send(embedErrorMessage(errorMessage));
+                                        res.status(500).send(errorMessage);
                                     }
-                                }
-                                else {
-                                    res.send(err);
+                                } else {
+                                    var errorMessage = embedErrorMessage("parser",provider,null,"dataset information",options.url,null);
+                                    res.status(500).send(errorMessage);
+                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,err);
                                 }
                             });
                         } else {
@@ -377,11 +481,10 @@ exports.getDataFlow = function(req,res) {
                         }
                     } else {
                         if (!res.headersSent) {
-                            var error = r.statusMessage;
                             debug(e);
-                            debug(error);
+                            debug(r.statusMessage);
                             debug(e.stack);
-                            res.send(buildHTML.detailDataset(provider,null,dataSet,dim,error));
+                            res.send(buildHTML.detailDataset(provider,null,dataSet,dim,r.statusMessage));
                         }
                     }
                 });
@@ -452,7 +555,7 @@ exports.getDataSet = function(req,res) {
         debug('getDataset with path=%s',myPath);
         getDim(provider, null, null, dataSet, function(err,dim) {
             if (err) {
-                res.status(500).send(dim); // if err, dim is the errorMessage
+                res.send(dim); // if err, dim is the errorMessage
             } else {
                 var authParams = dim.arrDim; // Authorised dimensions for the dataset.
                 var compt = 0;
@@ -494,8 +597,18 @@ exports.getDataSet = function(req,res) {
                 debug('auth params: %s',authParams);
                 debug('dimensions: %s',dimRequested);
                 request(options, function(e,r,b) {
-                    if (r.statusCode >= 200 && r.statusCode < 400) {
-                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                    if (e) {
+                        debug('Request Error at url %s with code %s',options.url,e);
+                        var errorMessage;
+                        if (e.code === "ETIMEDOUT") {
+                            errorMessage = embedErrorMessage("timeout",provider,null,"data",options.url,null);
+                        } else {
+                            errorMessage = embedErrorMessage("request",provider,e.code,"data",options.url,null);
+                        }
+                        res.statusCode(500).send(errorMessage);
+                    } else {
+                        if (r.statusCode >= 200 && r.statusCode < 400) {
+                            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                                 if(err === null) {
                                     try {
                                         var data = obj.StructureSpecificData.DataSet[0];
@@ -504,35 +617,36 @@ exports.getDataSet = function(req,res) {
                                             res.send(buildHTML.makeTable(vTS,dataSet,authParams));
                                         }
                                     } catch(error) {
-                                        debug(error);
+                                        debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,error);
                                         try {
                                             var footer = obj.StructureSpecificData.Footer[0].Message[0].code[0]; // for handling Eurostat errors
                                             if (footer === '413') {
                                                 res.redirect('/413.html');
                                                 debug('redirecting to 413');
                                             } else {
-                                                var errorMessage = "Error parsing SDMX at: " + options.url;
-                                                res.status(500).send(embedErrorMessage(errorMessage));
-                                                debug(errorMessage);
+                                                var errorMessage = embedErrorMessage("parser",provider,null,"dataset",options.url,null);
+                                                res.status(500).send(errorMessage);
                                             }
                                         } catch(error2) {
-                                            debug(error2);
-                                            var errorMessage = "Error parsing SDMX at: " + options.url;
-                                            res.status(500).send(embedErrorMessage(errorMessage));
+                                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,error2);
+                                            var errorMessage = embedErrorMessage("parser",provider,null,"dataset",options.url,null);
+                                            res.status(500).send(errorMessage);
                                         }
                                     }
                                 } else {
-                                    res.send(err);
+                                    var errorMessage = embedErrorMessage("parser",provider,null,"dataset",options.url,null);
+                                    res.status(500).send(errorMessage);
+                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,err);
                                 }
                             });
-                    } else if (r.statusCode === 413) {
-                        res.redirect('/413.html');
-                    } else {
-                        var errorMessage = '<p>Request to ' + provider + ' servers failed with code '+ r.statusCode +' <br/>';
-                        errorMessage += 'We tried to retrieve data at <a href="' + options.url + '">'+ options.url + '</a> but get the following error message:</p>';
-                        errorMessage += '<p><i>"' + r.statusMessage + '".</i></p>';
-                        res.status(r.statusCode).send(embedErrorMessage(errorMessage));
-                        debug(r);
+                        } else if (r.statusCode === 413) {
+                            res.redirect('/413.html');
+                        } else {
+                            var errorProvider = r.statusMessage || b ;
+                            var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"dataset",options.url,errorProvider);
+                            res.send(errorMessage);
+                            debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s",r.statusCode,errorProvider,options.url);
+                        }
                     }
                 });
             }});
@@ -573,11 +687,21 @@ exports.getSeries = function(req,res) {
                 headers: {
                     'connection': 'keep-alive',
                     'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1'
-                }
+                },
+                timeout: appTimeout
             };
             debug('getSeries with path=%s',options.url);
             request(options, function(e,r,b) {
-                if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+                if (e) {
+                    var errorMessage;
+                    if (e.code === 'ETIMEDOUT') {
+                        errorMessage = embedErrorMessage("timeout",provider,null,"data",options.url,null);
+                    } else {
+                        errorMessage = embedErrorMessage("request",provider,e.code,"data",options.url,null);
+                    }
+                    res.send(errorMessage);
+                } else {
+                    if (r.statusCode >= 200 && r.statusCode < 400) {
                         xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                             if(err === null) {
                                 try {
@@ -587,22 +711,22 @@ exports.getSeries = function(req,res) {
                                         res.send(buildHTML.makeTable(vTS,series,[]));
                                     }}
                                 catch(error) {
-                                    debug(error);
-                                    var errorMessage = "Error when parsing SDMX at: " + options.url;
-                                    res.status(500).send(embedErrorMessage(errorMessage));
+                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,error);
+                                    var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
+                                    res.status(500).send(errorMessage);
                                 }
                             } else{
-                                res.send(err);
+                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,err);
+                                var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
+                                res.status(500).send(errorMessage);
                             }
                         });
-                } else {
-
-                    var errorMessage = '<p>Request to ' + provider + ' servers failed with code '+ r.statusCode +'.<br/>';
-                    errorMessage += 'We tried to retrieve data at <a href="' + options.url + '">'+ options.url + '</a> but get the following error message:</p>';
-                    var errorProvider = r.statusMessage || b ;
-                    errorMessage += '<p><i>"' + errorProvider +'"</i></p>';
-                    res.status(r.statusCode).send(embedErrorMessage(errorMessage));
-                    debug(e);debug('[getSeries] request failed with code %d',r.statusCode);
+                    } else {
+                        var errorProvider = r.statusMessage || b ;
+                        var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"data",options.url,errorProvider);
+                        res.send(errorMessage);
+                        debug(e);debug('[getSeries] request failed with code %d',r.statusCode);
+                    }
                 }
             });        
         } else {
@@ -622,11 +746,21 @@ exports.getSeries = function(req,res) {
                     'connection': 'keep-alive',
                     'accept': 'application/vnd.sdmx.structurespecificdata+xml;version=2.1',
                     'user-agent': 'nodeJS'
-                }
+                },
+                timeout: appTimeout
             };
             debug('getSeries with path=%s',options.url);
             request(options, function(e,r,b) {
-                if (r.statusCode >= 200 && r.statusCode < 400) {
+                if (e) {
+                    var errorMessage;
+                    if (e.code === 'ETIMEDOUT') {
+                        errorMessage = embedErrorMessage("timeout",provider,null,"data",options.url,null);
+                    } else {
+                        errorMessage = embedErrorMessage("request",provider,e.code,"data",options.url,null);
+                    }
+                    res.send(errorMessage);
+                } else {
+                    if (r.statusCode >= 200 && r.statusCode < 400) {
                         xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                             if(err === null) {
                                 try {
@@ -638,21 +772,21 @@ exports.getSeries = function(req,res) {
                                 }
                                 catch(error) {
                                     debug(error);
-                                    var errorMessage = "Error parsing SDMX at: " + options.url;
+                                    var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
                                     res.status(500).send(errorMessage);
                                 }
                             } else {
-                                res.send(err);
+                                debug(err);
+                                var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
+                                res.status(500).send(errorMessage);
                             }
                         });
-                } else {
-                    debug('[getSeries] request failed with code %d',r.statusCode);
-                    var errorMessage = '<p>Request to ' + provider + ' servers failed with code '+ r.statusCode +' <br/>';
-                    errorMessage += 'We tried to retrieve data at <a href="' + options.url + '">'+ options.url + '</a> but get the following error message:</p>';
-                    var errorProvider = r.statusMessage || b ;
-                    errorMessage += '<p><i>"' + errorProvider +'"</i></p>';
-                    res.status(r.statusCode).send(embedErrorMessage(errorMessage));
-                    
+                    } else {
+                        debug('[getSeries] request failed with code %d',r.statusCode);
+                        var errorProvider = r.statusMessage || b ;
+                        var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"data",options.url,errorProvider);
+                        res.send(errorMessage);
+                    }   
                 }
             });
         };
@@ -688,41 +822,55 @@ exports.getCodeList = function(req,res) {
                 'connection': 'keep-alive',
                 'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                 'user-agent': 'nodeJS'
-            }
+            },
+            timeout: appTimeout
         };
         debug('getCodeList with provider: %s; dim: %s, dsdId: %s',provider,dim,dsdId);
         debug('url: %s', options.url);
         request(options, function(e,r,b) {
-            if (r.statusCode >=200 && r.statusCode < 400 && !e) {
-                xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                    if(err === null) {
-                        try {
-                            var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'];
-                            if (data.length > 1) {
-                                for(var d in data){
-                                    if (data[d].id[0] === dim) {
-                                        myData = data[d];
-                                    }
-                                }
-                            } else {
-                                var myData = data[0];
-                            }
-                            var title_dim = myData['id'][0];
-                            var codes = myData['Code'];
-                            debug('getCodeList: done;');
-                            res.send(buildHTML.codeList(codes,title_dim));}
-                        catch(error) {
-                            var errorMessage = "Error parsing SDMX at: " + options.url;
-                            res.status(500).send(errorMessage);
-                            debug(error);
-                        }
-                    } else {
-                        res.send(err);
-                    }
-                });
+            if (e) {
+                var errorMessage;
+                if (e.code === 'ETIMEDOUT') {
+                    errorMessage = embedErrorMessage("timeout",provider,null,"codelist",options.url,null);
+                } else {
+                    errorMessage = embedErrorMessage("request",provider,e.code,"codelist",options.url,null);
+                }
+                res.send(errorMessage);
             } else {
-                res.status(r.statusCode).send(r.statusMessage);
-                debug(e);
+                if (r.statusCode >=200 && r.statusCode < 400 && !e) {
+                    xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                        if(err === null) {
+                            try {
+                                var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'];
+                                if (data.length > 1) {
+                                    for(var d in data){
+                                        if (data[d].id[0] === dim) {
+                                            myData = data[d];
+                                        }
+                                    }
+                                } else {
+                                    var myData = data[0];
+                                }
+                                var title_dim = myData['id'][0];
+                                var codes = myData['Code'];
+                                debug('getCodeList: done;');
+                                res.send(buildHTML.codeList(codes,title_dim));}
+                            catch(error) {
+                                var errorMessage = embedErrorMessage("parser",provider,null,"codelist",options.url,null);
+                                res.status(500).send(errorMessage);
+                                debug(error);
+                            }
+                        } else {
+                            var errorMessage = embedErrorMessage("parser",provider,null,"codelist",options.url,null);
+                            res.status(500).send(errorMessage);
+                            debug(err);
+                        }
+                    });
+                } else {
+                    debug(e);
+                    var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"codelist",options.url,r.statusMessage);
+                    res.send(r.statusMessage);
+                }
             }
         });                   
     } else {
@@ -750,37 +898,52 @@ exports.getDatafromURL = function(req,res) {
         agentOptions: {
             ciphers: 'ALL',
             secureProtocol: 'TLSv1_1_method'
-        }
+        },
+        timeout: appTimeout
     };
     request(options,function(e,r,b) {
-        if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
-                    xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                        if(err === null) {
-                            try {
-                                if (typeof obj.StructureSpecificData !== 'undefined') {
-                                    var data = obj.StructureSpecificData.DataSet[0],
-                                        vTS = data.Series,
-                                        title = 'request to '+ host;
-                                    if (!req.timedout) {
-                                        res.send(buildHTML.makeTable(vTS,title,[]));
-                                    }
-                                } else {
-                                    res.set('Content-type','text/plain');
-                                    res.send('The request could not be handled');
-                                }
-                            } catch(error) {
-                                debug(error);
-                                var errorMessage = "Error parsing SDMX at: " + options.url;
-                                res.status(500).send(errorMessage);
-                            }
-                        } else {
-                            res.send(err);
-                        }
-                    });
+        if (e) {
+            var errorMessage;
+            if (e.code === 'ETIMEDOUT') {
+                errorMessage = embedErrorMessage("timeout",host,null,"data",options.url,null);
             } else {
-                res.send(r.statusCode);
+                errorMessage = embedErrorMessage("request",host,e.code,"data",options.url,null);
             }
-        });
+            res.send(errorMessage);
+        } else {
+            if (r.statusCode >= 200 && r.statusCode < 400) {
+                xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                    if(err === null) {
+                        try {
+                            if (typeof obj.StructureSpecificData !== 'undefined') {
+                                var data = obj.StructureSpecificData.DataSet[0],
+                                    vTS = data.Series,
+                                    title = 'request to '+ host;
+                                if (!req.timedout) {
+                                    res.send(buildHTML.makeTable(vTS,title,[]));
+                                }
+                            } else {
+                                res.set('Content-type','text/plain');
+                                res.send('The request could not be handled');
+                            }
+                        } catch(error) {
+                            debug(error);
+                            var errorMessage = embedErrorMessage("parser",host,null,"data",options.url,null);
+                            res.status(500).send(errorMessage);
+                        }
+                    } else {
+                        debug(err);
+                        var errorMessage = embedErrorMessage("parser",host,null,"data",options.url,null);
+                        res.status(500).send(errorMessage);
+                    }
+                });
+            } else {
+                var errorMessage = embedErrorMessage("fetcher",host,r.statusCode,"data",options.url,r.statusMessage);
+                res.send(errorMessage);
+                debug("Request to %s failed with code %d and message %s",options.url,r.statusCode,r.statusMessage);
+            }
+        }
+    });
 };
 
 
@@ -894,28 +1057,28 @@ exports.getList = function(req,res) {
                                                 res.redirect('/413.html');
                                                 debug('redirecting to 413');
                                             } else {
-                                                var errorMessage = "Error parsing SDMX at: " + options.url;
+                                                debug("Error parser at %s",options.url);
+                                                var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
                                                 res.status(500).send(errorMessage);
-                                                debug(errorMessage);
                                             }
                                         } catch(error2) {
                                             debug(error2);
-                                            var errorMessage = "Error parsing SDMX at: " + options.url;
+                                            var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
                                             res.status(500).send(errorMessage);
                                         }
                                     }
                                 } else {
-                                    res.send(err);
+                                    debug(err);
+                                    res.send(err);var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
+                                    res.status(500).send(errorMessage);
                                 }
                             });
                     } else if (r.statusCode === 413) {
                         res.redirect('/413.html');
                     } else {
-                        var errorMessage = "Error retrieving data at: " + options.url + '\n';
-                        errorMessage += 'Code: ' + r.statusCode + '\n';
-                        errorMessage += 'Message: ' + r.statusMessage;
-                        res.status(r.statusCode).send(errorMessage);
-                        debug(r);
+                        debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s",r.statusCode,provider,options.url);
+                        var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"data",options.url,r.statusMessage);
+                        res.send(errorMessage);
                     }
                 });
             }});
@@ -1043,3 +1206,14 @@ exports.getTemp = function(req,res){
         });
     }
 };
+
+// FOR TESTING TIMEOUT
+// exports.testTimeout = function(req,res) {
+//     console.log('Request received');
+//     setTimeout(function() {
+//         console.log(req.timedout);
+//         res.send('OK');
+//         console.log('Response sent.');
+//     }, 30000);
+//     console.log('Waiting...');   
+// };

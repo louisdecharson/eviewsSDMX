@@ -36,18 +36,21 @@ var providers = require('./routes/providers.json');
 
 var app = express();
 var port = process.env.PORT || 8080;
+// TIMEOUT
+app.use(timeout('29.9s',{"respond":true}));
 
 debug('booting %s','EViews - SDMX');
 
 app.use(bodyParser.json({limit: '50mb'}));
+app.use(haltOnTimedout);
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
+app.use(haltOnTimedout);
 app.use('/',express.static(__dirname + '/public/'));
+app.use(haltOnTimedout);
 
 // Favicon
 app.use(favicon(path.join(__dirname,'public','favicon.ico')));
-
-// TIMEOUT
-app.use(timeout(299000,{"respond":true}));
+app.use(haltOnTimedout);
 
 // SDMX PROVIDER
 // -----------------------
@@ -115,9 +118,13 @@ app.get('/:provider',function(req,res){
     }
 });
 
+// 404
+app.get('*', function(req, res){
+    res.status(404).send(err404);
+});
+
 // TIMEOUT
 app.use(haltOnTimedout);
-
 function haltOnTimedout(err,req,res,next) {
     if (req.timedout === true) {
         if (res.headersSent) {
@@ -130,10 +137,7 @@ function haltOnTimedout(err,req,res,next) {
     }
 };
 
-// 404
-app.get('*', function(req, res){
-    res.status(404).send(err404);
-});
+
 
 // Rabbit MQ
 rabbit.connect(function(c) {
