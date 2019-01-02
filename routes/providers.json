@@ -90,7 +90,7 @@
     "WEUROSTAT": {
         "name": "DB.nomics",
         "protocol":"http",
-        "host":"api.db.nomics.world",
+        "host":"api.legacy.nomics.world",
         "path": "/api/v1/sdmx/",
         "agencyID": "EUROSTAT",
         "SDMX":"True",
