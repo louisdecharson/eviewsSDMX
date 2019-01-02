@@ -328,7 +328,7 @@ exports.getAllDataFlow = function(req,res) {
                 } else {
                     errorMessage = embedErrorMessage("request",provider,e.code,"dataflow",options.url,null);
                 }
-                res.statusCode(500).send(errorMessage);
+                res.status(500).send(errorMessage);
             } else {
                 if (r.statusCode >=200 && r.statusCode < 400 && !e) {
                     xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
@@ -605,7 +605,7 @@ exports.getDataSet = function(req,res) {
                         } else {
                             errorMessage = embedErrorMessage("request",provider,e.code,"data",options.url,null);
                         }
-                        res.statusCode(500).send(errorMessage);
+                        res.status(500).send(errorMessage);
                     } else {
                         if (r.statusCode >= 200 && r.statusCode < 400) {
                             xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){

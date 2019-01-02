@@ -13,6 +13,8 @@ timeout.js
 /routes/fetcher_old.js
 /public/.ipynb_checkpoints?
 /public/robots.py
+/public/test/
+/routes/ERRORS
 
 # OS generated files #
 ######################
