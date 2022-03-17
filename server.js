@@ -142,7 +142,11 @@ function haltOnTimedout(err,req,res,next) {
 // Rabbit MQ
 rabbit.connect(function(c) {
     var conn = rabbit.get();
-    rabbit.consumeReply(conn);
+    if (conn) {
+        rabbit.consumeReply(conn);
+    } else {
+        console.log("Connection to RabbitMQ not available.");
+    }
     app.listen(port, function() {
         console.log('Our app is running on port '+ port);
     });
