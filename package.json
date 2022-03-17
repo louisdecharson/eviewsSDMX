@@ -4,7 +4,7 @@
   "author": "Louis de Charsonville <louisdecharson@gmail.com>",
   "license": "AGPL-3.0",
   "dependencies": {
-    "amqplib": "^0.5.2",
+    "amqplib": "^0.8.0",
     "assert": "^1.4.1",
     "body-parser": "^1.17.1",
     "connect-timeout": "^1.7.0",
