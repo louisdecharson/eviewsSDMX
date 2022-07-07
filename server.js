@@ -141,15 +141,22 @@ function haltOnTimedout(err,req,res,next) {
 
 // Rabbit MQ
 rabbit.connect(function(c) {
-    var conn = rabbit.get();
-    if (conn) {
-        rabbit.consumeReply(conn);
-    } else {
-        console.log("Connection to RabbitMQ not available.");
+    try {
+        let conn = rabbit.get();
+        if (conn) {
+            rabbit.consumeReply(conn);
+        } else {
+            console.log("Connection to RabbitMQ not available.");
+        }
+        app.listen(port, function() {
+            console.log('Our app is running on port '+ port);
+        });
+    } catch (error) {
+        console.log("Connection to RabbitMQ not available. Error: " + error);
+        app.listen(port, function() {
+            console.log('Our app is running on port '+ port);
+        });
     }
-    app.listen(port, function() {
-        console.log('Our app is running on port '+ port);
-    });
 });
 
 
