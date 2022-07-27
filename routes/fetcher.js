@@ -36,7 +36,7 @@ var rabbit = require('./../rabbit');
 
 // Utilitaries
 // ===========
-function stripPrefix(str){
+function stripPrefix(str) {
     var prefixMatch;
     prefixMatch = new RegExp(/(?!xmlns)^.*:/);
     return str.replace(prefixMatch, '');
@@ -55,7 +55,7 @@ function embedErrorMessage(type, provider, code, data, url, message) {
         if (code !== 500) {
             text += '<li>the data you are trying to download does not exist.</li>';
             text += '<li>the filters or dimensions you have entered are incorrect.</li></ul>';
-        }  else {
+        } else {
             text += '<li>' + provider + ' servers are not working right now.</li></ul>';
         }
     }
@@ -79,7 +79,7 @@ function embedErrorMessage(type, provider, code, data, url, message) {
     }
     if (type === "request") {
         text += '<h4 class="alert-heading">Request error</h4><hr/>';
-        text += '<p>We were unable to make a request to ' + provider + ' servers. Request failed with code '+ code + '.<br/>';
+        text += '<p>We were unable to make a request to ' + provider + ' servers. Request failed with code ' + code + '.<br/>';
         text += 'Request was tried with url ';
         text += '<a href="' + url + '">' + url + '</a> while retrieving ' + data + '.<br/>';
         text += '<hr/><h6>Possible causes:</h6> <ul>';
@@ -101,69 +101,78 @@ function getErrorMessage(errorCode) {
     }
 }
 // Check if element is an array
-function isInArray(it,arr) {
+function isInArray(it, arr) {
     return arr.indexOf(it) > -1;
 }
 
 // =============================================================================
 
+function _getPath(provider, metadata = false) {
+    if (metadata && "metadataPath" in providers[provider]) {
+        return providers[provider].metadataPath
+    } else {
+        return providers[provider].path
+    }
+}
+
 // On récupére le nom de l'agence que l'on utilise pour récupérer la DSD d'un dataset
-function getAgency(provider,dataset,callback) {
-    var protocol = providers[provider.toUpperCase()].protocol,
-        host = providers[provider.toUpperCase()].host,
-        path = providers[provider.toUpperCase()].path,
-        format = providers[provider.toUpperCase()].format,
-        agencyID = providers[provider.toUpperCase()].agencyID;
-    var myPath = path + 'dataflow/' + agencyID +'/'+dataset + '?'+ format;
+function getAgency(provider, dataset, callback) {
+    const providerUpperCase = provider.toUpperCase(),
+        protocol = providers[providerUpperCase].protocol,
+        host = providers[providerUpperCase].host,
+        path = _getPath(providerUpperCase, true),
+        format = providers[providerUpperCase].format,
+        agencyID = providers[providerUpperCase].agencyID;
+    var myPath = path + 'dataflow/' + agencyID + '/' + dataset + '?' + format;
     var options = {
-        url: protocol+'://'+host+myPath,
+        url: protocol + '://' + host + myPath,
         method: 'GET',
         headers: {
-            'connection' : 'keep-alive',
+            'connection': 'keep-alive',
             'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
             'user-agent': 'nodeJS'
         },
         timeout: appTimeout
     };
-    debug('call getAgency; provider: %s, dataset: %s',provider,dataset);
-    debug('url: %s',options.url);
-    request(options,function(e,r,b) {
+    debug('call getAgency; provider: %s, dataset: %s', provider, dataset);
+    debug('url: %s', options.url);
+    request(options, function (e, r, b) {
         if (e) {
             var errorMessage;
             if (e.code === 'ETIMEDOUT') {
-               errorMessage  = embedErrorMessage("timeout",provider,null,"agency ID",options.url,null);
+                errorMessage = embedErrorMessage("timeout", provider, null, "agency ID", options.url, null);
             } else {
-                errorMessage = embedErrorMessage("request",provider,e.code,"agency ID",options.url,null);
+                errorMessage = embedErrorMessage("request", provider, e.code, "agency ID", options.url, null);
             }
-            debug('Request Error at url %s with code %s',options.url,e);
-            callback(true,errorMessage);
+            debug('Request Error at url %s with code %s', options.url, e);
+            callback(true, errorMessage);
         } else {
-            if (r.statusCode >=200 && r.statusCode < 400) {
-                xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+            if (r.statusCode >= 200 && r.statusCode < 400) {
+                xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                     if (err === null) {
                         try {
                             var agency = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['agencyID'],
                                 dsdId = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['id'];
-                            callback(false,{"agency":agency,"dsdId":dsdId});
-                            debug('agency: %s; dsdId: %s',agency, dsdId);
+                            callback(false, { "agency": agency, "dsdId": dsdId });
+                            debug('agency: %s; dsdId: %s', agency, dsdId);
                             debug('getAgency: done.');
-                        } catch(error) {
-                            debug("Parser error. Error: %s",error);
-                            var errorMessage = embedErrorMessage("parser",provider,null,"agency ID",options.url,null);
+                        } catch (error) {
+                            debug("Parser error. Error: %s", error);
+                            var errorMessage = embedErrorMessage("parser", provider, null, "agency ID", options.url, null);
                             // var errorMessage = "Error parsing SDMX when retrieving datastructure at: "+ options.url;
-                            callback(true,errorMessage);
+                            callback(true, errorMessage);
                         }
                     } else {
-                        debug("Parser error. Error: %s",err);
-                        var errorMessage = embedErrorMessage("parser",provider,null,"agency ID",options.url,null);
-                        callback(true,errorMessage);
+                        debug("Parser error. Error: %s", err);
+                        var errorMessage = embedErrorMessage("parser", provider, null, "agency ID", options.url, null);
+                        callback(true, errorMessage);
                     };
                 });
             } else {
-                var errorProvider = r.statusMessage || b ;
-                var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"agency ID",options.url,errorProvider);
-                callback(true,errorMessage);
-                debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s",r.statusCode,errorProvider,options.url);
+                var errorProvider = r.statusMessage || b;
+                var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "agency ID", options.url, errorProvider);
+                callback(true, errorMessage);
+                debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
             }
         }
     });
@@ -173,213 +182,217 @@ function getAgency(provider,dataset,callback) {
 function getDim(provider, agency, dsdId, dataset, callback) {
     var nbDim = 0,
         arrDim = [];
-    debug('call getDim with provider=%s, agency=%s, dsdId=%s, dataset=%s',provider,agency,dsdId,dataset);
-    var protocol = providers[provider.toUpperCase()].protocol,
-        host = providers[provider.toUpperCase()].host,
-        path = providers[provider.toUpperCase()].path,
-        format = providers[provider.toUpperCase()].format;
+    debug('call getDim with provider=%s, agency=%s, dsdId=%s, dataset=%s', provider, agency, dsdId, dataset);
+    const providerUpperCase = provider.toUpperCase(),
+        protocol = providers[providerUpperCase].protocol,
+        host = providers[providerUpperCase].host,
+        path = _getPath(providerUpperCase, true),
+        format = providers[providerUpperCase].format,
+        agencyID = providers[providerUpperCase].agencyID;
     if ((agency === null && dsdId === null) && dataset !== null) {
-        getAgency(provider,dataset,function(err,agencyInfo) {
+        getAgency(provider, dataset, function (err, agencyInfo) {
             if (err) {
-                callback(true,agencyInfo); // if err == true, agencyInfo == error's message
+                callback(true, agencyInfo); // if err == true, agencyInfo == error's message
             } else {
-                var myPath = path + 'datastructure/'+agencyInfo.agency+'/'+agencyInfo.dsdId + '?'+ format;
+                var myPath = path + 'datastructure/' + agencyInfo.agency + '/' + agencyInfo.dsdId + '?' + format;
                 var options = {
                     url: protocol + '://' + host + myPath,
                     method: 'GET',
                     headers: {
-                        'connection' : 'keep-alive',
+                        'connection': 'keep-alive',
                         'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                         'user-agent': 'nodeJS'
                     },
                     timeout: appTimeout
                 };
-                request(options,function(e,r,b) { // e: error, r: response, b:body
+                request(options, function (e, r, b) { // e: error, r: response, b:body
                     if (e) {
-                        debug('Request Error at url %s with code %s',options.url,e);
+                        debug('Request Error at url %s with code %s', options.url, e);
                         var errorMessage;
                         if (e.code === "ETIMEDOUT") {
-                            errorMessage = embedErrorMessage("timeout",provider,null,"dimensions",options.url,null);
+                            errorMessage = embedErrorMessage("timeout", provider, null, "dimensions", options.url, null);
                         } else {
-                            errorMessage = embedErrorMessage("request",provider,e.code,"dimensions",options.url,null);
+                            errorMessage = embedErrorMessage("request", provider, e.code, "dimensions", options.url, null);
                         }
-                        callback(true,errorMessage);
+                        callback(true, errorMessage);
                     } else {
-                        if (r.statusCode >=200 && r.statusCode < 400) {
-                            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                                if(err === null) {
+                        if (r.statusCode >= 200 && r.statusCode < 400) {
+                            xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                                if (err === null) {
                                     try {
                                         var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
                                         nbDim = data.length;
-                                        data.forEach(function(item,index) {
+                                        data.forEach(function (item, index) {
                                             arrDim.push(item['id'][0]);
                                         });
-                                        debug('nbDim: %s ; arrDim: %s, dsdId: %s',nbDim,arrDim,dsdId);
-                                        callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data,"dsdId":agencyInfo.dsdId});
-                                    } catch(error) {
-                                        var errorMessage = embedErrorMessage("parser",provider,null,"dimensions of the data",options.url,null);
+                                        debug('nbDim: %s ; arrDim: %s, dsdId: %s', nbDim, arrDim, dsdId);
+                                        callback(false, { "nbDim": nbDim, "arrDim": arrDim, "data": data, "dsdId": agencyInfo.dsdId });
+                                    } catch (error) {
+                                        var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
                                         // var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
                                         debug(error);
-                                        callback(true,errorMessage);
+                                        callback(true, errorMessage);
                                     }
                                 } else {
-                                    var errorMessage = embedErrorMessage("parser",provider,null,"dimensions of the data",options.url,null);
+                                    var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
                                     debug(err);
                                     callback(true, errorMessage);
                                 }
                             });
                         } else {
-                            var errorProvider = r.statusMessage || b ;
-                            var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"dimensions of the data",options.url,errorProvider);
+                            var errorProvider = r.statusMessage || b;
+                            var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dimensions of the data", options.url, errorProvider);
                             callback(true, errorMessage);
-                            debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s",r.statusCode,errorProvider,options.url);
+                            debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
                             debug(e);
                         }
                     }
                 });
-            }});
+            }
+        });
     } else if (agency === null && dataset === null) {
-        callback(true,"no agency nor dataset provided");
+        callback(true, "no agency nor dataset provided");
     } else if (agency !== null && dsdId !== null) {
-        var myPath = path + 'datastructure/'+agency+'/'+dsdId + '?' + format;
+        var myPath = path + 'datastructure/' + agency + '/' + dsdId + '?' + format;
         var options = {
             url: protocol + '://' + host + myPath,
             method: 'GET',
             headers: {
-                'connection' : 'keep-alive',
+                'connection': 'keep-alive',
                 'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                 'user-agent': 'nodeJS'
             },
             timeout: appTimeout
         };
-        request(options, function(e,r,b) {
+        request(options, function (e, r, b) {
             if (e) {
-                debug('Request Error at url %s with code %s',options.url,e);
+                debug('Request Error at url %s with code %s', options.url, e);
                 var errorMessage;
                 if (e.code === "ETIMEDOUT") {
-                    errorMessage = embedErrorMessage("timeout",provider,null,"dimensions",options.url,null);
+                    errorMessage = embedErrorMessage("timeout", provider, null, "dimensions", options.url, null);
                 } else {
-                    errorMessage = embedErrorMessage("request",provider,e.code,"dimensions",options.url,null);
+                    errorMessage = embedErrorMessage("request", provider, e.code, "dimensions", options.url, null);
                 }
-                callback(true,errorMessage);
+                callback(true, errorMessage);
             } else {
-                if (r.statusCode >=200 && r.statusCode < 400) {
-                    xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                        if(err === null) {
+                if (r.statusCode >= 200 && r.statusCode < 400) {
+                    xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                        if (err === null) {
                             try {
                                 var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
                                 nbDim = data.length;
-                                data.forEach(function(item,index) {
+                                data.forEach(function (item, index) {
                                     arrDim.push(item['id'][0]);
                                 });
-                                callback(false,{"nbDim": nbDim,"arrDim":arrDim,"data":data});
-                            } catch(error) {
-                                var errorMessage = embedErrorMessage("parser",provider,null,"dimensions of the data",options.url,null);
+                                callback(false, { "nbDim": nbDim, "arrDim": arrDim, "data": data });
+                            } catch (error) {
+                                var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
                                 // var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
-                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,error);
+                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
                                 callback(true, errorMessage);
                             }
                         } else {
-                            var errorMessage = embedErrorMessage("parser",provider,null,"dimensions of the data",options.url,null);
-                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,err);
+                            var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
+                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
                             callback(true, errorMessage);
                         }
                     });
                 } else {
-                    var errorProvider = r.statusMessage || b ;
-                    var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"dimensions of the data",options.url,errorProvider);
-                    debug("Fetcher ERROR \n Code: %d \n Message: %s \n Url: %s",r.statusCode,r.statusMessage,options.url);
+                    var errorProvider = r.statusMessage || b;
+                    var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dimensions of the data", options.url, errorProvider);
+                    debug("Fetcher ERROR \n Code: %d \n Message: %s \n Url: %s", r.statusCode, r.statusMessage, options.url);
                     callback(true, errorMessage);
                 }
             }
-        });           
+        });
     }
 };
 
 // ====================================== ROUTES ======================================
 
 // List the datasets of a provider
-exports.getAllDataFlow = function(req,res) {
+exports.getAllDataFlow = function (req, res) {
     var provider = req.params.provider;
-    var protocol = providers[provider.toUpperCase()].protocol,
-        host = providers[provider.toUpperCase()].host,
-        path = providers[provider.toUpperCase()].path,
-        format = providers[provider.toUpperCase()].format,
-        agencyID = providers[provider.toUpperCase()].agencyID;
-    
-    if (isInArray(provider.toUpperCase(),Object.keys(providers))) {
-        var myPath = path + 'dataflow/' + agencyID+ '?' + format;
+    const providerUpperCase = provider.toUpperCase(),
+        protocol = providers[providerUpperCase].protocol,
+        host = providers[providerUpperCase].host,
+        path = _getPath(providerUpperCase, true),
+        format = providers[providerUpperCase].format,
+        agencyID = providers[providerUpperCase].agencyID;
+
+    if (isInArray(provider.toUpperCase(), Object.keys(providers))) {
+        var myPath = path + 'dataflow/' + agencyID + '?' + format;
         var options = {
-            url: protocol + '://'+ host + myPath,
+            url: protocol + '://' + host + myPath,
             headers: {
-                'connection':'keep-alive',
+                'connection': 'keep-alive',
                 'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
                 'user-agent': 'nodeJS'
             },
             timeout: appTimeout
         };
-        debug('get dataflow with path=%s',options.url);
-        request(options,function(e,r,b) {
+        debug('get dataflow with path=%s', options.url);
+        request(options, function (e, r, b) {
             if (e) {
-                debug('Request Error at url %s with code %s',options.url,e);
+                debug('Request Error at url %s with code %s', options.url, e);
                 var errorMessage;
                 if (e.code === "ETIMEDOUT") {
-                    errorMessage = embedErrorMessage("timeout",provider,null,"dataflow",options.url,null);
+                    errorMessage = embedErrorMessage("timeout", provider, null, "dataflow", options.url, null);
                 } else {
-                    errorMessage = embedErrorMessage("request",provider,e.code,"dataflow",options.url,null);
+                    errorMessage = embedErrorMessage("request", provider, e.code, "dataflow", options.url, null);
                 }
                 res.status(500).send(errorMessage);
             } else {
-                if (r.statusCode >=200 && r.statusCode < 400 && !e) {
-                    xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
+                if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+                    xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                         if (err === null) {
                             var data = [];
                             try {
-                                obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'].forEach(function(it,ind){
+                                obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'].forEach(function (it, ind) {
                                     var datasetId = it.id,
                                         dsdId = it.Structure[0]['Ref'][0]['id'],
                                         agency = it.Structure[0]['Ref'][0]['agencyID'],
                                         name = it.Name; //[0]['_']
                                     if (name.length > 1) {
-                                        name.forEach(function(item,index){
+                                        name.forEach(function (item, index) {
                                             switch (item['xml:lang'][0]) {
-                                            case 'fr':
-                                                name = it.Name[index]['_'];
-                                                break;
-                                            case 'en':
-                                                name = it.Name[index]['_'];
-                                                break;
-                                            default:
-                                                name = it.Name[0]['_'];
+                                                case 'fr':
+                                                    name = it.Name[index]['_'];
+                                                    break;
+                                                case 'en':
+                                                    name = it.Name[index]['_'];
+                                                    break;
+                                                default:
+                                                    name = it.Name[0]['_'];
                                             }
                                         });
-                                    } else {name = it.Name[0]['_'];}
-                                    data.push([datasetId,dsdId,agency,name,provider]);
+                                    } else { name = it.Name[0]['_']; }
+                                    data.push([datasetId, dsdId, agency, name, provider]);
                                 });
-                                res.send(buildHTML.dataFlow(data,provider));
+                                res.send(buildHTML.dataFlow(data, provider));
                             }
-                            catch(error) {
-                                var errorMessage = embedErrorMessage("parser",provider,null,"dataflow (list of the datasets)",options.url,null);
+                            catch (error) {
+                                var errorMessage = embedErrorMessage("parser", provider, null, "dataflow (list of the datasets)", options.url, null);
                                 res.status(500).send(errorMessage);
-                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,error);
+                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
                             }
                         } else {
-                            var errorMessage = embedErrorMessage("parser",provider,null,"dataflow (list of the datasets)",options.url,null);
+                            var errorMessage = embedErrorMessage("parser", provider, null, "dataflow (list of the datasets)", options.url, null);
                             res.status(500).send(errorMessage);
-                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,err);
+                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
                         }
                     });
                 } else {
-                    debug("The code while requesting dataflow at %s",options.url);
+                    debug("The code while requesting dataflow at %s", options.url);
                     debug(r.statusCode);
                     debug(r.statusMessage);
-                    var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"dataflow (list of the datasets)",options.url,r.statusMessage);
+                    var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dataflow (list of the datasets)", options.url, r.statusMessage);
                     res.send(errorMessage);
                 }
             }
         });
     } else {
-        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        var errorMessage = 'The provider ' + provider + 'is not supported by the application.';
         errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
         res.status(404).send(errorMessage);
     }
@@ -388,7 +401,7 @@ exports.getAllDataFlow = function(req,res) {
 
 
 // List the timeseries inside a dataset
-exports.getDataFlow = function(req,res) {
+exports.getDataFlow = function (req, res) {
     var provider = req.params.provider.toUpperCase(),
         dataSet = req.params.dataset,
         myTimeout = req.query.timeout;
@@ -397,16 +410,17 @@ exports.getDataFlow = function(req,res) {
     } else {
         myTimeout = +myTimeout;
     }
-    debug('getDataflow with provider:%s, dataset:%s, timeout:%s',provider,dataSet,myTimeout);
-    var protocol = providers[provider.toUpperCase()].protocol,
-        host = providers[provider.toUpperCase()].host,
-        path = providers[provider.toUpperCase()].path,
-        format = providers[provider.toUpperCase()].format,
-        agencyID = providers[provider.toUpperCase()].agencyID,
+    debug('getDataflow with provider:%s, dataset:%s, timeout:%s', provider, dataSet, myTimeout);
+    const providerUpperCase = provider.toUpperCase(),
+        protocol = providers[providerUpperCase].protocol,
+        host = providers[providerUpperCase].host,
+        path = _getPath(providerUpperCase),
+        format = providers[providerUpperCase].format,
+        agencyID = providers[providerUpperCase].agencyID,
         nodata = providers[provider.toUpperCase()].nodata;
-    
-    if (isInArray(provider.toUpperCase(),Object.keys(providers))) {
-        getDim(provider,null,null,dataSet,function(err,dim) {
+
+    if (isInArray(provider.toUpperCase(), Object.keys(providers))) {
+        getDim(provider, null, null, dataSet, function (err, dim) {
             if (err) {
                 res.send(dim); // if err, dim is the error message
             } else {
@@ -417,11 +431,11 @@ exports.getDataFlow = function(req,res) {
                     if (nodata === 'True') {
                         var myPath = path + 'data/' + dataSet + '?detail=nodata&' + format;
                     } else {
-                        var myPath = path + 'data/' + dataSet + '?' + format;   
+                        var myPath = path + 'data/' + dataSet + '?' + format;
                     }
                 }
                 var options = {
-                    url: protocol + '://' +  host + myPath,
+                    url: protocol + '://' + host + myPath,
                     method: 'GET',
                     timeout: myTimeout,
                     headers: {
@@ -430,72 +444,77 @@ exports.getDataFlow = function(req,res) {
                         'user-agent': 'nodeJS'
                     }
                 };
-                debug('get dataflow with path=%s | timeout=%o',options.url,options.timeout);
-                if (debug.enabled) {var start = Date.now();}
-                request(options,function(e,r,b) {
-                    if (debug.enabled) {clearInterval(interval);}
+                debug('get dataflow with path=%s | timeout=%o', options.url, options.timeout);
+                if (debug.enabled) { var start = Date.now(); }
+                request(options, function (e, r, b) {
+                    if (debug.enabled) { clearInterval(interval); }
                     if (!e) {
                         if (r.statusCode >= 200 && r.statusCode < 400) {
-                            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj) {
+                            xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                                 if (err === null) {
                                     try {
-                                        var footer =  obj.StructureSpecificData.Footer;
-                                        try { footer = footer[0].Message[0].code[0];}
-                                        catch(error) {}
+                                        var footer = obj.StructureSpecificData.Footer;
+                                        try { footer = footer[0].Message[0].code[0]; }
+                                        catch (error) {}
                                         finally {
                                             if (footer == '413') {
                                                 var errorFooter413 = '413 | Dataset is too big to retreive'; // Eurostat is sending error 413 in the footer...
-                                                res.send(buildHTML.detailDataset(provider,null,dataSet,dim,errorFooter413));
+                                                res.send(buildHTML.detailDataset(provider, null, dataSet, dim, errorFooter413));
                                             } else if (footer != null) {
-                                                res.status(footer).send('ERROR | Code : '+ footer + ' ' + getErrorMessage(footer));
-                                            } else {                   
+                                                res.status(footer).send('ERROR | Code : ' + footer + ' ' + getErrorMessage(footer));
+                                            } else {
                                                 var data = obj.StructureSpecificData.DataSet[0];
                                                 var vTS = data.Series;
                                                 if (!res.headersSent) {
-                                                    res.send(buildHTML.detailDataset(provider,vTS,dataSet,dim,null));
-                                                };}}
-                                    } catch(error) {
+                                                    res.send(buildHTML.detailDataset(provider, vTS, dataSet, dim, null));
+                                                };
+                                            }
+                                        }
+                                    } catch (error) {
                                         // var errorMessage = "Error retrieving data at: " + options.url;
-                                        var errorMessage = embedErrorMessage("parser",provider,null,"dataset information",options.url,null);
+                                        var errorMessage = embedErrorMessage("parser", provider, null, "dataset information", options.url, null);
                                         debug(errorMessage);
                                         debug('-------------------------');
                                         debug(error);
                                         res.status(500).send(errorMessage);
                                     }
                                 } else {
-                                    var errorMessage = embedErrorMessage("parser",provider,null,"dataset information",options.url,null);
+                                    var errorMessage = embedErrorMessage("parser", provider, null, "dataset information", options.url, null);
                                     res.status(500).send(errorMessage);
-                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,err);
+                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
                                 }
                             });
                         } else {
                             if (!res.headersSent) {
+                                console.log(e, r.statusCode)
+                                debug('Error when retrieving list of series from %s: %s', dataSet, e)
                                 var myError = 'Response Code: ' + r.statusCode;
-                                res.send(buildHTML.detailDataset(provider,null,dataSet,dim,myError));
+                                res.send(buildHTML.detailDataset(provider, null, dataSet, dim, myError));
                             }
                         }
                     } else if (e.code === 'ETIMEDOUT' || e.code === 'ESOCKETTIMEDOUT') {
                         var errorDatasetTooBig = 'the dataset is too big to retrieve all the timeseries. You can increase timeout by adding "?timeout=" at the end of the url (default is 5000ms)';
                         if (!res.headersSent) {
-                            res.send(buildHTML.detailDataset(provider,null,dataSet,dim,errorDatasetTooBig));
+                            res.send(buildHTML.detailDataset(provider, null, dataSet, dim, errorDatasetTooBig));
                         }
                     } else {
                         if (!res.headersSent) {
                             debug(e);
                             debug(r.statusMessage);
                             debug(e.stack);
-                            res.send(buildHTML.detailDataset(provider,null,dataSet,dim,r.statusMessage));
+                            res.send(buildHTML.detailDataset(provider, null, dataSet, dim, r.statusMessage));
                         }
                     }
                 });
-                if (debug.enabled){
-                    var interval = setInterval(function(){
+                if (debug.enabled) {
+                    var interval = setInterval(function () {
                         console.log('Waiting: ', (Date.now() - start) / 1000);
                     }, 1000);
                 }
-            }});
+            }
+        });
     } else {
-        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        var errorMessage = 'The provider ' + provider + 'is not supported by the application.';
         errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
         res.status(404).send(embedErrorMessage(errorMessage));
     }
@@ -516,59 +535,60 @@ exports.getDataFlow = function(req,res) {
 // + dimRequested = string of the ordered dimensions separated by dots passed by the
 //                  use. dimRequested should be a sub-set of authParams.
 
-exports.getDataSet = function(req,res) {    
+exports.getDataSet = function (req, res) {
     var provider = req.params.provider.toUpperCase();
     var protocol = providers[provider.toUpperCase()].protocol,
         host = providers[provider.toUpperCase()].host,
         path = providers[provider.toUpperCase()].path,
         format = providers[provider.toUpperCase()].format,
         agencyID = providers[provider.toUpperCase()].agencyID;
-    if (isInArray(provider,Object.keys(providers))) {
+    if (isInArray(provider, Object.keys(providers))) {
         var dataSet = '';
-        if (provider !== 'EUROSTAT' && provider !== 'WEUROSTAT')  {
+        if (provider !== 'EUROSTAT' && provider !== 'WEUROSTAT') {
             dataSet = req.params.dataset.toUpperCase();
         } else {
-            dataSet = req.params.dataset;        
+            dataSet = req.params.dataset;
         };
-        
+
         // All keys to UpperCase
         var key, keys = Object.keys(req.query);
         var n = keys.length;
-        var reqParams={};
+        var reqParams = {};
         while (n--) {
             key = keys[n];
             var kkey = key; // name of the key before it get changed below
-            if (key.toUpperCase() === "FREQUENCY") {key = "FREQ";}
-            if (key === 'startPeriod') {reqParams[key] = req.query[key];}
-            else if (key === 'firstNObservations') {reqParams[key] = req.query[key];}
-            else if (key === 'lastNObservations') {reqParams[key] = req.query[key];}
-            else if (key === 'endPeriod') {reqParams[key] = req.query[key];}
-            else {reqParams[key.toUpperCase()] = req.query[kkey];}
-        }      
+            if (key.toUpperCase() === "FREQUENCY") { key = "FREQ"; }
+            if (key === 'startPeriod') { reqParams[key] = req.query[key]; }
+            else if (key === 'firstNObservations') { reqParams[key] = req.query[key]; }
+            else if (key === 'lastNObservations') { reqParams[key] = req.query[key]; }
+            else if (key === 'endPeriod') { reqParams[key] = req.query[key]; }
+            else { reqParams[key.toUpperCase()] = req.query[kkey]; }
+        }
         var dimRequested = ''; // string fill with ordered dimensions passed by the user in req.params
         if (provider === 'WEUROSTAT') {
             var myPath = providers[provider].path + providers[provider].agencyID + '/data/' + dataSet;
         } else {
             var myPath = providers[provider].path + 'data/' + dataSet;
         }
-        debug('getDataset with provider: %s, dataset: %s',provider,dataSet);
-        debug('getDataset with path=%s',myPath);
-        getDim(provider, null, null, dataSet, function(err,dim) {
+        debug('getDataset with provider: %s, dataset: %s', provider, dataSet);
+        debug('getDataset with path=%s', myPath);
+        getDim(provider, null, null, dataSet, function (err, dim) {
             if (err) {
                 res.send(dim); // if err, dim is the errorMessage
             } else {
                 var authParams = dim.arrDim; // Authorised dimensions for the dataset.
                 var compt = 0;
-                authParams.forEach(function(it,ind){
-                    if(reqParams[it] != null) {
-                        if(ind<dim.nbDim-1) {dimRequested += reqParams[it]+'.';}
-                        else { dimRequested += reqParams[it];}
-                        delete reqParams[it];}
+                authParams.forEach(function (it, ind) {
+                    if (reqParams[it] != null) {
+                        if (ind < dim.nbDim - 1) { dimRequested += reqParams[it] + '.'; }
+                        else { dimRequested += reqParams[it]; }
+                        delete reqParams[it];
+                    }
                     else {
-                        if (ind<dim.nbDim-1) {
+                        if (ind < dim.nbDim - 1) {
                             dimRequested += '.';
                         }
-                        compt ++;
+                        compt++;
                     }
                 });
                 // When the whole dataSet is requested.
@@ -577,12 +597,12 @@ exports.getDataSet = function(req,res) {
                 };
                 myPath += '/' + dimRequested;
 
-                Object.keys(reqParams).forEach(function(it,ind,arr) {
+                Object.keys(reqParams).forEach(function (it, ind, arr) {
                     if (ind === 0) {
                         myPath += '?';
                     }
-                    myPath += it.toString() + "=" + reqParams[it] ;
-                    if (ind < arr.length-1) {
+                    myPath += it.toString() + "=" + reqParams[it];
+                    if (ind < arr.length - 1) {
                         myPath += "&";
                     }
                 });
@@ -594,70 +614,71 @@ exports.getDataSet = function(req,res) {
                         'user-agent': 'nodeJS'
                     }
                 };
-                debug('auth params: %s',authParams);
-                debug('dimensions: %s',dimRequested);
-                request(options, function(e,r,b) {
+                debug('auth params: %s', authParams);
+                debug('dimensions: %s', dimRequested);
+                request(options, function (e, r, b) {
                     if (e) {
-                        debug('Request Error at url %s with code %s',options.url,e);
+                        debug('Request Error at url %s with code %s', options.url, e);
                         var errorMessage;
                         if (e.code === "ETIMEDOUT") {
-                            errorMessage = embedErrorMessage("timeout",provider,null,"data",options.url,null);
+                            errorMessage = embedErrorMessage("timeout", provider, null, "data", options.url, null);
                         } else {
-                            errorMessage = embedErrorMessage("request",provider,e.code,"data",options.url,null);
+                            errorMessage = embedErrorMessage("request", provider, e.code, "data", options.url, null);
                         }
                         res.status(500).send(errorMessage);
                     } else {
                         if (r.statusCode >= 200 && r.statusCode < 400) {
-                            xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                                if(err === null) {
+                            xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                                if (err === null) {
                                     try {
                                         var data = obj.StructureSpecificData.DataSet[0];
                                         var vTS = data.Series; // vector of Time Series : vTS
                                         if (!req.timedout) {
-                                            res.send(buildHTML.makeTable(vTS,dataSet,authParams));
+                                            res.send(buildHTML.makeTable(vTS, dataSet, authParams));
                                         }
-                                    } catch(error) {
-                                        debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,error);
+                                    } catch (error) {
+                                        debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
                                         try {
                                             var footer = obj.StructureSpecificData.Footer[0].Message[0].code[0]; // for handling Eurostat errors
                                             if (footer === '413') {
                                                 res.redirect('/413.html');
                                                 debug('redirecting to 413');
                                             } else {
-                                                var errorMessage = embedErrorMessage("parser",provider,null,"dataset",options.url,null);
+                                                var errorMessage = embedErrorMessage("parser", provider, null, "dataset", options.url, null);
                                                 res.status(500).send(errorMessage);
                                             }
-                                        } catch(error2) {
-                                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,error2);
-                                            var errorMessage = embedErrorMessage("parser",provider,null,"dataset",options.url,null);
+                                        } catch (error2) {
+                                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error2);
+                                            var errorMessage = embedErrorMessage("parser", provider, null, "dataset", options.url, null);
                                             res.status(500).send(errorMessage);
                                         }
                                     }
                                 } else {
-                                    var errorMessage = embedErrorMessage("parser",provider,null,"dataset",options.url,null);
+                                    var errorMessage = embedErrorMessage("parser", provider, null, "dataset", options.url, null);
                                     res.status(500).send(errorMessage);
-                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,err);
+                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
                                 }
                             });
                         } else if (r.statusCode === 413) {
                             res.redirect('/413.html');
                         } else {
-                            var errorProvider = r.statusMessage || b ;
-                            var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"dataset",options.url,errorProvider);
+                            var errorProvider = r.statusMessage || b;
+                            var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dataset", options.url, errorProvider);
                             res.send(errorMessage);
-                            debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s",r.statusCode,errorProvider,options.url);
+                            debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
                         }
                     }
                 });
-            }});
+            }
+        });
     } else {
-        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        var errorMessage = 'The provider ' + provider + 'is not supported by the application.';
         errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
         res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
-exports.getSeries = function(req,res) {
+exports.getSeries = function (req, res) {
     var series = req.params.series,
         provider = req.params.provider.toUpperCase();
     var protocol = providers[provider.toUpperCase()].protocol,
@@ -665,12 +686,12 @@ exports.getSeries = function(req,res) {
         path = providers[provider.toUpperCase()].path,
         format = providers[provider.toUpperCase()].format,
         agencyID = providers[provider.toUpperCase()].agencyID;
-    if (isInArray(provider,Object.keys(providers))) {
+    if (isInArray(provider, Object.keys(providers))) {
         var keys = Object.keys(req.query);
         var params = "?";
-        keys.forEach(function(it,ind,arr) {
-            params += it.toString() + "=" + req.query[it] ;
-            if (ind<arr.length-1) {
+        keys.forEach(function (it, ind, arr) {
+            params += it.toString() + "=" + req.query[it];
+            if (ind < arr.length - 1) {
                 params += "&";
             }
         });
@@ -680,7 +701,7 @@ exports.getSeries = function(req,res) {
             params += format;
         }
         if (provider == "INSEE") {
-            var myPath = '/series/sdmx/data/SERIES_BDM/'+series+params;
+            var myPath = '/series/sdmx/data/SERIES_BDM/' + series + params;
             var options = {
                 url: protocol + '://' + host + myPath,
                 method: 'GET',
@@ -690,54 +711,55 @@ exports.getSeries = function(req,res) {
                 },
                 timeout: appTimeout
             };
-            debug('getSeries with path=%s',options.url);
-            request(options, function(e,r,b) {
+            debug('getSeries with path=%s', options.url);
+            request(options, function (e, r, b) {
                 if (e) {
                     var errorMessage;
                     if (e.code === 'ETIMEDOUT') {
-                        errorMessage = embedErrorMessage("timeout",provider,null,"data",options.url,null);
+                        errorMessage = embedErrorMessage("timeout", provider, null, "data", options.url, null);
                     } else {
-                        errorMessage = embedErrorMessage("request",provider,e.code,"data",options.url,null);
+                        errorMessage = embedErrorMessage("request", provider, e.code, "data", options.url, null);
                     }
                     res.send(errorMessage);
                 } else {
                     if (r.statusCode >= 200 && r.statusCode < 400) {
-                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                            if(err === null) {
+                        xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                            if (err === null) {
                                 try {
                                     var data = obj.StructureSpecificData.DataSet[0];
                                     var vTS = data.Series;
                                     if (!req.timedout) {
-                                        res.send(buildHTML.makeTable(vTS,series,[]));
-                                    }}
-                                catch(error) {
-                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,error);
-                                    var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
+                                        res.send(buildHTML.makeTable(vTS, series, []));
+                                    }
+                                }
+                                catch (error) {
+                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
+                                    var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                     res.status(500).send(errorMessage);
                                 }
-                            } else{
-                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s',options.url,err);
-                                var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
+                            } else {
+                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
+                                var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                 res.status(500).send(errorMessage);
                             }
                         });
                     } else {
-                        var errorProvider = r.statusMessage || b ;
-                        var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"data",options.url,errorProvider);
+                        var errorProvider = r.statusMessage || b;
+                        var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "data", options.url, errorProvider);
                         res.send(errorMessage);
-                        debug(e);debug('[getSeries] request failed with code %d',r.statusCode);
+                        debug(e); debug('[getSeries] request failed with code %d', r.statusCode);
                     }
                 }
-            });        
+            });
         } else {
             var arr = series.split('.'),
                 dataSet = arr[0];
             arr.shift();
             var userParams = arr.join('.');
             if (provider.toUpperCase() === 'WEUROSTAT') {
-                var myPath = path + providers[provider].agencyID + '/data/' + dataSet+'/' + userParams + params;
+                var myPath = path + providers[provider].agencyID + '/data/' + dataSet + '/' + userParams + params;
             } else {
-                var myPath = path + 'data/' + dataSet + '/'+ userParams + params;
+                var myPath = path + 'data/' + dataSet + '/' + userParams + params;
             }
             var options = {
                 url: protocol + '://' + host + myPath,
@@ -749,69 +771,70 @@ exports.getSeries = function(req,res) {
                 },
                 timeout: appTimeout
             };
-            debug('getSeries with path=%s',options.url);
-            request(options, function(e,r,b) {
+            debug('getSeries with path=%s', options.url);
+            request(options, function (e, r, b) {
                 if (e) {
                     var errorMessage;
                     if (e.code === 'ETIMEDOUT') {
-                        errorMessage = embedErrorMessage("timeout",provider,null,"data",options.url,null);
+                        errorMessage = embedErrorMessage("timeout", provider, null, "data", options.url, null);
                     } else {
-                        errorMessage = embedErrorMessage("request",provider,e.code,"data",options.url,null);
+                        errorMessage = embedErrorMessage("request", provider, e.code, "data", options.url, null);
                     }
                     res.send(errorMessage);
                 } else {
                     if (r.statusCode >= 200 && r.statusCode < 400) {
-                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                            if(err === null) {
+                        xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                            if (err === null) {
                                 try {
                                     var data = obj.StructureSpecificData.DataSet[0];
                                     var vTS = data.Series;
                                     if (!req.timedout) {
-                                        res.send(buildHTML.makeTable(vTS,series,[]));
+                                        res.send(buildHTML.makeTable(vTS, series, []));
                                     }
                                 }
-                                catch(error) {
+                                catch (error) {
                                     debug(error);
-                                    var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
+                                    var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                     res.status(500).send(errorMessage);
                                 }
                             } else {
                                 debug(err);
-                                var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
+                                var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                 res.status(500).send(errorMessage);
                             }
                         });
                     } else {
-                        debug('[getSeries] request failed with code %d',r.statusCode);
-                        var errorProvider = r.statusMessage || b ;
-                        var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"data",options.url,errorProvider);
+                        debug('[getSeries] request failed with code %d', r.statusCode);
+                        var errorProvider = r.statusMessage || b;
+                        var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "data", options.url, errorProvider);
                         res.send(errorMessage);
-                    }   
+                    }
                 }
             });
         };
     } else {
-        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        var errorMessage = 'The provider ' + provider + 'is not supported by the application.';
         errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
         res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
-exports.getCodeList = function(req,res) {
+exports.getCodeList = function (req, res) {
 
     var provider = req.params.provider.toUpperCase(),
         dim = req.params.codelist,
         dsdId = req.query.dsdId;
 
-    var protocol = providers[provider.toUpperCase()].protocol,
-        host = providers[provider.toUpperCase()].host,
-        path = providers[provider.toUpperCase()].path,
-        format = providers[provider.toUpperCase()].format,
-        agencyID = providers[provider.toUpperCase()].agencyID;
-    
-    if (isInArray(provider,Object.keys(providers))) {
+    const providerUpperCase = provider.toUpperCase(),
+        protocol = providers[providerUpperCase].protocol,
+        host = providers[providerUpperCase].host,
+        path = _getPath(providerUpperCase, true),
+        format = providers[providerUpperCase].format,
+        agencyID = providers[providerUpperCase].agencyID;
+
+    if (isInArray(provider, Object.keys(providers))) {
         if (provider === 'EUROSTAT') {
-            var myPath = path + 'datastructure/'+ agencyID + '/' + dsdId + '?' + format;
+            var myPath = path + 'datastructure/' + agencyID + '/' + dsdId + '?' + format;
         } else {
             var myPath = path + 'codelist/' + agencyID + '/' + dim + '?' + format;
         }
@@ -825,25 +848,25 @@ exports.getCodeList = function(req,res) {
             },
             timeout: appTimeout
         };
-        debug('getCodeList with provider: %s; dim: %s, dsdId: %s',provider,dim,dsdId);
+        debug('getCodeList with provider: %s; dim: %s, dsdId: %s', provider, dim, dsdId);
         debug('url: %s', options.url);
-        request(options, function(e,r,b) {
+        request(options, function (e, r, b) {
             if (e) {
                 var errorMessage;
                 if (e.code === 'ETIMEDOUT') {
-                    errorMessage = embedErrorMessage("timeout",provider,null,"codelist",options.url,null);
+                    errorMessage = embedErrorMessage("timeout", provider, null, "codelist", options.url, null);
                 } else {
-                    errorMessage = embedErrorMessage("request",provider,e.code,"codelist",options.url,null);
+                    errorMessage = embedErrorMessage("request", provider, e.code, "codelist", options.url, null);
                 }
                 res.send(errorMessage);
             } else {
-                if (r.statusCode >=200 && r.statusCode < 400 && !e) {
-                    xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                        if(err === null) {
+                if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+                    xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                        if (err === null) {
                             try {
                                 var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'];
                                 if (data.length > 1) {
-                                    for(var d in data){
+                                    for (var d in data) {
                                         if (data[d].id[0] === dim) {
                                             myData = data[d];
                                         }
@@ -854,41 +877,42 @@ exports.getCodeList = function(req,res) {
                                 var title_dim = myData['id'][0];
                                 var codes = myData['Code'];
                                 debug('getCodeList: done;');
-                                res.send(buildHTML.codeList(codes,title_dim));}
-                            catch(error) {
-                                var errorMessage = embedErrorMessage("parser",provider,null,"codelist",options.url,null);
+                                res.send(buildHTML.codeList(codes, title_dim));
+                            }
+                            catch (error) {
+                                var errorMessage = embedErrorMessage("parser", provider, null, "codelist", options.url, null);
                                 res.status(500).send(errorMessage);
                                 debug(error);
                             }
                         } else {
-                            var errorMessage = embedErrorMessage("parser",provider,null,"codelist",options.url,null);
+                            var errorMessage = embedErrorMessage("parser", provider, null, "codelist", options.url, null);
                             res.status(500).send(errorMessage);
                             debug(err);
                         }
                     });
                 } else {
                     debug(e);
-                    var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"codelist",options.url,r.statusMessage);
+                    var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "codelist", options.url, r.statusMessage);
                     res.send(r.statusMessage);
                 }
             }
-        });                   
+        });
     } else {
-        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        var errorMessage = 'The provider ' + provider + 'is not supported by the application.';
         errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
         res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
 // Retrieve data from SDMX URL
-exports.getDatafromURL = function(req,res) {    
-    var myUrl = req.query.url.replace(/\'*/g,"").replace(/\s/g,'+'); // remove ''
+exports.getDatafromURL = function (req, res) {
+    var myUrl = req.query.url.replace(/\'*/g, "").replace(/\s/g, '+'); // remove ''
     var host = url.parse(myUrl).hostname,
         protocol = url.parse(myUrl).protocol,
         path = url.parse(myUrl).pathname;
-    debug("Receive request for host: %s, with path: %s, over protcol: %s",host,protocol,path);  
+    debug("Receive request for host: %s, with path: %s, over protcol: %s", host, protocol, path);
     var options = {
-        url: protocol+'//'+host+path,
+        url: protocol + '//' + host + path,
         method: 'GET',
         headers: {
             'connection': 'keep-alive',
@@ -901,53 +925,53 @@ exports.getDatafromURL = function(req,res) {
         },
         timeout: appTimeout
     };
-    request(options,function(e,r,b) {
+    request(options, function (e, r, b) {
         if (e) {
             var errorMessage;
             if (e.code === 'ETIMEDOUT') {
-                errorMessage = embedErrorMessage("timeout",host,null,"data",options.url,null);
+                errorMessage = embedErrorMessage("timeout", host, null, "data", options.url, null);
             } else {
-                errorMessage = embedErrorMessage("request",host,e.code,"data",options.url,null);
+                errorMessage = embedErrorMessage("request", host, e.code, "data", options.url, null);
             }
             res.send(errorMessage);
         } else {
             if (r.statusCode >= 200 && r.statusCode < 400) {
-                xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                    if(err === null) {
+                xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                    if (err === null) {
                         try {
                             if (typeof obj.StructureSpecificData !== 'undefined') {
                                 var data = obj.StructureSpecificData.DataSet[0],
                                     vTS = data.Series,
-                                    title = 'request to '+ host;
+                                    title = 'request to ' + host;
                                 if (!req.timedout) {
-                                    res.send(buildHTML.makeTable(vTS,title,[]));
+                                    res.send(buildHTML.makeTable(vTS, title, []));
                                 }
                             } else {
-                                res.set('Content-type','text/plain');
+                                res.set('Content-type', 'text/plain');
                                 res.send('The request could not be handled');
                             }
-                        } catch(error) {
+                        } catch (error) {
                             debug(error);
-                            var errorMessage = embedErrorMessage("parser",host,null,"data",options.url,null);
+                            var errorMessage = embedErrorMessage("parser", host, null, "data", options.url, null);
                             res.status(500).send(errorMessage);
                         }
                     } else {
                         debug(err);
-                        var errorMessage = embedErrorMessage("parser",host,null,"data",options.url,null);
+                        var errorMessage = embedErrorMessage("parser", host, null, "data", options.url, null);
                         res.status(500).send(errorMessage);
                     }
                 });
             } else {
-                var errorMessage = embedErrorMessage("fetcher",host,r.statusCode,"data",options.url,r.statusMessage);
+                var errorMessage = embedErrorMessage("fetcher", host, r.statusCode, "data", options.url, r.statusMessage);
                 res.send(errorMessage);
-                debug("Request to %s failed with code %d and message %s",options.url,r.statusCode,r.statusMessage);
+                debug("Request to %s failed with code %d and message %s", options.url, r.statusCode, r.statusMessage);
             }
         }
     });
 };
 
 
-exports.redirectURL = function(req,res) {
+exports.redirectURL = function (req, res) {
     var myUrl = req.body.myUrl;
     var route = "/req?url='" + myUrl + "'";
     res.redirect(route);
@@ -958,7 +982,7 @@ exports.redirectURL = function(req,res) {
 // };
 
 
-exports.getList = function(req,res) {    
+exports.getList = function (req, res) {
     var provider = req.params.provider.toUpperCase();
     var protocol = providers[provider.toUpperCase()].protocol,
         host = providers[provider.toUpperCase()].host,
@@ -966,48 +990,49 @@ exports.getList = function(req,res) {
         format = providers[provider.toUpperCase()].format,
         agencyID = providers[provider.toUpperCase()].agencyID,
         nodata = providers[provider.toUpperCase()].nodata;
-    if (isInArray(provider,Object.keys(providers))) {
+    if (isInArray(provider, Object.keys(providers))) {
         var dataSet = '';
-        if (provider !== 'EUROSTAT' && provider !== 'WEUROSTAT')  {
+        if (provider !== 'EUROSTAT' && provider !== 'WEUROSTAT') {
             dataSet = req.params.dataset.toUpperCase();
         } else {
-            dataSet = req.params.dataset;        
+            dataSet = req.params.dataset;
         };
-        
+
         // All keys to UpperCase
         var key, keys = Object.keys(req.query);
         var n = keys.length;
-        var reqParams={};
+        var reqParams = {};
         while (n--) {
             key = keys[n];
             var kkey = key; // name of the key before it get changed below
-            if (key.toUpperCase() === "FREQUENCY") {key = "FREQ";}
-            else {reqParams[key.toUpperCase()] = req.query[kkey];}
-        }      
+            if (key.toUpperCase() === "FREQUENCY") { key = "FREQ"; }
+            else { reqParams[key.toUpperCase()] = req.query[kkey]; }
+        }
         var dimRequested = ''; // string fill with ordered dimensions passed by the user in req.params
         if (provider === 'WEUROSTAT') {
             var myPath = providers[provider].path + providers[provider].agencyID + '/data/' + dataSet;
         } else {
             var myPath = providers[provider].path + 'data/' + dataSet;
         }
-        debug('getDataset with provider: %s, dataset: %s',provider,dataSet);
-        debug('getDataset with path=%s',myPath);
-        getDim(provider, null, null, dataSet, function(err,dim) {
+        debug('getDataset with provider: %s, dataset: %s', provider, dataSet);
+        debug('getDataset with path=%s', myPath);
+        getDim(provider, null, null, dataSet, function (err, dim) {
             if (err) {
                 res.status(500).send(dim); // if err, dim is the errorMessage
             } else {
                 var authParams = dim.arrDim; // Authorised dimensions for the dataset.
                 var compt = 0;
-                authParams.forEach(function(it,ind){
-                    if(reqParams[it] != null) {
-                        if(ind<dim.nbDim-1) {dimRequested += reqParams[it]+'.';}
-                        else { dimRequested += reqParams[it];}
-                        delete reqParams[it];}
+                authParams.forEach(function (it, ind) {
+                    if (reqParams[it] != null) {
+                        if (ind < dim.nbDim - 1) { dimRequested += reqParams[it] + '.'; }
+                        else { dimRequested += reqParams[it]; }
+                        delete reqParams[it];
+                    }
                     else {
-                        if (ind<dim.nbDim-1) {
+                        if (ind < dim.nbDim - 1) {
                             dimRequested += '.';
                         }
-                        compt ++;
+                        compt++;
                     }
                 });
                 // When the whole dataSet is requested.
@@ -1020,12 +1045,12 @@ exports.getList = function(req,res) {
                 } else {
                     myPath += '?';
                 }
-                Object.keys(reqParams).forEach(function(it,ind,arr) {
+                Object.keys(reqParams).forEach(function (it, ind, arr) {
                     if (ind === 0) {
                         myPath += '?';
                     }
-                    myPath += it.toString() + "=" + reqParams[it] ;
-                    if (ind < arr.length-1) {
+                    myPath += it.toString() + "=" + reqParams[it];
+                    if (ind < arr.length - 1) {
                         myPath += "&";
                     }
                 });
@@ -1037,112 +1062,114 @@ exports.getList = function(req,res) {
                         'user-agent': 'nodeJS'
                     }
                 };
-                debug('auth params: %s',authParams);
-                debug('dimensions: %s',dimRequested);
-                request(options, function(e,r,b) {
+                debug('auth params: %s', authParams);
+                debug('dimensions: %s', dimRequested);
+                request(options, function (e, r, b) {
                     if (r.statusCode >= 200 && r.statusCode < 400) {
-                        xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                                if(err === null) {
+                        xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                            if (err === null) {
+                                try {
+                                    var data = obj.StructureSpecificData.DataSet[0];
+                                    var vTS = data.Series; // vector of Time Series : vTS
+                                    if (!req.timedout) {
+                                        res.send(buildHTML.List(provider, vTS, dataSet, dim));
+                                    }
+                                } catch (error) {
+                                    debug(error);
                                     try {
-                                        var data = obj.StructureSpecificData.DataSet[0];
-                                        var vTS = data.Series; // vector of Time Series : vTS
-                                        if (!req.timedout) {
-                                            res.send(buildHTML.List(provider,vTS,dataSet,dim));
-                                        }
-                                    } catch(error) {
-                                        debug(error);
-                                        try {
-                                            var footer = obj.StructureSpecificData.Footer[0].Message[0].code[0]; // for handling Eurostat errors
-                                            if (footer === '413') {
-                                                res.redirect('/413.html');
-                                                debug('redirecting to 413');
-                                            } else {
-                                                debug("Error parser at %s",options.url);
-                                                var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
-                                                res.status(500).send(errorMessage);
-                                            }
-                                        } catch(error2) {
-                                            debug(error2);
-                                            var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
+                                        var footer = obj.StructureSpecificData.Footer[0].Message[0].code[0]; // for handling Eurostat errors
+                                        if (footer === '413') {
+                                            res.redirect('/413.html');
+                                            debug('redirecting to 413');
+                                        } else {
+                                            debug("Error parser at %s", options.url);
+                                            var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                             res.status(500).send(errorMessage);
                                         }
+                                    } catch (error2) {
+                                        debug(error2);
+                                        var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
+                                        res.status(500).send(errorMessage);
                                     }
-                                } else {
-                                    debug(err);
-                                    res.send(err);var errorMessage = embedErrorMessage("parser",provider,null,"data",options.url,null);
-                                    res.status(500).send(errorMessage);
                                 }
-                            });
+                            } else {
+                                debug(err);
+                                res.send(err); var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
+                                res.status(500).send(errorMessage);
+                            }
+                        });
                     } else if (r.statusCode === 413) {
                         res.redirect('/413.html');
                     } else {
-                        debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s",r.statusCode,provider,options.url);
-                        var errorMessage = embedErrorMessage("fetcher",provider,r.statusCode,"data",options.url,r.statusMessage);
+                        debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, provider, options.url);
+                        var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "data", options.url, r.statusMessage);
                         res.send(errorMessage);
                     }
                 });
-            }});
+            }
+        });
     } else {
-        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        var errorMessage = 'The provider ' + provider + 'is not supported by the application.';
         errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
         res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
 
-exports.getBigDataSet = function(req,res) {    
+exports.getBigDataSet = function (req, res) {
     var provider = req.params.provider.toUpperCase();
     var protocol = providers[provider.toUpperCase()].protocol,
         host = providers[provider.toUpperCase()].host,
         path = providers[provider.toUpperCase()].path,
         format = providers[provider.toUpperCase()].format,
         agencyID = providers[provider.toUpperCase()].agencyID;
-    if (isInArray(provider,Object.keys(providers))) {
+    if (isInArray(provider, Object.keys(providers))) {
         var dataSet = '';
-        if (provider !== 'EUROSTAT' && provider !== 'WEUROSTAT')  {
+        if (provider !== 'EUROSTAT' && provider !== 'WEUROSTAT') {
             dataSet = req.params.dataset.toUpperCase();
         } else {
-            dataSet = req.params.dataset;        
+            dataSet = req.params.dataset;
         };
-        
+
         // All keys to UpperCase
         var key, keys = Object.keys(req.query);
         var n = keys.length;
-        var reqParams={};
+        var reqParams = {};
         while (n--) {
             key = keys[n];
             var kkey = key; // name of the key before it get changed below
-            if (key.toUpperCase() === "FREQUENCY") {key = "FREQ";}
-            if (key === 'startPeriod') {reqParams[key] = req.query[key];}
-            else if (key === 'firstNObservations') {reqParams[key] = req.query[key];}
-            else if (key === 'lastNObservations') {reqParams[key] = req.query[key];}
-            else if (key === 'endPeriod') {reqParams[key] = req.query[key];}
-            else {reqParams[key.toUpperCase()] = req.query[kkey];}
-        }      
+            if (key.toUpperCase() === "FREQUENCY") { key = "FREQ"; }
+            if (key === 'startPeriod') { reqParams[key] = req.query[key]; }
+            else if (key === 'firstNObservations') { reqParams[key] = req.query[key]; }
+            else if (key === 'lastNObservations') { reqParams[key] = req.query[key]; }
+            else if (key === 'endPeriod') { reqParams[key] = req.query[key]; }
+            else { reqParams[key.toUpperCase()] = req.query[kkey]; }
+        }
         var dimRequested = ''; // string fill with ordered dimensions passed by the user in req.params
         if (provider === 'WEUROSTAT') {
             var myPath = providers[provider].path + providers[provider].agencyID + '/data/' + dataSet;
         } else {
             var myPath = providers[provider].path + 'data/' + dataSet;
         }
-        debug('getDataset with provider: %s, dataset: %s',provider,dataSet);
-        debug('getDataset with path=%s',myPath);
-        getDim(provider, null, null, dataSet, function(err,dim) {
+        debug('getDataset with provider: %s, dataset: %s', provider, dataSet);
+        debug('getDataset with path=%s', myPath);
+        getDim(provider, null, null, dataSet, function (err, dim) {
             if (err) {
                 res.status(500).send(dim); // if err, dim is the errorMessage
             } else {
                 var authParams = dim.arrDim; // Authorised dimensions for the dataset.
                 var compt = 0;
-                authParams.forEach(function(it,ind){
-                    if(reqParams[it] != null) {
-                        if(ind<dim.nbDim-1) {dimRequested += reqParams[it]+'.';}
-                        else { dimRequested += reqParams[it];}
-                        delete reqParams[it];}
+                authParams.forEach(function (it, ind) {
+                    if (reqParams[it] != null) {
+                        if (ind < dim.nbDim - 1) { dimRequested += reqParams[it] + '.'; }
+                        else { dimRequested += reqParams[it]; }
+                        delete reqParams[it];
+                    }
                     else {
-                        if (ind<dim.nbDim-1) {
+                        if (ind < dim.nbDim - 1) {
                             dimRequested += '.';
                         }
-                        compt ++;
+                        compt++;
                     }
                 });
                 // When the whole dataSet is requested.
@@ -1151,12 +1178,12 @@ exports.getBigDataSet = function(req,res) {
                 };
                 myPath += '/' + dimRequested;
 
-                Object.keys(reqParams).forEach(function(it,ind,arr) {
+                Object.keys(reqParams).forEach(function (it, ind, arr) {
                     if (ind === 0) {
                         myPath += '?';
                     }
-                    myPath += it.toString() + "=" + reqParams[it] ;
-                    if (ind < arr.length-1) {
+                    myPath += it.toString() + "=" + reqParams[it];
+                    if (ind < arr.length - 1) {
                         myPath += "&";
                     }
                 });
@@ -1168,8 +1195,8 @@ exports.getBigDataSet = function(req,res) {
                         'user-agent': 'nodeJS'
                     }
                 };
-                debug('auth params: %s',authParams);
-                debug('dimensions: %s',dimRequested);
+                debug('auth params: %s', authParams);
+                debug('dimensions: %s', dimRequested);
 
                 var conn = rabbit.get(),
                     id = shortid.generate();
@@ -1179,19 +1206,19 @@ exports.getBigDataSet = function(req,res) {
                     authParams: authParams,
                     file: id
                 };
-                rabbit.sendMessage(conn,JSON.stringify(task));
+                rabbit.sendMessage(conn, JSON.stringify(task));
                 res.send(buildHTML.bigDataset(id));
             }
         });
     } else {
-        var errorMessage  = 'The provider ' + provider + 'is not supported by the application.';
+        var errorMessage = 'The provider ' + provider + 'is not supported by the application.';
         errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
         res.status(404).send(embedErrorMessage(errorMessage));
     }
 };
 
 // Send temporary file
-exports.getTemp = function(req,res){   
+exports.getTemp = function (req, res) {
     var id = req.params.id;
     debug('Request for temporary file with id: %s', id);
     if (id.slice(-4) === "html") {
@@ -1201,7 +1228,7 @@ exports.getTemp = function(req,res){
         res.send(buildHTML.wait(id));
     } else {
         // else let Rabbit send us the route
-        rabbit.sendTempFile(id,function(route){
+        rabbit.sendTempFile(id, function (route) {
             res.redirect(route);
         });
     }
