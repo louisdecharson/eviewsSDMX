@@ -19,7 +19,7 @@ var request = require('request'),
 
 // TODO : implement multiple series request
 
-exports.getSeries = function(req,res) {
+function getSeries(req, res) {
     
     var payload = {
         seriesid: req.params.series.split('+'),
@@ -49,4 +49,8 @@ exports.getSeries = function(req,res) {
         }
     });
 
+};
+
+export const bls  = {
+    "getSeries": getSeries
 };

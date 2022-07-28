@@ -1,7 +1,8 @@
 {
   "name": "eviewsSDMX",
-  "main": "server.js",
-  "author": "Louis de Charsonville <louisdecharson@gmail.com>",
+  "type": "module",
+  "exports": "./server.js",
+  "author": "Louis de Charsonville <louisdecharson@posteo.net>",
   "license": "AGPL-3.0",
   "dependencies": {
     "amqplib": "^0.8.0",
@@ -35,5 +36,8 @@
     "chai": "^4.0.2",
     "chai-http": "^3.0.0",
     "mocha": "^9.2.2"
+  },
+  "engines": {
+    "node": ">=14.16"
   }
 }

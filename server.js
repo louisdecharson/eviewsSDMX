@@ -13,33 +13,38 @@
 
 
 // EXTERNAL MODULES
-var express = require('express'),
-    path = require('path'),
-    bodyParser = require('body-parser'),
-    timeout = require('connect-timeout'),
-    favicon = require('serve-favicon'),
-    debug = require('debug')('server');
-// ROUTES 
-var fetcher = require('./routes/fetcher'),
-    quandl = require('./routes/quandl'),
-    bls = require('./routes/bls'),
-    fred = require('./routes/fred'),
-    buba = require('./routes/buba'),
-    oecd = require('./routes/oecd'),
-    explore = require('./routes/explore');
+import { express } from 'express';
+import { path } from 'path';
+import { bodyParser } from 'body-parser';
+import { timeout } from 'connect-timeout';
+import { favicon } from 'serve-favicon';
+import { debug } from 'debug';
+
+// Routes
+import { fetcher } from './routes/fetcher.js';
+import { quandl } from './routes/quandl.js';
+import { bls } from './routes/bls.js';
+import { fred } from './routes/fred.js';
+import { buba } from './routes/buba.js';
+import { oecd } from './routes/oecd.js';
+import { explore } from './routes/explore.js';
 
 // RABBIT MQ
-var rabbit = require('./rabbit');
+import { rabbit } from './rabbit.js';
+
 
 // Providers
-var providers = require('./routes/providers.json');
+const require = createRequire(import.meta.url);
+const providers = require('./routes/providers.json');
 
-var app = express();
+const logger = debug('server');
+
+const app = express();
 var port = process.env.PORT || 8080;
 // TIMEOUT
 app.use(timeout('29.9s',{"respond":true}));
 
-debug('booting %s','EViews - SDMX');
+logger('booting %s','EViews - SDMX');
 
 app.use(bodyParser.json({limit: '50mb'}));
 app.use(haltOnTimedout);

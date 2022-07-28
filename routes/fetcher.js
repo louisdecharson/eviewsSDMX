@@ -12,26 +12,26 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // =====================================================================
 
-// PACKAGES
-var xml2js = require('xml2js'),
-    http = require('follow-redirects').http,
-    https = require('https'),
-    url = require('url'),
-    fs = require('fs'),
-    buildHTML = require('./buildHTML'),
-    request = require('request'),
-    debug = require('debug')('fetcher'),
-    amqp = require('amqplib/callback_api'),
-    shortid = require('shortid');
+// Modules
+import { parseString } from 'xml2js';
+import * as https from 'https';
+import url from 'node:url';
+import * as buildHTML from './buildHTML.js';
+import * as request from 'request';
+import * as debug from 'debug';
+import * as shortid from 'shortid';
+import * as http from 'follow-redirects';
+import * as amqp from 'amqplib/callback_api.js';
 
-const providers = require('./providers.json'),
-      appTimeout = 29500; // TimeOut for Request
+const logger = debug('fetcher');
+
+const require = createRequire(import.meta.url);
+const providers = require('./routes/providers.json');
+
+const appTimeout = 29500; // TimeOut for Request
 
 
 // RABBIT MQ
-// var urlrabbit = process.env.CLOUDAMQP_URL || "amqp://localhost",
-//     q = 'tasks',
-//     dirTempFiles = './public/temp/';
 var rabbit = require('./../rabbit');
 
 // Utilitaries
@@ -109,9 +109,9 @@ function isInArray(it, arr) {
 
 function _getPath(provider, metadata = false) {
     if (metadata && "metadataPath" in providers[provider]) {
-        return providers[provider].metadataPath
+        return providers[provider].metadataPath;
     } else {
-        return providers[provider].path
+        return providers[provider].path;
     }
 }
 
@@ -134,8 +134,8 @@ function getAgency(provider, dataset, callback) {
         },
         timeout: appTimeout
     };
-    debug('call getAgency; provider: %s, dataset: %s', provider, dataset);
-    debug('url: %s', options.url);
+    logger('call getAgency; provider: %s, dataset: %s', provider, dataset);
+    logger('url: %s', options.url);
     request(options, function (e, r, b) {
         if (e) {
             var errorMessage;
@@ -144,26 +144,26 @@ function getAgency(provider, dataset, callback) {
             } else {
                 errorMessage = embedErrorMessage("request", provider, e.code, "agency ID", options.url, null);
             }
-            debug('Request Error at url %s with code %s', options.url, e);
+            logger('Request Error at url %s with code %s', options.url, e);
             callback(true, errorMessage);
         } else {
             if (r.statusCode >= 200 && r.statusCode < 400) {
-                xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                     if (err === null) {
                         try {
                             var agency = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['agencyID'],
                                 dsdId = obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'][0]['Structure']['0']['Ref'][0]['id'];
                             callback(false, { "agency": agency, "dsdId": dsdId });
-                            debug('agency: %s; dsdId: %s', agency, dsdId);
-                            debug('getAgency: done.');
+                            logger('agency: %s; dsdId: %s', agency, dsdId);
+                            logger('getAgency: done.');
                         } catch (error) {
-                            debug("Parser error. Error: %s", error);
+                            logger("Parser error. Error: %s", error);
                             var errorMessage = embedErrorMessage("parser", provider, null, "agency ID", options.url, null);
                             // var errorMessage = "Error parsing SDMX when retrieving datastructure at: "+ options.url;
                             callback(true, errorMessage);
                         }
                     } else {
-                        debug("Parser error. Error: %s", err);
+                        logger("Parser error. Error: %s", err);
                         var errorMessage = embedErrorMessage("parser", provider, null, "agency ID", options.url, null);
                         callback(true, errorMessage);
                     };
@@ -172,7 +172,7 @@ function getAgency(provider, dataset, callback) {
                 var errorProvider = r.statusMessage || b;
                 var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "agency ID", options.url, errorProvider);
                 callback(true, errorMessage);
-                debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
+                logger("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
             }
         }
     });
@@ -182,7 +182,7 @@ function getAgency(provider, dataset, callback) {
 function getDim(provider, agency, dsdId, dataset, callback) {
     var nbDim = 0,
         arrDim = [];
-    debug('call getDim with provider=%s, agency=%s, dsdId=%s, dataset=%s', provider, agency, dsdId, dataset);
+    logger('call getDim with provider=%s, agency=%s, dsdId=%s, dataset=%s', provider, agency, dsdId, dataset);
     const providerUpperCase = provider.toUpperCase(),
         protocol = providers[providerUpperCase].protocol,
         host = providers[providerUpperCase].host,
@@ -207,7 +207,7 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                 };
                 request(options, function (e, r, b) { // e: error, r: response, b:body
                     if (e) {
-                        debug('Request Error at url %s with code %s', options.url, e);
+                        logger('Request Error at url %s with code %s', options.url, e);
                         var errorMessage;
                         if (e.code === "ETIMEDOUT") {
                             errorMessage = embedErrorMessage("timeout", provider, null, "dimensions", options.url, null);
@@ -217,7 +217,7 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                         callback(true, errorMessage);
                     } else {
                         if (r.statusCode >= 200 && r.statusCode < 400) {
-                            xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                            parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                                 if (err === null) {
                                     try {
                                         var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
@@ -225,17 +225,17 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                                         data.forEach(function (item, index) {
                                             arrDim.push(item['id'][0]);
                                         });
-                                        debug('nbDim: %s ; arrDim: %s, dsdId: %s', nbDim, arrDim, dsdId);
+                                        logger('nbDim: %s ; arrDim: %s, dsdId: %s', nbDim, arrDim, dsdId);
                                         callback(false, { "nbDim": nbDim, "arrDim": arrDim, "data": data, "dsdId": agencyInfo.dsdId });
                                     } catch (error) {
                                         var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
                                         // var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
-                                        debug(error);
+                                        logger(error);
                                         callback(true, errorMessage);
                                     }
                                 } else {
                                     var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
-                                    debug(err);
+                                    logger(err);
                                     callback(true, errorMessage);
                                 }
                             });
@@ -243,8 +243,8 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                             var errorProvider = r.statusMessage || b;
                             var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dimensions of the data", options.url, errorProvider);
                             callback(true, errorMessage);
-                            debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
-                            debug(e);
+                            logger("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
+                            logger(e);
                         }
                     }
                 });
@@ -266,7 +266,7 @@ function getDim(provider, agency, dsdId, dataset, callback) {
         };
         request(options, function (e, r, b) {
             if (e) {
-                debug('Request Error at url %s with code %s', options.url, e);
+                logger('Request Error at url %s with code %s', options.url, e);
                 var errorMessage;
                 if (e.code === "ETIMEDOUT") {
                     errorMessage = embedErrorMessage("timeout", provider, null, "dimensions", options.url, null);
@@ -276,7 +276,7 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                 callback(true, errorMessage);
             } else {
                 if (r.statusCode >= 200 && r.statusCode < 400) {
-                    xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                    parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                         if (err === null) {
                             try {
                                 var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
@@ -288,19 +288,19 @@ function getDim(provider, agency, dsdId, dataset, callback) {
                             } catch (error) {
                                 var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
                                 // var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
-                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
+                                logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
                                 callback(true, errorMessage);
                             }
                         } else {
                             var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
-                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
+                            logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
                             callback(true, errorMessage);
                         }
                     });
                 } else {
                     var errorProvider = r.statusMessage || b;
                     var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dimensions of the data", options.url, errorProvider);
-                    debug("Fetcher ERROR \n Code: %d \n Message: %s \n Url: %s", r.statusCode, r.statusMessage, options.url);
+                    logger("Fetcher ERROR \n Code: %d \n Message: %s \n Url: %s", r.statusCode, r.statusMessage, options.url);
                     callback(true, errorMessage);
                 }
             }
@@ -331,10 +331,10 @@ exports.getAllDataFlow = function (req, res) {
             },
             timeout: appTimeout
         };
-        debug('get dataflow with path=%s', options.url);
+        logger('get dataflow with path=%s', options.url);
         request(options, function (e, r, b) {
             if (e) {
-                debug('Request Error at url %s with code %s', options.url, e);
+                logger('Request Error at url %s with code %s', options.url, e);
                 var errorMessage;
                 if (e.code === "ETIMEDOUT") {
                     errorMessage = embedErrorMessage("timeout", provider, null, "dataflow", options.url, null);
@@ -344,7 +344,7 @@ exports.getAllDataFlow = function (req, res) {
                 res.status(500).send(errorMessage);
             } else {
                 if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
-                    xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                    parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                         if (err === null) {
                             var data = [];
                             try {
@@ -374,18 +374,18 @@ exports.getAllDataFlow = function (req, res) {
                             catch (error) {
                                 var errorMessage = embedErrorMessage("parser", provider, null, "dataflow (list of the datasets)", options.url, null);
                                 res.status(500).send(errorMessage);
-                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
+                                logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
                             }
                         } else {
                             var errorMessage = embedErrorMessage("parser", provider, null, "dataflow (list of the datasets)", options.url, null);
                             res.status(500).send(errorMessage);
-                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
+                            logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
                         }
                     });
                 } else {
-                    debug("The code while requesting dataflow at %s", options.url);
-                    debug(r.statusCode);
-                    debug(r.statusMessage);
+                    logger("The code while requesting dataflow at %s", options.url);
+                    logger(r.statusCode);
+                    logger(r.statusMessage);
                     var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dataflow (list of the datasets)", options.url, r.statusMessage);
                     res.send(errorMessage);
                 }
@@ -410,7 +410,7 @@ exports.getDataFlow = function (req, res) {
     } else {
         myTimeout = +myTimeout;
     }
-    debug('getDataflow with provider:%s, dataset:%s, timeout:%s', provider, dataSet, myTimeout);
+    logger('getDataflow with provider:%s, dataset:%s, timeout:%s', provider, dataSet, myTimeout);
     const providerUpperCase = provider.toUpperCase(),
         protocol = providers[providerUpperCase].protocol,
         host = providers[providerUpperCase].host,
@@ -444,13 +444,13 @@ exports.getDataFlow = function (req, res) {
                         'user-agent': 'nodeJS'
                     }
                 };
-                debug('get dataflow with path=%s | timeout=%o', options.url, options.timeout);
-                if (debug.enabled) { var start = Date.now(); }
+                logger('get dataflow with path=%s | timeout=%o', options.url, options.timeout);
+                if (logger.enabled) { var start = Date.now(); }
                 request(options, function (e, r, b) {
-                    if (debug.enabled) { clearInterval(interval); }
+                    if (logger.enabled) { clearInterval(interval); }
                     if (!e) {
                         if (r.statusCode >= 200 && r.statusCode < 400) {
-                            xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                            parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                                 if (err === null) {
                                     try {
                                         var footer = obj.StructureSpecificData.Footer;
@@ -473,21 +473,21 @@ exports.getDataFlow = function (req, res) {
                                     } catch (error) {
                                         // var errorMessage = "Error retrieving data at: " + options.url;
                                         var errorMessage = embedErrorMessage("parser", provider, null, "dataset information", options.url, null);
-                                        debug(errorMessage);
-                                        debug('-------------------------');
-                                        debug(error);
+                                        logger(errorMessage);
+                                        logger('-------------------------');
+                                        logger(error);
                                         res.status(500).send(errorMessage);
                                     }
                                 } else {
                                     var errorMessage = embedErrorMessage("parser", provider, null, "dataset information", options.url, null);
                                     res.status(500).send(errorMessage);
-                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
+                                    logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
                                 }
                             });
                         } else {
                             if (!res.headersSent) {
                                 console.log(e, r.statusCode)
-                                debug('Error when retrieving list of series from %s: %s', dataSet, e)
+                                logger('Error when retrieving list of series from %s: %s', dataSet, e)
                                 var myError = 'Response Code: ' + r.statusCode;
                                 res.send(buildHTML.detailDataset(provider, null, dataSet, dim, myError));
                             }
@@ -499,14 +499,14 @@ exports.getDataFlow = function (req, res) {
                         }
                     } else {
                         if (!res.headersSent) {
-                            debug(e);
-                            debug(r.statusMessage);
-                            debug(e.stack);
+                            logger(e);
+                            logger(r.statusMessage);
+                            logger(e.stack);
                             res.send(buildHTML.detailDataset(provider, null, dataSet, dim, r.statusMessage));
                         }
                     }
                 });
-                if (debug.enabled) {
+                if (logger.enabled) {
                     var interval = setInterval(function () {
                         console.log('Waiting: ', (Date.now() - start) / 1000);
                     }, 1000);
@@ -570,8 +570,8 @@ exports.getDataSet = function (req, res) {
         } else {
             var myPath = providers[provider].path + 'data/' + dataSet;
         }
-        debug('getDataset with provider: %s, dataset: %s', provider, dataSet);
-        debug('getDataset with path=%s', myPath);
+        logger('getDataset with provider: %s, dataset: %s', provider, dataSet);
+        logger('getDataset with path=%s', myPath);
         getDim(provider, null, null, dataSet, function (err, dim) {
             if (err) {
                 res.send(dim); // if err, dim is the errorMessage
@@ -614,11 +614,11 @@ exports.getDataSet = function (req, res) {
                         'user-agent': 'nodeJS'
                     }
                 };
-                debug('auth params: %s', authParams);
-                debug('dimensions: %s', dimRequested);
+                logger('auth params: %s', authParams);
+                logger('dimensions: %s', dimRequested);
                 request(options, function (e, r, b) {
                     if (e) {
-                        debug('Request Error at url %s with code %s', options.url, e);
+                        logger('Request Error at url %s with code %s', options.url, e);
                         var errorMessage;
                         if (e.code === "ETIMEDOUT") {
                             errorMessage = embedErrorMessage("timeout", provider, null, "data", options.url, null);
@@ -628,7 +628,7 @@ exports.getDataSet = function (req, res) {
                         res.status(500).send(errorMessage);
                     } else {
                         if (r.statusCode >= 200 && r.statusCode < 400) {
-                            xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                            parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                                 if (err === null) {
                                     try {
                                         var data = obj.StructureSpecificData.DataSet[0];
@@ -637,18 +637,18 @@ exports.getDataSet = function (req, res) {
                                             res.send(buildHTML.makeTable(vTS, dataSet, authParams));
                                         }
                                     } catch (error) {
-                                        debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
+                                        logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
                                         try {
                                             var footer = obj.StructureSpecificData.Footer[0].Message[0].code[0]; // for handling Eurostat errors
                                             if (footer === '413') {
                                                 res.redirect('/413.html');
-                                                debug('redirecting to 413');
+                                                logger('redirecting to 413');
                                             } else {
                                                 var errorMessage = embedErrorMessage("parser", provider, null, "dataset", options.url, null);
                                                 res.status(500).send(errorMessage);
                                             }
                                         } catch (error2) {
-                                            debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error2);
+                                            logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error2);
                                             var errorMessage = embedErrorMessage("parser", provider, null, "dataset", options.url, null);
                                             res.status(500).send(errorMessage);
                                         }
@@ -656,7 +656,7 @@ exports.getDataSet = function (req, res) {
                                 } else {
                                     var errorMessage = embedErrorMessage("parser", provider, null, "dataset", options.url, null);
                                     res.status(500).send(errorMessage);
-                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
+                                    logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
                                 }
                             });
                         } else if (r.statusCode === 413) {
@@ -665,7 +665,7 @@ exports.getDataSet = function (req, res) {
                             var errorProvider = r.statusMessage || b;
                             var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dataset", options.url, errorProvider);
                             res.send(errorMessage);
-                            debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
+                            logger("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
                         }
                     }
                 });
@@ -711,7 +711,7 @@ exports.getSeries = function (req, res) {
                 },
                 timeout: appTimeout
             };
-            debug('getSeries with path=%s', options.url);
+            logger('getSeries with path=%s', options.url);
             request(options, function (e, r, b) {
                 if (e) {
                     var errorMessage;
@@ -723,7 +723,7 @@ exports.getSeries = function (req, res) {
                     res.send(errorMessage);
                 } else {
                     if (r.statusCode >= 200 && r.statusCode < 400) {
-                        xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                        parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                             if (err === null) {
                                 try {
                                     var data = obj.StructureSpecificData.DataSet[0];
@@ -733,12 +733,12 @@ exports.getSeries = function (req, res) {
                                     }
                                 }
                                 catch (error) {
-                                    debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
+                                    logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
                                     var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                     res.status(500).send(errorMessage);
                                 }
                             } else {
-                                debug('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
+                                logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
                                 var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                 res.status(500).send(errorMessage);
                             }
@@ -747,7 +747,7 @@ exports.getSeries = function (req, res) {
                         var errorProvider = r.statusMessage || b;
                         var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "data", options.url, errorProvider);
                         res.send(errorMessage);
-                        debug(e); debug('[getSeries] request failed with code %d', r.statusCode);
+                        logger(e); logger('[getSeries] request failed with code %d', r.statusCode);
                     }
                 }
             });
@@ -771,7 +771,7 @@ exports.getSeries = function (req, res) {
                 },
                 timeout: appTimeout
             };
-            debug('getSeries with path=%s', options.url);
+            logger('getSeries with path=%s', options.url);
             request(options, function (e, r, b) {
                 if (e) {
                     var errorMessage;
@@ -783,7 +783,7 @@ exports.getSeries = function (req, res) {
                     res.send(errorMessage);
                 } else {
                     if (r.statusCode >= 200 && r.statusCode < 400) {
-                        xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                        parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                             if (err === null) {
                                 try {
                                     var data = obj.StructureSpecificData.DataSet[0];
@@ -793,18 +793,18 @@ exports.getSeries = function (req, res) {
                                     }
                                 }
                                 catch (error) {
-                                    debug(error);
+                                    logger(error);
                                     var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                     res.status(500).send(errorMessage);
                                 }
                             } else {
-                                debug(err);
+                                logger(err);
                                 var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                 res.status(500).send(errorMessage);
                             }
                         });
                     } else {
-                        debug('[getSeries] request failed with code %d', r.statusCode);
+                        logger('[getSeries] request failed with code %d', r.statusCode);
                         var errorProvider = r.statusMessage || b;
                         var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "data", options.url, errorProvider);
                         res.send(errorMessage);
@@ -848,8 +848,8 @@ exports.getCodeList = function (req, res) {
             },
             timeout: appTimeout
         };
-        debug('getCodeList with provider: %s; dim: %s, dsdId: %s', provider, dim, dsdId);
-        debug('url: %s', options.url);
+        logger('getCodeList with provider: %s; dim: %s, dsdId: %s', provider, dim, dsdId);
+        logger('url: %s', options.url);
         request(options, function (e, r, b) {
             if (e) {
                 var errorMessage;
@@ -861,7 +861,7 @@ exports.getCodeList = function (req, res) {
                 res.send(errorMessage);
             } else {
                 if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
-                    xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                    parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                         if (err === null) {
                             try {
                                 var data = obj['Structure']['Structures'][0]['Codelists'][0]['Codelist'];
@@ -876,22 +876,22 @@ exports.getCodeList = function (req, res) {
                                 }
                                 var title_dim = myData['id'][0];
                                 var codes = myData['Code'];
-                                debug('getCodeList: done;');
+                                logger('getCodeList: done;');
                                 res.send(buildHTML.codeList(codes, title_dim));
                             }
                             catch (error) {
                                 var errorMessage = embedErrorMessage("parser", provider, null, "codelist", options.url, null);
                                 res.status(500).send(errorMessage);
-                                debug(error);
+                                logger(error);
                             }
                         } else {
                             var errorMessage = embedErrorMessage("parser", provider, null, "codelist", options.url, null);
                             res.status(500).send(errorMessage);
-                            debug(err);
+                            logger(err);
                         }
                     });
                 } else {
-                    debug(e);
+                    logger(e);
                     var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "codelist", options.url, r.statusMessage);
                     res.send(r.statusMessage);
                 }
@@ -910,7 +910,7 @@ exports.getDatafromURL = function (req, res) {
     var host = url.parse(myUrl).hostname,
         protocol = url.parse(myUrl).protocol,
         path = url.parse(myUrl).pathname;
-    debug("Receive request for host: %s, with path: %s, over protcol: %s", host, protocol, path);
+    logger("Receive request for host: %s, with path: %s, over protcol: %s", host, protocol, path);
     var options = {
         url: protocol + '//' + host + path,
         method: 'GET',
@@ -936,7 +936,7 @@ exports.getDatafromURL = function (req, res) {
             res.send(errorMessage);
         } else {
             if (r.statusCode >= 200 && r.statusCode < 400) {
-                xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                     if (err === null) {
                         try {
                             if (typeof obj.StructureSpecificData !== 'undefined') {
@@ -951,12 +951,12 @@ exports.getDatafromURL = function (req, res) {
                                 res.send('The request could not be handled');
                             }
                         } catch (error) {
-                            debug(error);
+                            logger(error);
                             var errorMessage = embedErrorMessage("parser", host, null, "data", options.url, null);
                             res.status(500).send(errorMessage);
                         }
                     } else {
-                        debug(err);
+                        logger(err);
                         var errorMessage = embedErrorMessage("parser", host, null, "data", options.url, null);
                         res.status(500).send(errorMessage);
                     }
@@ -964,7 +964,7 @@ exports.getDatafromURL = function (req, res) {
             } else {
                 var errorMessage = embedErrorMessage("fetcher", host, r.statusCode, "data", options.url, r.statusMessage);
                 res.send(errorMessage);
-                debug("Request to %s failed with code %d and message %s", options.url, r.statusCode, r.statusMessage);
+                logger("Request to %s failed with code %d and message %s", options.url, r.statusCode, r.statusMessage);
             }
         }
     });
@@ -1014,8 +1014,8 @@ exports.getList = function (req, res) {
         } else {
             var myPath = providers[provider].path + 'data/' + dataSet;
         }
-        debug('getDataset with provider: %s, dataset: %s', provider, dataSet);
-        debug('getDataset with path=%s', myPath);
+        logger('getDataset with provider: %s, dataset: %s', provider, dataSet);
+        logger('getDataset with path=%s', myPath);
         getDim(provider, null, null, dataSet, function (err, dim) {
             if (err) {
                 res.status(500).send(dim); // if err, dim is the errorMessage
@@ -1062,11 +1062,11 @@ exports.getList = function (req, res) {
                         'user-agent': 'nodeJS'
                     }
                 };
-                debug('auth params: %s', authParams);
-                debug('dimensions: %s', dimRequested);
+                logger('auth params: %s', authParams);
+                logger('dimensions: %s', dimRequested);
                 request(options, function (e, r, b) {
                     if (r.statusCode >= 200 && r.statusCode < 400) {
-                        xml2js.parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                        parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
                             if (err === null) {
                                 try {
                                     var data = obj.StructureSpecificData.DataSet[0];
@@ -1075,25 +1075,25 @@ exports.getList = function (req, res) {
                                         res.send(buildHTML.List(provider, vTS, dataSet, dim));
                                     }
                                 } catch (error) {
-                                    debug(error);
+                                    logger(error);
                                     try {
                                         var footer = obj.StructureSpecificData.Footer[0].Message[0].code[0]; // for handling Eurostat errors
                                         if (footer === '413') {
                                             res.redirect('/413.html');
-                                            debug('redirecting to 413');
+                                            logger('redirecting to 413');
                                         } else {
-                                            debug("Error parser at %s", options.url);
+                                            logger("Error parser at %s", options.url);
                                             var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                             res.status(500).send(errorMessage);
                                         }
                                     } catch (error2) {
-                                        debug(error2);
+                                        logger(error2);
                                         var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                         res.status(500).send(errorMessage);
                                     }
                                 }
                             } else {
-                                debug(err);
+                                logger(err);
                                 res.send(err); var errorMessage = embedErrorMessage("parser", provider, null, "data", options.url, null);
                                 res.status(500).send(errorMessage);
                             }
@@ -1101,7 +1101,7 @@ exports.getList = function (req, res) {
                     } else if (r.statusCode === 413) {
                         res.redirect('/413.html');
                     } else {
-                        debug("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, provider, options.url);
+                        logger("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, provider, options.url);
                         var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "data", options.url, r.statusMessage);
                         res.send(errorMessage);
                     }
@@ -1151,8 +1151,8 @@ exports.getBigDataSet = function (req, res) {
         } else {
             var myPath = providers[provider].path + 'data/' + dataSet;
         }
-        debug('getDataset with provider: %s, dataset: %s', provider, dataSet);
-        debug('getDataset with path=%s', myPath);
+        logger('getDataset with provider: %s, dataset: %s', provider, dataSet);
+        logger('getDataset with path=%s', myPath);
         getDim(provider, null, null, dataSet, function (err, dim) {
             if (err) {
                 res.status(500).send(dim); // if err, dim is the errorMessage
@@ -1195,8 +1195,8 @@ exports.getBigDataSet = function (req, res) {
                         'user-agent': 'nodeJS'
                     }
                 };
-                debug('auth params: %s', authParams);
-                debug('dimensions: %s', dimRequested);
+                logger('auth params: %s', authParams);
+                logger('dimensions: %s', dimRequested);
 
                 var conn = rabbit.get(),
                     id = shortid.generate();
@@ -1220,7 +1220,7 @@ exports.getBigDataSet = function (req, res) {
 // Send temporary file
 exports.getTemp = function (req, res) {
     var id = req.params.id;
-    debug('Request for temporary file with id: %s', id);
+    logger('Request for temporary file with id: %s', id);
     if (id.slice(-4) === "html") {
         // Being here means the file does not exist yet (or does
         // not exist anymore).
