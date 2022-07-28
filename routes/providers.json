@@ -153,6 +153,20 @@
         "native": "False",
         "resources": ["series"]
     },
+    // "BUBASDMX": {
+    //     "name": "Deutsche Bundesbank (SDMX)",
+    //     "protocol":"https",
+    //     "host": "api.statistiken.bundesbank.de",
+    //     "path": "/rest/",
+    //     "metadataPath": "/rest/metadata/",
+    //     "agencyID": "BBK",
+    //     "SDMX": "True",
+    //     "apiKey": "False",
+    //     "native": "True",
+    //     "format":"",
+    //     "nodata": "",
+    //     "resources": ["dataflow","dataset","series","list","codelist"]
+    // },
     "TEST":{
         "name": "Test Errors",
         "protocol": "https",
