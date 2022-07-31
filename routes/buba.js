@@ -13,20 +13,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // PACKAGES
-var request = require('request'),
-    fs = require('fs'),
-    debug = require('debug')('buba'),
-    csv = require('fast-csv'),
-    buildHTML = require('./buildHTML');
+import request from 'request';
+import * as fs from 'fs';
+import * as csv from 'fast-csv';
+import { makeTableBuba } from './buildHTML.js';
 
-const urlBuba_pre = 'https://api.statistiken.bundesbank.de/rest/download/',
-      urlBuba_post = '?format=csv&lang=en';
+const URL_BUBA = 'https://api.statistiken.bundesbank.de/rest/download/',
+      URL_BUBA_DEFAULT_PARAMS = '?format=csv&lang=en';
 
-exports.getSeries = function(req,res) {
-  var urlSeries = req.params.series,
-      url = urlBuba_pre + urlSeries.replace('.','/') + urlBuba_post;
-  var dest = './temp.csv';
-  var f = fs.createWriteStream(dest);
+export function getSeries(req,res) {
+  const urlSeries = req.params.series,
+      url = URL_BUBA + urlSeries.replace('.','/') + URL_BUBA_DEFAULT_PARAMS,
+        dest = './temp.csv',
+        f = fs.createWriteStream(dest);
   request
     .get(url)
     .on('error', function(err) {
@@ -43,9 +42,9 @@ exports.getSeries = function(req,res) {
             finalData.push(data);
           })
           .on("end",function() {
-            buildHTML.makeTableBuba(finalData,function(html){res.send(html);});
+            makeTableBuba(finalData,function(html){res.send(html);});
             fs.unlink(dest,function(){});
-                    });
+          });
       });
     }));
 };

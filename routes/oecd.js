@@ -13,10 +13,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // PACKAGES
-var request = require('request'),
-    xml2js = require('xml2js'),
-    debug = require('debug')('oecd'),
-    buildHTML = require('./buildHTML');
+import request from 'request';
+import * as xml2js from 'xml2js';
+import Debug from 'debug';
+import * as buildHTML from './buildHTML.js';
+
+const logger = Debug('oecd');
 
 const urlOECD = 'http://stats.oecd.org/restsdmx/sdmx.ashx/';
 
@@ -27,7 +29,7 @@ function stripPrefix(str){
 }
 
 // FETCHER
-exports.getSeries = function(req,res) {
+export function getSeries(req,res) {
     var series = req.params.series,
         dataset = req.params.dataset,
         keys = Object.keys(req.query),
@@ -46,7 +48,7 @@ exports.getSeries = function(req,res) {
                 'connection': 'keep-alive'
             }
         };
-    debug('getSeries OECD with path=%s',options.url);
+    logger('getSeries OECD with path=%s',options.url);
     request(options,function(e,r,b){
         if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
             xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
@@ -59,7 +61,7 @@ exports.getSeries = function(req,res) {
                             res.send(buildHTML.makeTableOECD(vTS,series,dataset));
                         }}
                     catch(error) {
-                        debug(error);
+                        logger(error);
                         var errorMessage = "Error parsing SDMX at: " + options.url;
                         res.status(500).send(errorMessage);
                     }
@@ -69,12 +71,12 @@ exports.getSeries = function(req,res) {
             });
         } else {
             res.status(r.statusCode).send(r.statusMessage);
-            debug(e);
+            logger(e);
         }
     }); 
 };
 
-exports.getAllDataFlow = function(req,res) {
+export function getAllDataFlow(req,res) {
     var myURL = urlOECD + 'GetDataStructure/all?format=SDMX-ML',
         options = {
             url: myURL,
@@ -83,7 +85,7 @@ exports.getAllDataFlow = function(req,res) {
                 'connection': 'keep-alive'
             }
         };
-    debug('getAllDataflow OECD with path=%s',options.url);
+    logger('getAllDataflow OECD with path=%s',options.url);
     request(options,function(e,r,b){
         if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
             xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
@@ -97,7 +99,7 @@ exports.getAllDataFlow = function(req,res) {
                             res.send(buildHTML.dataFlow(data,'oecd'));
                         }}
                     catch(error) {
-                        debug(error);
+                        logger(error);
                         var errorMessage = "Error parsing SDMX at: " + options.url;
                         res.status(500).send(errorMessage);
                     }
@@ -107,12 +109,12 @@ exports.getAllDataFlow = function(req,res) {
             });
         } else {
             res.status(r.statusCode).send(r.statusMessage);
-            debug(e);
+            logger(e);
         }
     }); 
 };
 
-exports.getDataflow = function(req,res) {
+export function getDataflow(req,res) {
     var dataset = req.params.dataset,
         myURL = urlOECD + 'GetDataStructure/'+ dataset,
         options = {
@@ -122,7 +124,7 @@ exports.getDataflow = function(req,res) {
                 'connection': 'keep-alive'
             }
         };
-    debug('getDataflow OECD with path=%s',options.url);
+    logger('getDataflow OECD with path=%s',options.url);
     request(options,function(e,r,b){
         if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
             xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
@@ -134,7 +136,7 @@ exports.getDataflow = function(req,res) {
                             res.send(buildHTML.OECDDimensions(dim,dataset));
                         }}
                     catch(error) {
-                        debug(error);
+                        logger(error);
                         var errorMessage = "Error parsing SDMX at: " + options.url;
                         res.status(500).send(errorMessage);
                     }
@@ -144,12 +146,12 @@ exports.getDataflow = function(req,res) {
             });
         } else {
             res.status(r.statusCode).send(r.statusMessage);
-            debug(e);
+            logger(e);
         }
     }); 
 };
 
-exports.getCodeList = function(req,res) {
+export function getCodeList(req,res) {
     var codeList = req.params.codelist,
         dataset = req.query.Dataset,
         fullCodeList = "CL_" + dataset + "_" + codeList,
@@ -161,7 +163,7 @@ exports.getCodeList = function(req,res) {
                 'connection': 'keep-alive'
             }
         };
-    debug('getCodeList OECD with path=%s,codelist=%s for dataset=%s',options.url,codeList,dataset);
+    logger('getCodeList OECD with path=%s,codelist=%s for dataset=%s',options.url,codeList,dataset);
     request(options,function(e,r,b){
         if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
             xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
@@ -178,7 +180,7 @@ exports.getCodeList = function(req,res) {
                         });
                     }
                     catch(error) {
-                        debug(error);
+                        logger(error);
                         var errorMessage = "Error parsing SDMX at: " + options.url;
                         res.status(500).send(errorMessage);
                     }
@@ -188,7 +190,7 @@ exports.getCodeList = function(req,res) {
             });
         } else {
             res.status(r.statusCode).send(r.statusMessage);
-            debug(e);
+            logger(e);
         }
     }); 
 };

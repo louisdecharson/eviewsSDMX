@@ -14,11 +14,13 @@
 // =====================================================================
 
 // PACKAGES
-var https = require('https'),
-    debug = require('debug')('fred'),
-    buildHTML = require('./buildHTML.js');
+import * as https from 'https';
+import Debug from 'debug';
+import { makeTableFred } from './buildHTML.js';
 
-exports.getSeries = function(req,res) {
+const logger = Debug('fred');
+
+export function getSeries(req,res) {
     var series = req.params.series,
         apiKey = req.params.apiKey;
     var myPath = '/fred/series/observations?series_id='+ series + '&api_key='+apiKey+"&file_type=json";
@@ -30,7 +32,7 @@ exports.getSeries = function(req,res) {
             'connection': 'keep-alive'
         }
     };
-    debug('getSeries FRED with path=%s',options.path);
+    logger('getSeries FRED with path=%s',options.path);
     https.get(options, function(result) {
         if (result.statusCode >=200 && result.statusCode < 400) {
             var xml = '';
@@ -40,7 +42,7 @@ exports.getSeries = function(req,res) {
             result.on('end',function() {
                 var json = JSON.parse(xml);
                 var mySeries = json.observations;
-                res.send(buildHTML.makeTableFred(mySeries,series));
+                res.send(makeTableFred(mySeries,series));
             });
         } else {
             if (result.statusCode === 429) {

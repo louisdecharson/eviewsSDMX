@@ -13,31 +13,32 @@
 
 
 // EXTERNAL MODULES
-import { express } from 'express';
-import { path } from 'path';
-import { bodyParser } from 'body-parser';
-import { timeout } from 'connect-timeout';
-import { favicon } from 'serve-favicon';
-import { debug } from 'debug';
+import express from 'express';
+import path from 'path';
+import bodyParser from 'body-parser';
+import timeout from 'connect-timeout';
+import favicon from 'serve-favicon';
+import Debug from 'debug';
+import { createRequire } from 'module';
 
 // Routes
-import { fetcher } from './routes/fetcher.js';
-import { quandl } from './routes/quandl.js';
-import { bls } from './routes/bls.js';
-import { fred } from './routes/fred.js';
-import { buba } from './routes/buba.js';
-import { oecd } from './routes/oecd.js';
-import { explore } from './routes/explore.js';
+import * as fetcher from './routes/fetcher.js';
+import * as quandl from './routes/quandl.js';
+import * as bls from './routes/bls.js';
+import * as fred from './routes/fred.js';
+import * as buba from './routes/buba.js';
+import * as oecd from './routes/oecd.js';
+import * as explore from './routes/explore.js';
 
 // RABBIT MQ
-import { rabbit } from './rabbit.js';
+import * as rabbit from './rabbit.js';
 
 
 // Providers
 const require = createRequire(import.meta.url);
 const providers = require('./routes/providers.json');
-
-const logger = debug('server');
+const __dirname = path.resolve();
+const logger = Debug('server');
 
 const app = express();
 var port = process.env.PORT || 8080;
@@ -172,4 +173,4 @@ process.on('uncaughtException', (err) => {
 
 
 // FOR TESTING
-module.exports = app;
+export default { app };

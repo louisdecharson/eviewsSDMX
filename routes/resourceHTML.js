@@ -8,6 +8,6 @@ const bootstrap4 = '<script src="https://code.jquery.com/jquery-3.2.1.slim.min.j
       chapeau = '<h1>SDMX in EViews</h1><p><i>Import data in EViews</i></p><a class="btn btn-sm btn-primary" href="/">More details</a><hr/>',
       listJS = '<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.2.0/list.min.js"></script>';
 
-module.exports.header = '<!DOCTYPE html><html><head><title>SDMX in EViews</title></head>';
-module.exports.footer = jQuery + bootstrap4 + sdmxCSS + gA + '</body></html>';
-
+const header  = '<!DOCTYPE html><html><head><title>SDMX in EViews</title></head>';
+const footer = jQuery + bootstrap4 + sdmxCSS + gA + '</body></html>';
+export default {header, footer};

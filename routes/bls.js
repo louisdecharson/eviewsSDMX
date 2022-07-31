@@ -13,44 +13,54 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // PACKAGES
-var request = require('request'),
-    debug = require('debug')('bls'),
-    buildHTML = require('./buildHTML.js');
+import request from 'request';
+import Debug from 'debug';
+import * as buildHTML from './buildHTML.js';
 
-// TODO : implement multiple series request
+const BLS_URL = 'https://api.bls.gov/publicAPI/v2/timeseries/data/';
 
-function getSeries(req, res) {
-    
-    var payload = {
-        seriesid: req.params.series.split('+'),
-        startyear: req.query['startyear'],
-        endyear: req.query['endyear'],
-        registrationkey: req.params.apiKey
-    };
-    var payloadData = JSON.stringify(payload);  
-    var options = {
-        url: 'https://api.bls.gov/publicAPI/v2/timeseries/data/',
-        body: payloadData,
-        method: 'POST',
-        headers : {
-            'connection': 'keep-alive',
-            'Content-Type': 'application/json',
-            'user-agent': 'nodeJS'
-        }
-    };
-    debug('getSeries BLS with path=%s and payload=%s',options.url,payloadData);
-    request(options,function(err,result,body) {
-        debug('Answer received: %s',body);
-        if (!err & result.statusCode >=200 && result.statusCode < 400) {
-            var data = JSON.parse(body);
-            res.send(buildHTML.makeTableBLS(data.Results.series[0]));
-        } else {
-            res.send(result.statusCode);
-        }
-    });
+const logger = Debug('bls');
 
+
+export function getSeries(req, res) {
+  const series = req.params.series.split('+'),
+        startYear = req.query['startyear'],
+        endYear = req.query['endyear'],
+        apiKey = req.params.apiKey;
+  res.send(blsSeriesFetcher(series, startYear, endYear, apiKey));
 };
 
-export const bls  = {
-    "getSeries": getSeries
+function blsSeriesFetcher(series, startYear, endYear, apiKey) {
+  const payload = JSON.stringify({
+    seriesid: series,
+    startyear: startYear,
+    endYear: endYear,
+    registrationkey: apiKey
+  });
+  const requestOptions = {
+    url: BLS_URL,
+    body: payload,
+    method: 'POST',
+    headers: {
+      'connection': 'keep-alive',
+      'Content-Type': 'application/json',
+      'user-agent': 'nodeJS'
+    }
+  };
+  logger('getSeries BLS with path=%s and payload=%s',options.url,payloadData);
+  request(options,function(err, result, body) {
+    logger('Answer received: %s',body);
+    if (!err & result.statusCode >=200 && result.statusCode < 400) {
+      try {
+        const data = JSON.parse(body),
+              parsedResults = data.Results.series[0],
+              table = buildHTML.makeTableBLS(parsedResults);
+        return table;
+      } catch (error) {
+        return "Parsing error";
+      }
+    } else {
+      return result.statusCode;
+    }
+  });
 };

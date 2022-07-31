@@ -13,15 +13,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // PACKAGES
-var debug = require('debug')('explore'),
-    resourcesHTML = require('./resourceHTML.js');
+import Debug from 'debug';
+import * as resourceHTML from './resourceHTML.js';
+import { createRequire } from 'module'
 
+const logger = Debug('explore');
+const require = createRequire(import.meta.url);
 const providers = require('./providers.json');
 
 // HTML
 
 
-exports.getProviders = function(req,res) {
+export function getProviders(req, res) {
     var body = '<body><span class="badge badge-pill badge-primary badge-home"><a href="/">Back</a></span><div class="listProviders"><h1 style="text-align:center;">Providers</h1><h3>List of supported providers</h3><hr/><ul class="providers">';
     Object.keys(providers).forEach(function(provider,index) {
         var title = '<li class="provider" data-toggle="collapse" data-target="#'+ provider + '">' + providers[provider].name,

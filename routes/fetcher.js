@@ -17,30 +17,27 @@ import { parseString } from 'xml2js';
 import * as https from 'https';
 import url from 'node:url';
 import * as buildHTML from './buildHTML.js';
-import * as request from 'request';
-import * as debug from 'debug';
+import request from 'request';
+import Debug from 'debug';
 import * as shortid from 'shortid';
 import * as http from 'follow-redirects';
 import * as amqp from 'amqplib/callback_api.js';
+import { createRequire } from 'module'
 
-const logger = debug('fetcher');
+const logger = Debug('fetcher');
 
 const require = createRequire(import.meta.url);
-const providers = require('./routes/providers.json');
+const providers = require('./providers.json');
 
 const appTimeout = 29500; // TimeOut for Request
 
 
 // RABBIT MQ
-var rabbit = require('./../rabbit');
+import * as rabbit from '../rabbit.js';
 
 // Utilitaries
 // ===========
-function stripPrefix(str) {
-    var prefixMatch;
-    prefixMatch = new RegExp(/(?!xmlns)^.*:/);
-    return str.replace(prefixMatch, '');
-}
+import { stripPrefix } from '../helpers.js';
 
 // We embed the error message in a beautiful HTML webpage
 function embedErrorMessage(type, provider, code, data, url, message) {
@@ -190,218 +187,219 @@ function getDim(provider, agency, dsdId, dataset, callback) {
         format = providers[providerUpperCase].format,
         agencyID = providers[providerUpperCase].agencyID;
     if ((agency === null && dsdId === null) && dataset !== null) {
-        getAgency(provider, dataset, function (err, agencyInfo) {
-            if (err) {
-                callback(true, agencyInfo); // if err == true, agencyInfo == error's message
-            } else {
-                var myPath = path + 'datastructure/' + agencyInfo.agency + '/' + agencyInfo.dsdId + '?' + format;
-                var options = {
-                    url: protocol + '://' + host + myPath,
-                    method: 'GET',
-                    headers: {
-                        'connection': 'keep-alive',
-                        'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
-                        'user-agent': 'nodeJS'
-                    },
-                    timeout: appTimeout
-                };
-                request(options, function (e, r, b) { // e: error, r: response, b:body
-                    if (e) {
-                        logger('Request Error at url %s with code %s', options.url, e);
-                        var errorMessage;
-                        if (e.code === "ETIMEDOUT") {
-                            errorMessage = embedErrorMessage("timeout", provider, null, "dimensions", options.url, null);
-                        } else {
-                            errorMessage = embedErrorMessage("request", provider, e.code, "dimensions", options.url, null);
-                        }
-                        callback(true, errorMessage);
-                    } else {
-                        if (r.statusCode >= 200 && r.statusCode < 400) {
-                            parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
-                                if (err === null) {
-                                    try {
-                                        var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
-                                        nbDim = data.length;
-                                        data.forEach(function (item, index) {
-                                            arrDim.push(item['id'][0]);
-                                        });
-                                        logger('nbDim: %s ; arrDim: %s, dsdId: %s', nbDim, arrDim, dsdId);
-                                        callback(false, { "nbDim": nbDim, "arrDim": arrDim, "data": data, "dsdId": agencyInfo.dsdId });
-                                    } catch (error) {
-                                        var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
-                                        // var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
-                                        logger(error);
-                                        callback(true, errorMessage);
-                                    }
-                                } else {
-                                    var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
-                                    logger(err);
-                                    callback(true, errorMessage);
-                                }
-                            });
-                        } else {
-                            var errorProvider = r.statusMessage || b;
-                            var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dimensions of the data", options.url, errorProvider);
-                            callback(true, errorMessage);
-                            logger("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
-                            logger(e);
-                        }
-                    }
-                });
-            }
-        });
-    } else if (agency === null && dataset === null) {
-        callback(true, "no agency nor dataset provided");
-    } else if (agency !== null && dsdId !== null) {
-        var myPath = path + 'datastructure/' + agency + '/' + dsdId + '?' + format;
-        var options = {
+      getAgency(provider, dataset, function (err, agencyInfo) {
+        if (err) {
+          callback(true, agencyInfo); // if err == true, agencyInfo == error's message
+        } else {
+          var myPath = path + 'datastructure/' + agencyInfo.agency + '/' + agencyInfo.dsdId + '?' + format;
+          var options = {
             url: protocol + '://' + host + myPath,
             method: 'GET',
             headers: {
-                'connection': 'keep-alive',
-                'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
-                'user-agent': 'nodeJS'
+              'connection': 'keep-alive',
+              'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
+              'user-agent': 'nodeJS'
             },
-            timeout: appTimeout
-        };
-        request(options, function (e, r, b) {
+                    timeout: appTimeout
+          };
+          request(options, function (e, r, b) { // e: error, r: response, b:body
             if (e) {
-                logger('Request Error at url %s with code %s', options.url, e);
-                var errorMessage;
-                if (e.code === "ETIMEDOUT") {
-                    errorMessage = embedErrorMessage("timeout", provider, null, "dimensions", options.url, null);
-                } else {
-                    errorMessage = embedErrorMessage("request", provider, e.code, "dimensions", options.url, null);
-                }
-                callback(true, errorMessage);
+              logger('Request Error at url %s with code %s', options.url, e);
+              var errorMessage;
+              if (e.code === "ETIMEDOUT") {
+                errorMessage = embedErrorMessage("timeout", provider, null, "dimensions", options.url, null);
+              } else {
+                errorMessage = embedErrorMessage("request", provider, e.code, "dimensions", options.url, null);
+              }
+              callback(true, errorMessage);
             } else {
-                if (r.statusCode >= 200 && r.statusCode < 400) {
-                    parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
-                        if (err === null) {
-                            try {
-                                var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
-                                nbDim = data.length;
-                                data.forEach(function (item, index) {
-                                    arrDim.push(item['id'][0]);
-                                });
-                                callback(false, { "nbDim": nbDim, "arrDim": arrDim, "data": data });
-                            } catch (error) {
-                                var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
-                                // var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
-                                logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
-                                callback(true, errorMessage);
-                            }
-                        } else {
-                            var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
-                            logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
-                            callback(true, errorMessage);
-                        }
-                    });
-                } else {
-                    var errorProvider = r.statusMessage || b;
-                    var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dimensions of the data", options.url, errorProvider);
-                    logger("Fetcher ERROR \n Code: %d \n Message: %s \n Url: %s", r.statusCode, r.statusMessage, options.url);
+              if (r.statusCode >= 200 && r.statusCode < 400) {
+                parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+                  if (err === null) {
+                    try {
+                      var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
+                                        nbDim = data.length;
+                      data.forEach(function (item, index) {
+                        arrDim.push(item['id'][0]);
+                      });
+                      logger('nbDim: %s ; arrDim: %s, dsdId: %s', nbDim, arrDim, dsdId);
+                      callback(false, { "nbDim": nbDim, "arrDim": arrDim, "data": data, "dsdId": agencyInfo.dsdId });
+                    } catch (error) {
+                      var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
+                      // var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
+                      logger(error);
+                      callback(true, errorMessage);
+                    }
+                  } else {
+                    var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
+                    logger(err);
                     callback(true, errorMessage);
-                }
+                  }
+                });
+              } else {
+                var errorProvider = r.statusMessage || b;
+                var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dimensions of the data", options.url, errorProvider);
+                callback(true, errorMessage);
+                logger("Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s", r.statusCode, errorProvider, options.url);
+                logger(e);
+              }
             }
-        });
+          });
+        }
+      });
+    } else if (agency === null && dataset === null) {
+      callback(true, "no agency nor dataset provided");
+    } else if (agency !== null && dsdId !== null) {
+      var myPath = path + 'datastructure/' + agency + '/' + dsdId + '?' + format;
+      var options = {
+        url: protocol + '://' + host + myPath,
+        method: 'GET',
+        headers: {
+          'connection': 'keep-alive',
+          'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
+          'user-agent': 'nodeJS'
+        },
+        timeout: appTimeout
+      };
+      request(options, function (e, r, b) {
+        if (e) {
+          logger('Request Error at url %s with code %s', options.url, e);
+          var errorMessage;
+          if (e.code === "ETIMEDOUT") {
+            errorMessage = embedErrorMessage("timeout", provider, null, "dimensions", options.url, null);
+          } else {
+            errorMessage = embedErrorMessage("request", provider, e.code, "dimensions", options.url, null);
+          }
+          callback(true, errorMessage);
+        } else {
+          if (r.statusCode >= 200 && r.statusCode < 400) {
+            parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+              if (err === null) {
+                try {
+                  var data = obj['Structure']['Structures'][0]['DataStructures'][0]['DataStructure'][0]['DataStructureComponents'][0]['DimensionList'][0]['Dimension'];
+                  nbDim = data.length;
+                  data.forEach(function (item, index) {
+                    arrDim.push(item['id'][0]);
+                  });
+                  callback(false, { "nbDim": nbDim, "arrDim": arrDim, "data": data });
+                } catch (error) {
+                  var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
+                  // var errorMessage = "Failed to retrieve dimensions - could not parse SDMX answer at: "+options.url;
+                  logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
+                  callback(true, errorMessage);
+                }
+              } else {
+                var errorMessage = embedErrorMessage("parser", provider, null, "dimensions of the data", options.url, null);
+                logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
+                callback(true, errorMessage);
+              }
+            });
+          } else {
+            var errorProvider = r.statusMessage || b;
+            var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dimensions of the data", options.url, errorProvider);
+            logger("Fetcher ERROR \n Code: %d \n Message: %s \n Url: %s", r.statusCode, r.statusMessage, options.url);
+            callback(true, errorMessage);
+          }
+        }
+      });
     }
 };
 
 // ====================================== ROUTES ======================================
 
 // List the datasets of a provider
-exports.getAllDataFlow = function (req, res) {
-    var provider = req.params.provider;
-    const providerUpperCase = provider.toUpperCase(),
+export function getAllDataFlow(req, res) {
+  var provider = req.params.provider;
+  const providerUpperCase = provider.toUpperCase(),
         protocol = providers[providerUpperCase].protocol,
         host = providers[providerUpperCase].host,
         path = _getPath(providerUpperCase, true),
         format = providers[providerUpperCase].format,
         agencyID = providers[providerUpperCase].agencyID;
 
-    if (isInArray(provider.toUpperCase(), Object.keys(providers))) {
-        var myPath = path + 'dataflow/' + agencyID + '?' + format;
-        var options = {
-            url: protocol + '://' + host + myPath,
-            headers: {
-                'connection': 'keep-alive',
-                'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
-                'user-agent': 'nodeJS'
-            },
-            timeout: appTimeout
-        };
-        logger('get dataflow with path=%s', options.url);
-        request(options, function (e, r, b) {
-            if (e) {
-                logger('Request Error at url %s with code %s', options.url, e);
-                var errorMessage;
-                if (e.code === "ETIMEDOUT") {
-                    errorMessage = embedErrorMessage("timeout", provider, null, "dataflow", options.url, null);
-                } else {
-                    errorMessage = embedErrorMessage("request", provider, e.code, "dataflow", options.url, null);
-                }
-                res.status(500).send(errorMessage);
-            } else {
-                if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
-                    parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
-                        if (err === null) {
-                            var data = [];
-                            try {
-                                obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'].forEach(function (it, ind) {
-                                    var datasetId = it.id,
-                                        dsdId = it.Structure[0]['Ref'][0]['id'],
-                                        agency = it.Structure[0]['Ref'][0]['agencyID'],
-                                        name = it.Name; //[0]['_']
-                                    if (name.length > 1) {
-                                        name.forEach(function (item, index) {
-                                            switch (item['xml:lang'][0]) {
-                                                case 'fr':
-                                                    name = it.Name[index]['_'];
-                                                    break;
-                                                case 'en':
-                                                    name = it.Name[index]['_'];
-                                                    break;
-                                                default:
-                                                    name = it.Name[0]['_'];
-                                            }
-                                        });
-                                    } else { name = it.Name[0]['_']; }
-                                    data.push([datasetId, dsdId, agency, name, provider]);
-                                });
-                                res.send(buildHTML.dataFlow(data, provider));
-                            }
-                            catch (error) {
-                                var errorMessage = embedErrorMessage("parser", provider, null, "dataflow (list of the datasets)", options.url, null);
-                                res.status(500).send(errorMessage);
-                                logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
-                            }
-                        } else {
-                            var errorMessage = embedErrorMessage("parser", provider, null, "dataflow (list of the datasets)", options.url, null);
-                            res.status(500).send(errorMessage);
-                            logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
-                        }
+  if (isInArray(provider.toUpperCase(), Object.keys(providers))) {
+    var myPath = path + 'dataflow/' + agencyID + '?' + format;
+    var options = {
+      url: protocol + '://' + host + myPath,
+      headers: {
+        'connection': 'keep-alive',
+        'accept': 'application/vnd.sdmx.structure+xml; version=2.1',
+        'user-agent': 'nodeJS'
+      },
+      timeout: appTimeout
+    };
+    logger('get dataflow with path=%s', options.url);
+    request(options, function (e, r, b) {
+      if (e) {
+        logger('Request Error at url %s with code %s', options.url, e);
+        var errorMessage;
+        if (e.code === "ETIMEDOUT") {
+          errorMessage = embedErrorMessage("timeout", provider, null, "dataflow", options.url, null);
+        } else {
+          errorMessage = embedErrorMessage("request", provider, e.code, "dataflow", options.url, null);
+        }
+        res.status(500).send(errorMessage);
+      } else {
+        if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
+          logger("parsing");
+          parseString(b, { tagNameProcessors: [stripPrefix], mergeAttrs: true }, function (err, obj) {
+            if (err === null) {
+              var data = [];
+              try {
+                obj['Structure']['Structures'][0]['Dataflows'][0]['Dataflow'].forEach(function (it, ind) {
+                  var datasetId = it.id,
+                      dsdId = it.Structure[0]['Ref'][0]['id'],
+                      agency = it.Structure[0]['Ref'][0]['agencyID'],
+                      name = it.Name; //[0]['_']
+                  if (name.length > 1) {
+                    name.forEach(function (item, index) {
+                      switch (item['xml:lang'][0]) {
+                        case 'fr':
+                          name = it.Name[index]['_'];
+                          break;
+                        case 'en':
+                          name = it.Name[index]['_'];
+                          break;
+                        default:
+                          name = it.Name[0]['_'];
+                      }
                     });
-                } else {
-                    logger("The code while requesting dataflow at %s", options.url);
-                    logger(r.statusCode);
-                    logger(r.statusMessage);
-                    var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dataflow (list of the datasets)", options.url, r.statusMessage);
-                    res.send(errorMessage);
-                }
+                  } else { name = it.Name[0]['_']; }
+                  data.push([datasetId, dsdId, agency, name, provider]);
+                });
+                res.send(buildHTML.dataFlow(data, provider));
+              }
+              catch (error) {
+                var errorMessage = embedErrorMessage("parser", provider, null, "dataflow (list of the datasets)", options.url, null);
+                res.status(500).send(errorMessage);
+                logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, error);
+              }
+            } else {
+              var errorMessage = embedErrorMessage("parser", provider, null, "dataflow (list of the datasets)", options.url, null);
+              res.status(500).send(errorMessage);
+              logger('Parser ERROR: \n + URL: %s \n + CODE: %s', options.url, err);
             }
-        });
-    } else {
-        var errorMessage = 'The provider ' + provider + 'is not supported by the application.';
-        errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
-        res.status(404).send(errorMessage);
-    }
+          });
+        } else {
+          logger("The code while requesting dataflow at %s", options.url);
+          logger(r.statusCode);
+          logger(r.statusMessage);
+          var errorMessage = embedErrorMessage("fetcher", provider, r.statusCode, "dataflow (list of the datasets)", options.url, r.statusMessage);
+          res.send(errorMessage);
+        }
+      }
+    });
+  } else {
+    var errorMessage = 'The provider ' + provider + 'is not supported by the application.';
+    errorMessage = 'List of supported providers is <a href="/providers">here</a>.';
+    res.status(404).send(errorMessage);
+  }
 };
 
 
 
 // List the timeseries inside a dataset
-exports.getDataFlow = function (req, res) {
+export function getDataFlow(req, res) {
     var provider = req.params.provider.toUpperCase(),
         dataSet = req.params.dataset,
         myTimeout = req.query.timeout;
@@ -535,7 +533,7 @@ exports.getDataFlow = function (req, res) {
 // + dimRequested = string of the ordered dimensions separated by dots passed by the
 //                  use. dimRequested should be a sub-set of authParams.
 
-exports.getDataSet = function (req, res) {
+export function getDataSet(req, res) {
     var provider = req.params.provider.toUpperCase();
     var protocol = providers[provider.toUpperCase()].protocol,
         host = providers[provider.toUpperCase()].host,
@@ -678,7 +676,7 @@ exports.getDataSet = function (req, res) {
     }
 };
 
-exports.getSeries = function (req, res) {
+export function getSeries(req, res) {
     var series = req.params.series,
         provider = req.params.provider.toUpperCase();
     var protocol = providers[provider.toUpperCase()].protocol,
@@ -819,7 +817,7 @@ exports.getSeries = function (req, res) {
     }
 };
 
-exports.getCodeList = function (req, res) {
+export function getCodeList(req, res) {
 
     var provider = req.params.provider.toUpperCase(),
         dim = req.params.codelist,
@@ -905,7 +903,7 @@ exports.getCodeList = function (req, res) {
 };
 
 // Retrieve data from SDMX URL
-exports.getDatafromURL = function (req, res) {
+export function getDatafromURL(req, res) {
     var myUrl = req.query.url.replace(/\'*/g, "").replace(/\s/g, '+'); // remove ''
     var host = url.parse(myUrl).hostname,
         protocol = url.parse(myUrl).protocol,
@@ -971,18 +969,13 @@ exports.getDatafromURL = function (req, res) {
 };
 
 
-exports.redirectURL = function (req, res) {
+export function redirectURL(req, res) {
     var myUrl = req.body.myUrl;
     var route = "/req?url='" + myUrl + "'";
     res.redirect(route);
 };
 
-// exports.getProviders = function(req,res) {
-//     res.send(buildHTML.listProviders(providers));
-// };
-
-
-exports.getList = function (req, res) {
+export function getList(req, res) {
     var provider = req.params.provider.toUpperCase();
     var protocol = providers[provider.toUpperCase()].protocol,
         host = providers[provider.toUpperCase()].host,
@@ -1116,7 +1109,7 @@ exports.getList = function (req, res) {
 };
 
 
-exports.getBigDataSet = function (req, res) {
+export function getBigDataSet(req, res) {
     var provider = req.params.provider.toUpperCase();
     var protocol = providers[provider.toUpperCase()].protocol,
         host = providers[provider.toUpperCase()].host,
@@ -1218,7 +1211,7 @@ exports.getBigDataSet = function (req, res) {
 };
 
 // Send temporary file
-exports.getTemp = function (req, res) {
+export function getTemp(req, res) {
     var id = req.params.id;
     logger('Request for temporary file with id: %s', id);
     if (id.slice(-4) === "html") {

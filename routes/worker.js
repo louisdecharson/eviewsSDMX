@@ -15,12 +15,15 @@
 // Worker listen for work on queue tasks and
 // reply on queue done;
 
-var amqp = require('amqplib/callback_api'),
-    request = require('request'),
-    debug = require('debug')('worker'),
-    xml2js = require('xml2js'),
-    buildHTML = require('./buildHTML.js'),
-    fs = require('fs');
+import * as amqp from 'amqplib/callback_api.js';
+import request from 'request';
+import * as debug from 'debug';
+import * as xml2js from 'xml2js';
+import * as fs from 'fs';
+import { makeTable } from './buildHTML.js';
+
+
+const logger = debug('worker');
 
 // Define parameters for Rabbit MQ
 var url = process.env.CLOUDAMQP_URL || "amqp://localhost",
@@ -51,14 +54,14 @@ try {
                             dataSet = req.dataSet,
                             authParams = req.authParams,
                             fileID = req.file; // where the file should be stored
-                        debug("Received message for url: %s",options.url);
-                        debug("Id: %s",fileID);
+                        logger("Received message for url: %s",options.url);
+                        logger("Id: %s",fileID);
                         request(options,function(e,r,b){
                             var reply = {id: fileID};
                             if (r.statusCode >= 200 && r.statusCode < 400) {
                                 xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
                                     if(err === null) {
-                                        debug("Data received, sending reply");
+                                        logger("Data received, sending reply");
                                         try {
                                             var data = obj.StructureSpecificData.DataSet[0];
                                             var vTS = data.Series; // vector of Time Series : vTS
@@ -68,14 +71,14 @@ try {
                                                            new Buffer(JSON.stringify(reply))
                                                           );
                                         } catch(error) {
-                                            debug(error);
+                                            logger(error);
                                             var errorMessage = "Error parsing SDMX at: " + options.url;
                                             reply.code = 500;
                                             reply.data = buildHTML.bigDatasetError(errorMessage);
                                             ch.sendToQueue(queueDone,
                                                            new Buffer(JSON.stringify(reply)));
 
-                                            debug(errorMessage);
+                                            logger(errorMessage);
                                         }
                                     } else {
                                         reply.code = 500;
@@ -97,7 +100,7 @@ try {
                                 reply.data = buildHTML.bigDatasetError(errorMessage);
                                 ch.sendToQueue(queueDone,
                                                new Buffer(JSON.stringify(reply)));
-                                debug(r);
+                                logger(r);
                             }
                         });
                     },{noAck:true});

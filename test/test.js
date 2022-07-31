@@ -11,13 +11,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-var chai = require('chai');
-var chaiHttp = require('chai-http');
-var app = require('../server');
-var should = chai.should();
+import chai from 'chai';
+import chaiHttp from 'chai-http';
+import app from '../server.js';
+import { createRequire } from 'module';
+
+const should = chai.should;
 chai.use(chaiHttp);
 
+const require = createRequire(import.meta.url);
 const urls = require('./urls.json');
+
 
 for(var provider in urls.paths){
     for(var test in urls.paths[provider]){
