@@ -32,14 +32,14 @@ const gA = "",
  * @param {string} css
  * @param {string} js
 */
-function encapsulate(title, body, js="", css = "") {
+export function encapsulate(title, body, js="", css = "") {
     return `
 <!DOCTYPE html>
 <html>
 <head><title>${title}</title>${css}</head>
 <body>${APP_TITLE}
 ${body}
-${listJS}${js}${jQuery}${bootstrap4}${sdmxCSS}
+${js}${sdmxCSS}
 </body></html>
     `;
 }
@@ -84,7 +84,7 @@ function findTitle(dict, str, callback) {
 
 export function dataFlow(data, service) {
   const title = "SDMX API for EViews / DATAFLOWS ",
-        jsForSearch = "<script>var options = {valueNames: ['name', 'desc'], searchClass: 'form-control'}; var dataList = new List('myDataflows',options);</script>";
+        jsForSearch = `${listJS}<script>var options = {valueNames: ['name', 'desc'], searchClass: 'form-control'}; var dataList = new List('myDataflows',options);</script>`;
   let theader = '<th>Id</th><th>Description</th>',
       tbody = '';
   data.forEach(function(item,index){
