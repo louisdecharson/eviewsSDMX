@@ -86,7 +86,6 @@ export class Provider {
                 agency: data.agencyID[0],
                 dsdId: data.id[0],
               };
-              console.log(returnObj);
               callback(null, returnObj);
             } catch (parserErr) {
               callback(parserError(this.provider, "agency", url), null);
@@ -225,7 +224,7 @@ export class Provider {
    * @param {string} params - parameters like startPeriod
    */
   getDatasetUrl(dataset, query, params) {
-    return `${this.path}data/${dataset}/${query}${params}`;
+    return `${this.protocol}://${this.host}${this.path}data/${dataset}/${query}${params}`;
   }
 
   /**

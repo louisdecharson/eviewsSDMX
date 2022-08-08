@@ -11,25 +11,28 @@ const logger = Debug("request");
  * @param {Context} request's context
  * @param {boolean} [true] htmlError - if true then errors will be html
  * @param {number} [29500] timeout - timeout in ms
+ * @param {object} [{}] agentOptions - agent options
  */
 export async function handleRequest(
   url,
   contentType,
   context,
   htmlError = true,
-  timeout = 29500
+  timeout = 29500,
+  agent = {}
 ) {
   logger(`Request to url ${url}`);
   const options = {
     method: "GET",
     headers: {
       connection: "keep-alive",
-      accept: "application/vnd.sdmx.structure+xml; version=2.1",
+      accept: contentType,
       "user-agent": "nodeJS",
     },
     timeout: {
       request: timeout,
     },
+    agent: agent,
   };
   try {
     const response = await got(url, options);
@@ -50,6 +53,7 @@ export async function handleRequest(
     }
     return { error: response, content: null };
   } catch (error) {
+    logger(`Request error: ${error}`);
     if (htmlError) {
       if (error.code === "ETIMEDOUT") {
         logger(`Timeout error. url: ${url}`);

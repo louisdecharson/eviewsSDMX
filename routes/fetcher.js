@@ -14,13 +14,8 @@
 
 // Modules
 import { parseString } from "xml2js";
-import * as https from "https";
-import request from "request";
 import Debug from "debug";
 import * as shortid from "shortid";
-import * as http from "follow-redirects";
-import * as amqp from "amqplib/callback_api.js";
-import { createRequire } from "module";
 
 import * as buildHTML from "./buildHTML.js";
 import { parserError, unknownProviderError } from "./errors.js";
@@ -31,18 +26,9 @@ import { stripPrefix } from "../helpers.js";
 import * as rabbit from "../rabbit.js";
 
 const logger = Debug("fetcher");
+const appTimeout = 29500; // Timeout in ms for request to
 
-const require = createRequire(import.meta.url);
-const providers = require("./providers.json");
-
-const appTimeout = 29500; // TimeOut for Request
-
-// RABBIT MQ
-
-// Utilitaries
-// ===========
-
-const XML_PARSER_OPTIONS = {
+export const XML_PARSER_OPTIONS = {
   tagNameProcessors: [stripPrefix],
   mergeAttrs: true,
 };
@@ -129,9 +115,8 @@ function _getFooterMessage(obj) {
     footerMessage = footer[0].Message[0].code[0];
   } catch (error) {
     footerMessage = footer;
-  } finally {
-    return footerMessage;
   }
+  return footerMessage;
 }
 
 export function getDataFlow(req, res) {
@@ -245,17 +230,18 @@ const QUERY_PARAMETERS = new Set([
   "firstNObservations",
   "lastNObservations",
 ]);
-function _formatParameters(rawParams) {
-  let params = {};
-  for (p in rawParams) {
+function _getQueryParameters(rawParams) {
+  const params = {};
+  Object.keys(rawParams).forEach((p) => {
     if (p in QUERY_PARAMETERS) {
       params[p] = rawParams[p];
     } else if (p.toUpperCase() === "FREQUENCY") {
-      params["FREQ"] = rawParams[p];
+      params.FREQ = rawParams[p];
     } else {
       params[p.toUpperCase()] = rawParams[p];
     }
-  }
+  });
+  logger(`Function: _formatParameters. Return:${JSON.stringify(params)}`);
   return params;
 }
 
@@ -263,7 +249,7 @@ function _formatParameters(rawParams) {
  * Get parameters from {a: "foo", b: "bar"} to ?a=foo&b=bar
  * @param {object} parameters - dict-like
  */
-function _getParams(parameters) {
+function _formatQueryParameters(parameters) {
   let params = "";
   Object.keys(parameters).forEach((it, ind, array) => {
     if (ind === 0) {
@@ -274,6 +260,11 @@ function _getParams(parameters) {
       params += "&";
     }
   });
+  logger(
+    `Function: _getParams. Input: ${JSON.stringify(
+      parameters
+    )}. Return:${JSON.stringify(params)}`
+  );
   return params;
 }
 
@@ -286,11 +277,16 @@ function _getParams(parameters) {
 function _decipherParameters(parameters, dimensions) {
   let query = "";
   let noDimensionRequested = true;
+  logger(
+    `Function: decipherParameters. Input: ${JSON.stringify(
+      parameters
+    )}, ${JSON.stringify(dimensions)}`
+  );
   dimensions.forEach((item, index) => {
     if (item in parameters) {
-      noDimensionRequested &= false;
+      noDimensionRequested = false;
       const suffix = index < dimensions.length - 1 ? "." : "";
-      query += `${parameters[index]}${suffix}`;
+      query += `${parameters[item]}${suffix}`;
       delete parameters[item];
     } else if (index < dimensions.length - 1) {
       query += ".";
@@ -299,13 +295,76 @@ function _decipherParameters(parameters, dimensions) {
   // if no dimension is requested by user in parameters
   // then query is not .... but 'all'
   query = noDimensionRequested ? "all" : query;
-  let params = _getParams(parameters);
+  const params = _formatQueryParameters(parameters);
 
   return { params, query };
 }
 
-export function getDataSet(req, res) {
-  const provider = req.params.provider;
+export function retrieveDataset(
+  provider,
+  dataset,
+  dimensions,
+  listOnly,
+  url,
+  contentType,
+  context,
+  res
+) {
+  handleRequest(url, contentType, context).then(({ error, content }) => {
+    if (error) {
+      res.send(error);
+    } else {
+      parseString(content, XML_PARSER_OPTIONS, (xmlParserErr, obj) => {
+        if (xmlParserErr === null) {
+          try {
+            const timeseries = obj.StructureSpecificData.DataSet[0].Series;
+            let table;
+            if (listOnly) {
+              table = buildHTML.makeListSeries(
+                provider,
+                timeseries,
+                dataset,
+                dimensions
+              );
+            } else {
+              table = buildHTML.makeTable(
+                timeseries,
+                dataset,
+                dimensions.arrDim
+              );
+            }
+            res.send(table);
+          } catch (parserErr) {
+            try {
+              const footer =
+                obj.StructureSpecificData.Footer[0].Message[0].code[0];
+              if (footer === "413") {
+                res.redirect("./413.html");
+              } else {
+                res.status(500).send(parserError(provider, "dataset", url));
+              }
+            } catch (_) {
+              res.status(500).send(parserError(provider, "dataset", url));
+            }
+          }
+        } else {
+          res.status(500).send(parserError(provider, "dataset", url));
+        }
+      });
+    }
+  });
+}
+
+/**
+ * Retrieves dataset information
+ * @param {object} req - request object
+ * @param {object} res = response object
+ * @param {boolean} listOnly = if true then only the list is retrieved
+ * @param {boolean} bigDataset = if true then an id and background job is created
+      using queue
+ */
+function handleDatasetRequest(req, res, listOnly = false, bigDataset = false) {
+  const { provider } = req.params;
   const providerInstance = new Provider(provider);
   if (!Provider.isKnown(provider)) {
     res.send(unknownProviderError(provider));
@@ -319,43 +378,46 @@ export function getDataSet(req, res) {
         res.send(err);
       } else {
         const dimensions = dim.arrDim;
-        const parameters = _formatParameters(req.query);
+        const parameters = _getQueryParameters(req.query);
         const { params, query } = _decipherParameters(parameters, dimensions);
         const url = providerInstance.getDatasetUrl(dataset, query, params);
         const contentType =
           "application/vnd.sdmx.structurespecificdata+xml;version=2.1";
         const context = new Context(provider, "dataset");
-        handleRequest(url, contentType, context).then(({ error, content }) => {
-          if (error) {
-            res.send(error);
-          } else {
-            parseString(content, XML_PARSER_OPTIONS, (xmlParserErr, obj) => {
-              if (xmlParserErr === null) {
-                try {
-                  const vTS = obj.StructureSpecificData.DataSet[0].Series;
-                  res.send(buildHTML.makeTable(vTS, dataset, dimensions));
-                } catch (parserErr) {
-                  try {
-                    const footer =
-                      obj.StructureSpecificData.Footer[0].Message[0].code[0];
-                    if (footer === "413") {
-                      res.redirect("./413.html");
-                    } else {
-                      res.send(500).send(parserError(provider, "dataset", url));
-                    }
-                  } catch (_) {
-                    res.send(500).send(parserError(provider, "dataset", url));
-                  }
-                }
-              } else {
-                res.send(500).send(parserError(provider, "dataset", url));
-              }
-            });
-          }
-        });
+        if (bigDataset) {
+          const conn = rabbit.get();
+          const id = shortid.generate();
+          const task = JSON.stringify({
+            provider,
+            dataset,
+            dimensions,
+            listOnly,
+            url,
+            contentType,
+            context,
+            id,
+          });
+          rabbit.sendMessage(conn, task);
+          res.send(buildHTML.bigDataset(id));
+        } else {
+          retrieveDataset(
+            provider,
+            dataset,
+            dim,
+            listOnly,
+            url,
+            contentType,
+            context,
+            res
+          );
+        }
       }
     });
   }
+}
+
+export function getDataSet(req, res) {
+  handleDatasetRequest(req, res, false, false);
 }
 
 export function getSeries(req, res) {
@@ -365,7 +427,7 @@ export function getSeries(req, res) {
   if (!Provider.isKnown(provider)) {
     res.send(unknownProviderError(provider));
   } else {
-    const params = _getParams(req.query);
+    const params = _formatQueryParameters(req.query);
     const { series, dataset } =
       providerInstance.getSeriesAndDataset(seriesParam);
     const url = providerInstance.getSeriesUrl(series, params, dataset);
@@ -379,13 +441,13 @@ export function getSeries(req, res) {
         parseString(content, XML_PARSER_OPTIONS, (xmlParserErr, obj) => {
           if (xmlParserErr === null) {
             try {
-              const vTS = obj.StructureSpecificData.DataSet[0].Series;
-              res.send(buildHTML.makeTable(vTS, dataset, []));
+              const timeseries = obj.StructureSpecificData.DataSet[0].Series;
+              res.send(buildHTML.makeTable(timeseries, dataset, []));
             } catch (parserErr) {
-              res.send(500).send(parserError(provider, "series", url));
+              res.status(500).send(parserError(provider, "series", url));
             }
           } else {
-            res.send(500).send(parserError(provider, "dataset", url));
+            res.status(500).send(parserError(provider, "dataset", url));
           }
         });
       }
@@ -401,9 +463,8 @@ export function getCodeList(req, res) {
     res.send(unknownProviderError(provider));
   } else {
     const url = providerInstance.getCodelistUrl(codelist, dsdId);
-    const contentType =
-      "application/vnd.sdmx.structurespecificdata+xml;version=2.1";
-    const context = new Context(provider, "dataset");
+    const contentType = "application/vnd.sdmx.structure+xml; version=2.1";
+    const context = new Context(provider, "codelist");
     handleRequest(url, contentType, context).then(({ error, content }) => {
       if (error) {
         res.send(error);
@@ -414,12 +475,13 @@ export function getCodeList(req, res) {
               const data = obj.Structure.Structures[0].Codelists[0].Codelist;
               let codes = "";
               if (data.length === 1) {
-                for (var d in data) {
+                Object.keys(data).every((d) => {
                   if (data[d].id[0] === codelist) {
                     codes = data[d];
-                    break;
+                    return false;
                   }
-                }
+                  return true;
+                });
               } else {
                 codes = data[0];
               }
@@ -427,10 +489,10 @@ export function getCodeList(req, res) {
               const codelistCode = codes.Code;
               res.send(buildHTML.codeList(codelistCode, codelistId));
             } catch (parserErr) {
-              res.send(500).send(parserError(provider, "codelist", url));
+              res.status(500).send(parserError(provider, "codelist", url));
             }
           } else {
-            res.send(500).send(parserError(provider, "codelist", url));
+            res.status(500).send(parserError(provider, "codelist", url));
           }
         });
       }
@@ -440,432 +502,116 @@ export function getCodeList(req, res) {
 
 // Retrieve data from SDMX URL
 export function getDatafromURL(req, res) {
-  var myUrl = req.query.url.replace(/\'*/g, "").replace(/\s/g, "+"); // remove ''
-  var host = url.parse(myUrl).hostname,
-    protocol = url.parse(myUrl).protocol,
-    path = url.parse(myUrl).pathname;
+  const myUrl = req.query.url.replace(/\'*/g, "").replace(/\s/g, "+");
+  const urlParsed = url.parse(myUrl);
+  const { hostname, protocol, pathname } = urlParsed;
   logger(
     "Receive request for host: %s, with path: %s, over protcol: %s",
-    host,
+    hostname,
     protocol,
-    path
+    pathname
   );
-  var options = {
-    url: protocol + "//" + host + path,
-    method: "GET",
-    headers: {
-      connection: "keep-alive",
-      accept: "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-      "user-agent": "nodeJS",
-    },
-    agentOptions: {
-      ciphers: "ALL",
-      secureProtocol: "TLSv1_1_method",
-    },
-    timeout: appTimeout,
+  const url = `${protocol}//${hostname}${pathname}`;
+  const contentType =
+    "application/vnd.sdmx.structurespecificdata+xml;version=2.1";
+  const agent = {
+    ciphers: "ALL",
+    secureProtocol: "TLSv1_1_method",
   };
-  request(options, function (e, r, b) {
-    if (e) {
-      var errorMessage;
-      if (e.code === "ETIMEDOUT") {
-        errorMessage = embedErrorMessage(
-          "timeout",
-          host,
-          null,
-          "data",
-          options.url,
-          null
-        );
+
+  handleRequest(url, contentType, true, appTimeout, agent).then(
+    ({ error, content }) => {
+      if (error) {
+        res.send(error);
       } else {
-        errorMessage = embedErrorMessage(
-          "request",
-          host,
-          e.code,
-          "data",
-          options.url,
-          null
-        );
-      }
-      res.send(errorMessage);
-    } else {
-      if (r.statusCode >= 200 && r.statusCode < 400) {
-        parseString(
-          b,
-          { tagNameProcessors: [stripPrefix], mergeAttrs: true },
-          function (err, obj) {
-            if (err === null) {
-              try {
-                if (typeof obj.StructureSpecificData !== "undefined") {
-                  var data = obj.StructureSpecificData.DataSet[0],
-                    vTS = data.Series,
-                    title = "request to " + host;
-                  if (!req.timedout) {
-                    res.send(buildHTML.makeTable(vTS, title, []));
-                  }
-                } else {
-                  res.set("Content-type", "text/plain");
-                  res.send("The request could not be handled");
-                }
-              } catch (error) {
-                logger(error);
-                var errorMessage = embedErrorMessage(
-                  "parser",
-                  host,
-                  null,
-                  "data",
-                  options.url,
-                  null
-                );
-                res.status(500).send(errorMessage);
-              }
-            } else {
-              logger(err);
-              var errorMessage = embedErrorMessage(
-                "parser",
-                host,
-                null,
-                "data",
-                options.url,
-                null
-              );
-              res.status(500).send(errorMessage);
-            }
+        parseString(content, XML_PARSER_OPTIONS, (err, obj) => {
+          try {
+            const timeseries = obj.StructureSpecificData.Dataset[0].Series;
+            const pageTitle = `Request to ${hostname}`;
+            res.send(buildHTML.makeTable(timeseries, pageTitle, []));
+          } catch (xmlParserErr) {
+            res.status(500).send(parserError(hostname, "SDMX request", url));
           }
-        );
-      } else {
-        var errorMessage = embedErrorMessage(
-          "fetcher",
-          host,
-          r.statusCode,
-          "data",
-          options.url,
-          r.statusMessage
-        );
-        res.send(errorMessage);
-        logger(
-          "Request to %s failed with code %d and message %s",
-          options.url,
-          r.statusCode,
-          r.statusMessage
-        );
+        });
       }
     }
-  });
+  );
 }
 
 export function redirectURL(req, res) {
-  var myUrl = req.body.myUrl;
-  var route = "/req?url='" + myUrl + "'";
+  const { myUrl } = req.body;
+  const route = `/req?url='${myUrl}'`;
+  logger(`Redirection to ${route}`);
   res.redirect(route);
 }
 
 export function getList(req, res) {
-  var provider = req.params.provider.toUpperCase();
-  var protocol = providers[provider.toUpperCase()].protocol,
-    host = providers[provider.toUpperCase()].host,
-    path = providers[provider.toUpperCase()].path,
-    format = providers[provider.toUpperCase()].format,
-    agencyID = providers[provider.toUpperCase()].agencyID,
-    nodata = providers[provider.toUpperCase()].nodata;
-  if (isInArray(provider, Object.keys(providers))) {
-    var dataSet = "";
-    if (provider !== "EUROSTAT" && provider !== "WEUROSTAT") {
-      dataSet = req.params.dataset.toUpperCase();
-    } else {
-      dataSet = req.params.dataset;
-    }
-
-    // All keys to UpperCase
-    var key,
-      keys = Object.keys(req.query);
-    var n = keys.length;
-    var reqParams = {};
-    while (n--) {
-      key = keys[n];
-      var kkey = key; // name of the key before it get changed below
-      if (key.toUpperCase() === "FREQUENCY") {
-        key = "FREQ";
-      } else {
-        reqParams[key.toUpperCase()] = req.query[kkey];
-      }
-    }
-    var dimRequested = ""; // string fill with ordered dimensions passed by the user in req.params
-    if (provider === "WEUROSTAT") {
-      var myPath =
-        providers[provider].path +
-        providers[provider].agencyID +
-        "/data/" +
-        dataSet;
-    } else {
-      var myPath = providers[provider].path + "data/" + dataSet;
-    }
-    logger("getDataset with provider: %s, dataset: %s", provider, dataSet);
-    logger("getDataset with path=%s", myPath);
-    getDim(provider, null, null, dataSet, function (err, dim) {
-      if (err) {
-        res.status(500).send(dim); // if err, dim is the errorMessage
-      } else {
-        var authParams = dim.arrDim; // Authorised dimensions for the dataset.
-        var compt = 0;
-        authParams.forEach(function (it, ind) {
-          if (reqParams[it] != null) {
-            if (ind < dim.nbDim - 1) {
-              dimRequested += reqParams[it] + ".";
-            } else {
-              dimRequested += reqParams[it];
-            }
-            delete reqParams[it];
-          } else {
-            if (ind < dim.nbDim - 1) {
-              dimRequested += ".";
-            }
-            compt++;
-          }
-        });
-        // When the whole dataSet is requested.
-        if (compt == dim.nbDim) {
-          dimRequested = "all";
-        }
-        myPath += "/" + dimRequested;
-        if (nodata === "True") {
-          myPath += "?detail=nodata&";
-        } else {
-          myPath += "?";
-        }
-        Object.keys(reqParams).forEach(function (it, ind, arr) {
-          if (ind === 0) {
-            myPath += "?";
-          }
-          myPath += it.toString() + "=" + reqParams[it];
-          if (ind < arr.length - 1) {
-            myPath += "&";
-          }
-        });
-        var options = {
-          url: protocol + "://" + host + myPath,
-          headers: {
-            connection: "keep-alive",
-            accept:
-              "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-            "user-agent": "nodeJS",
-          },
-        };
-        logger("auth params: %s", authParams);
-        logger("dimensions: %s", dimRequested);
-        request(options, function (e, r, b) {
-          if (r.statusCode >= 200 && r.statusCode < 400) {
-            parseString(
-              b,
-              { tagNameProcessors: [stripPrefix], mergeAttrs: true },
-              function (err, obj) {
-                if (err === null) {
-                  try {
-                    var data = obj.StructureSpecificData.DataSet[0];
-                    var vTS = data.Series; // vector of Time Series : vTS
-                    if (!req.timedout) {
-                      res.send(buildHTML.List(provider, vTS, dataSet, dim));
-                    }
-                  } catch (error) {
-                    logger(error);
-                    try {
-                      var footer =
-                        obj.StructureSpecificData.Footer[0].Message[0].code[0]; // for handling Eurostat errors
-                      if (footer === "413") {
-                        res.redirect("/413.html");
-                        logger("redirecting to 413");
-                      } else {
-                        logger("Error parser at %s", options.url);
-                        var errorMessage = embedErrorMessage(
-                          "parser",
-                          provider,
-                          null,
-                          "data",
-                          options.url,
-                          null
-                        );
-                        res.status(500).send(errorMessage);
-                      }
-                    } catch (error2) {
-                      logger(error2);
-                      var errorMessage = embedErrorMessage(
-                        "parser",
-                        provider,
-                        null,
-                        "data",
-                        options.url,
-                        null
-                      );
-                      res.status(500).send(errorMessage);
-                    }
-                  }
-                } else {
-                  logger(err);
-                  res.send(err);
-                  var errorMessage = embedErrorMessage(
-                    "parser",
-                    provider,
-                    null,
-                    "data",
-                    options.url,
-                    null
-                  );
-                  res.status(500).send(errorMessage);
-                }
-              }
-            );
-          } else if (r.statusCode === 413) {
-            res.redirect("/413.html");
-          } else {
-            logger(
-              "Fetcher ERROR \n + Code: %d \n + Message: %s \n + Url: %s",
-              r.statusCode,
-              provider,
-              options.url
-            );
-            var errorMessage = embedErrorMessage(
-              "fetcher",
-              provider,
-              r.statusCode,
-              "data",
-              options.url,
-              r.statusMessage
-            );
-            res.send(errorMessage);
-          }
-        });
-      }
-    });
-  } else {
-    var errorMessage =
-      "The provider " + provider + "is not supported by the application.";
-    errorMessage =
-      'List of supported providers is <a href="/providers">here</a>.';
-    res.status(404).send(embedErrorMessage(errorMessage));
-  }
+  handleDatasetRequest(req, res, true);
 }
+// export function getList(req, res) {
+//   const { provider } = req.params;
+//   const providerInstance = new Provider(provider);
+//   if (!Provider.isKnown(provider)) {
+//     res.send(unknownProviderError(provider));
+//   } else {
+//     const dataset =
+//       provider !== "EUROSTAT"
+//         ? req.params.dataset.toUpperCase()
+//         : req.params.dataset;
+//     providerInstance.getDimension(null, null, dataset, (err, dim) => {
+//       if (err) {
+//         res.send(err);
+//       } else {
+//         const dimensions = dim.arrDim;
+//         const parameters = _getQueryParameters(req.query);
+//         const { params, query } = _decipherParameters(parameters, dimensions);
+//         const url = providerInstance.getDatasetUrl(dataset, query, params);
+//         const contentType =
+//           "application/vnd.sdmx.structurespecificdata+xml;version=2.1";
+//         const context = new Context(provider, "dataset");
+//         handleRequest(url, contentType, context).then(({ error, content }) => {
+//           if (error) {
+//             res.send(error);
+//           } else {
+//             parseString(content, XML_PARSER_OPTIONS, (xmlParserErr, obj) => {
+//               if (xmlParserErr === null) {
+//                 try {
+//                   const timeseries =
+//                     obj.StructureSpecificData.DataSet[0].Series;
+//                   res.send(
+//                     buildHTML.List(provider, timeseries, dataset, dimensions)
+//                   );
+//                 } catch (parserErr) {
+//                   try {
+//                     const footer =
+//                       obj.StructureSpecificData.Footer[0].Message[0].code[0];
+//                     if (footer === "413") {
+//                       res.redirect("./413.html");
+//                     } else {
+//                       res.send(500).send(parserError(provider, "dataset", url));
+//                     }
+//                   } catch (_) {
+//                     res.send(500).send(parserError(provider, "dataset", url));
+//                   }
+//                 }
+//               } else {
+//                 res.send(500).send(parserError(provider, "dataset", url));
+//               }
+//             });
+//           }
+//         });
+//       }
+//     });
+//   }
+// }
 
 export function getBigDataSet(req, res) {
-  var provider = req.params.provider.toUpperCase();
-  var protocol = providers[provider.toUpperCase()].protocol,
-    host = providers[provider.toUpperCase()].host,
-    path = providers[provider.toUpperCase()].path,
-    format = providers[provider.toUpperCase()].format,
-    agencyID = providers[provider.toUpperCase()].agencyID;
-  if (isInArray(provider, Object.keys(providers))) {
-    var dataSet = "";
-    if (provider !== "EUROSTAT" && provider !== "WEUROSTAT") {
-      dataSet = req.params.dataset.toUpperCase();
-    } else {
-      dataSet = req.params.dataset;
-    }
-
-    // All keys to UpperCase
-    var key,
-      keys = Object.keys(req.query);
-    var n = keys.length;
-    var reqParams = {};
-    while (n--) {
-      key = keys[n];
-      var kkey = key; // name of the key before it get changed below
-      if (key.toUpperCase() === "FREQUENCY") {
-        key = "FREQ";
-      }
-      if (key === "startPeriod") {
-        reqParams[key] = req.query[key];
-      } else if (key === "firstNObservations") {
-        reqParams[key] = req.query[key];
-      } else if (key === "lastNObservations") {
-        reqParams[key] = req.query[key];
-      } else if (key === "endPeriod") {
-        reqParams[key] = req.query[key];
-      } else {
-        reqParams[key.toUpperCase()] = req.query[kkey];
-      }
-    }
-    var dimRequested = ""; // string fill with ordered dimensions passed by the user in req.params
-    if (provider === "WEUROSTAT") {
-      var myPath =
-        providers[provider].path +
-        providers[provider].agencyID +
-        "/data/" +
-        dataSet;
-    } else {
-      var myPath = providers[provider].path + "data/" + dataSet;
-    }
-    logger("getDataset with provider: %s, dataset: %s", provider, dataSet);
-    logger("getDataset with path=%s", myPath);
-    getDim(provider, null, null, dataSet, function (err, dim) {
-      if (err) {
-        res.status(500).send(dim); // if err, dim is the errorMessage
-      } else {
-        var authParams = dim.arrDim; // Authorised dimensions for the dataset.
-        var compt = 0;
-        authParams.forEach(function (it, ind) {
-          if (reqParams[it] != null) {
-            if (ind < dim.nbDim - 1) {
-              dimRequested += reqParams[it] + ".";
-            } else {
-              dimRequested += reqParams[it];
-            }
-            delete reqParams[it];
-          } else {
-            if (ind < dim.nbDim - 1) {
-              dimRequested += ".";
-            }
-            compt++;
-          }
-        });
-        // When the whole dataSet is requested.
-        if (compt == dim.nbDim) {
-          dimRequested = "all";
-        }
-        myPath += "/" + dimRequested;
-
-        Object.keys(reqParams).forEach(function (it, ind, arr) {
-          if (ind === 0) {
-            myPath += "?";
-          }
-          myPath += it.toString() + "=" + reqParams[it];
-          if (ind < arr.length - 1) {
-            myPath += "&";
-          }
-        });
-        var options = {
-          url: protocol + "://" + host + myPath,
-          headers: {
-            connection: "keep-alive",
-            accept:
-              "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-            "user-agent": "nodeJS",
-          },
-        };
-        logger("auth params: %s", authParams);
-        logger("dimensions: %s", dimRequested);
-
-        var conn = rabbit.get(),
-          id = shortid.generate();
-        var task = {
-          options: options,
-          dataSet: dataSet,
-          authParams: authParams,
-          file: id,
-        };
-        rabbit.sendMessage(conn, JSON.stringify(task));
-        res.send(buildHTML.bigDataset(id));
-      }
-    });
-  } else {
-    var errorMessage =
-      "The provider " + provider + "is not supported by the application.";
-    errorMessage =
-      'List of supported providers is <a href="/providers">here</a>.';
-    res.status(404).send(embedErrorMessage(errorMessage));
-  }
+  handleDatasetRequest(req, res, false, true);
 }
 
 // Send temporary file
 export function getTemp(req, res) {
-  var id = req.params.id;
+  const { id } = req.params;
   logger("Request for temporary file with id: %s", id);
   if (id.slice(-4) === "html") {
     // Being here means the file does not exist yet (or does
@@ -874,7 +620,7 @@ export function getTemp(req, res) {
     res.send(buildHTML.wait(id));
   } else {
     // else let Rabbit send us the route
-    rabbit.sendTempFile(id, function (route) {
+    rabbit.sendTempFile(id, (route) => {
       res.redirect(route);
     });
   }

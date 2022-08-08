@@ -15,99 +15,108 @@
 // Worker listen for work on queue tasks and
 // reply on queue done;
 
-import * as amqp from 'amqplib/callback_api.js';
-import request from 'request';
-import * as debug from 'debug';
-import * as xml2js from 'xml2js';
-import * as fs from 'fs';
-import { makeTable } from './buildHTML.js';
+import * as amqp from "amqplib/callback_api.js";
+import Debug from "debug";
+import { parseString } from "xml2js";
+import * as fs from "fs";
+import * as buildHTML from "./buildHTML.js";
+import { handleRequest } from "./request.js";
+import { XML_PARSER_OPTIONS } from "./fetcher.js";
 
-
-const logger = debug('worker');
+const logger = Debug("fetcher");
 
 // Define parameters for Rabbit MQ
-var url = process.env.CLOUDAMQP_URL || "amqp://localhost",
-    queueTasks = 'tasks',
-    queueDone = 'done'; // queue for Tasks
+const urlrabbit = process.env.CLOUDAMQP_URL || "amqp://localhost";
+const queueTasks = "tasks";
+const queueDone = "done"; // queue for Tasks
 
-// Utilitaries
-function stripPrefix(str){
-    var prefixMatch;
-    prefixMatch = new RegExp(/(?!xmlns)^.*:/);
-    return str.replace(prefixMatch, '');
+function addMessageToDone(channel, HTMLcode, data, id = 0) {
+  const reply = {
+    code: HTMLcode,
+    data,
+    id,
+  };
+  const content = Buffer.from(JSON.stringify(reply));
+  channel.sendToQueue(queueDone, content);
+}
+
+/**
+ * Create error string
+ * @param {string} url - url at which the error occurred.
+ * @param {object} error - error message
+ */
+function createErrorContent(url, error) {
+  const errorMessage = `Error when retrieving data to ${url}. Error: ${error}.`;
+  return buildHTML.bigDatasetError(errorMessage);
+}
+
+function retrieveData(channel, message) {
+  const task = JSON.parse(message.content);
+  const { dataset, dimensions, url, contentType, context, id } = task;
+  handleRequest(url, contentType, context).then(({ error, content }) => {
+    if (error) {
+      addMessageToDone(channel, 500, createErrorContent(url, error));
+    } else {
+      parseString(content, XML_PARSER_OPTIONS, (xmlParserErr, obj) => {
+        if (xmlParserErr === null) {
+          try {
+            const timeseries = obj.StructureSpecificData.DataSet[0].Series;
+            const table = buildHTML.makeTable(timeseries, dataset, dimensions);
+            addMessageToDone(channel, 200, table.toString(), id);
+          } catch (parserErr) {
+            try {
+              const footer =
+                obj.StructureSpecificData.Footer[0].Message[0].code[0];
+              if (footer === "413") {
+                addMessageToDone(
+                  channel,
+                  413,
+                  createErrorContent(
+                    url,
+                    "Dataset is too big to be retrieved. Try to filter it."
+                  )
+                );
+              } else {
+                addMessageToDone(
+                  channel,
+                  500,
+                  createErrorContent(url, parserErr)
+                );
+              }
+            } catch (_) {
+              addMessageToDone(
+                channel,
+                500,
+                createErrorContent(url, parserErr)
+              );
+            }
+          }
+        } else {
+          addMessageToDone(channel, 500, createErrorContent(url, xmlParserErr));
+        }
+      });
+    }
+  });
+}
+function main() {
+  amqp.connect(urlrabbit, (err, conn) => {
+    if (err) {
+      logger(err);
+      console.log(err);
+    } else {
+      logger("Connection to worker established");
+      conn.createChannel((channelCreationError, channel) => {
+        channel.assertQueue(queueTasks, { durable: false });
+        channel.consume(queueTasks, (msg) => retrieveData(channel, msg), {
+          noAck: true,
+        });
+      });
+    }
+  });
 }
 
 try {
-    amqp.connect(url, (err, conn) => {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log("Established connection to worker.");
-            conn.createChannel(function(err,ch){
-                if (err) {
-                    console.log("Unable to create channel. " + err);
-                } else {
-                    ch.assertQueue(queueTasks, {durable:false});
-                    ch.consume(queueTasks,function(msg){
-                        var req = JSON.parse(msg.content),
-                            options = req.options,
-                            dataSet = req.dataSet,
-                            authParams = req.authParams,
-                            fileID = req.file; // where the file should be stored
-                        logger("Received message for url: %s",options.url);
-                        logger("Id: %s",fileID);
-                        request(options,function(e,r,b){
-                            var reply = {id: fileID};
-                            if (r.statusCode >= 200 && r.statusCode < 400) {
-                                xml2js.parseString(b, {tagNameProcessors: [stripPrefix], mergeAttrs : true}, function(err,obj){
-                                    if(err === null) {
-                                        logger("Data received, sending reply");
-                                        try {
-                                            var data = obj.StructureSpecificData.DataSet[0];
-                                            var vTS = data.Series; // vector of Time Series : vTS
-                                            reply.code = 200;
-                                            reply.data = buildHTML.makeTable(vTS,dataSet,authParams).toString();
-                                            ch.sendToQueue(queueDone,
-                                                           new Buffer(JSON.stringify(reply))
-                                                          );
-                                        } catch(error) {
-                                            logger(error);
-                                            var errorMessage = "Error parsing SDMX at: " + options.url;
-                                            reply.code = 500;
-                                            reply.data = buildHTML.bigDatasetError(errorMessage);
-                                            ch.sendToQueue(queueDone,
-                                                           new Buffer(JSON.stringify(reply)));
-
-                                            logger(errorMessage);
-                                        }
-                                    } else {
-                                        reply.code = 500;
-                                        reply.data = buildHTML.bigDatasetError('Internal server error. ' + err);
-                                        ch.sendToQueue(queueDone,
-                                                       new Buffer(JSON.stringify(reply)));
-                                    }
-                                });
-                            } else if (r.statusCode === 413) {
-                                reply.code = 413;
-                                reply.data = buildHTML.bigDatasetError('Error 413.');
-                                ch.sendToQueue(queueDone,
-                                               new Buffer(JSON.stringify(reply)));
-                            } else {
-                                var errorMessage = "Error retrieving data at: " + options.url + '\n';
-                                errorMessage += 'Code: ' + r.statusCode + '\n';
-                                errorMessage += 'Message: ' + r.statusMessage;
-                                reply.code = 500;
-                                reply.data = buildHTML.bigDatasetError(errorMessage);
-                                ch.sendToQueue(queueDone,
-                                               new Buffer(JSON.stringify(reply)));
-                                logger(r);
-                            }
-                        });
-                    },{noAck:true});
-                }
-            });
-        }
-    });
+  main();
 } catch (error) {
-    console.log("Error caught: " + error);
+  console.log("Error caught: " + error);
 }
