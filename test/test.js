@@ -15,12 +15,20 @@ import chai from "chai";
 import chaiHttp from "chai-http";
 import app from "../server.js";
 import { createRequire } from "module";
+import "dotenv/config";
 
 const should = chai.should();
 chai.use(chaiHttp);
 
 const require = createRequire(import.meta.url);
 const urls = require("./urls.json");
+
+function replaceKey(url) {
+  const { BLS_API_KEY, FRED_API_KEY } = process.env;
+  return url
+    .replace("FRED_API_KEY", FRED_API_KEY)
+    .replace("BLS_API_KEY", BLS_API_KEY);
+}
 
 Object.keys(urls.paths).forEach((provider) => {
   Object.keys(urls.paths[provider]).forEach((test) => {
@@ -30,7 +38,7 @@ Object.keys(urls.paths).forEach((provider) => {
       it(`should get status 200 for url ${url}`, (done) => {
         chai
           .request(app)
-          .get(url)
+          .get(replaceKey(url))
           .end((err, res) => {
             if (err) {
               throw err;

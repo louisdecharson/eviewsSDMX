@@ -13,6 +13,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // PACKAGES
+import got from "got";
 import request from "request";
 import Debug from "debug";
 import * as buildHTML from "../render/buildHTML.js";
@@ -21,7 +22,7 @@ const BLS_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/";
 
 const logger = Debug("bls");
 
-function fetchBLS(series, startYear, endYear, apiKey) {
+async function fetchBLS(series, startYear, endYear, apiKey) {
   const payload = JSON.stringify({
     seriesid: series,
     startyear: startYear,
@@ -29,7 +30,6 @@ function fetchBLS(series, startYear, endYear, apiKey) {
     registrationkey: apiKey,
   });
   const options = {
-    url: BLS_URL,
     body: payload,
     method: "POST",
     headers: {
@@ -38,26 +38,30 @@ function fetchBLS(series, startYear, endYear, apiKey) {
       "user-agent": "nodeJS",
     },
   };
-  logger("getSeries BLS with path=%s and payload=%s", options.url, payload);
-  request(options, (err, result, body) => {
-    logger("Answer received: %s", body);
-    if (!err && result.statusCode >= 200 && result.statusCode < 400) {
+  try {
+    logger("getSeries BLS with path=%s and payload=%s", BLS_URL, payload);
+    const response = await got(BLS_URL, options);
+    if (response.statusCode >= 200 && response.statusCode) {
       try {
-        const data = JSON.parse(body);
-        const parsedResults = data.Results.series[0];
-        return buildHTML.makeTableBLS(parsedResults);
-      } catch (error) {
+        const parsedResults = JSON.parse(response.body).Results.series;
+        const html = buildHTML.makeTableBLS(parsedResults);
+        return Promise.resolve(html);
+      } catch (parserError) {
         return "Parsing error";
       }
     } else {
-      return result.statusCode;
+      return response.statusCode;
     }
-  });
+  } catch (error) {
+    return error;
+  }
 }
 
 export function getSeries(req, res) {
   const series = req.params.series.split("+");
   const { startYear, endYear } = req.query;
   const { apiKey } = req.params;
-  res.send(fetchBLS(series, startYear, endYear, apiKey));
+  fetchBLS(series, startYear, endYear, apiKey).then((html) => {
+    res.status(200).send(html);
+  });
 }

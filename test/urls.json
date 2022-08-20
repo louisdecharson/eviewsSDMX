@@ -4,7 +4,7 @@
   "paths": {
     "INSEE": {
       "insee_dataflows": "/insee/dataflow",
-      "insee_dataflow": "insee/dataflow/BALANCE-PAIEMENTS",
+      "insee_dataflow": "/insee/dataflow/BALANCE-PAIEMENTS",
       "insee_dataset": "/insee/dataset/ERI-ACTIVITE-PARTIELLE?startPeriod=2015",
       "insee_series": "/insee/series/001769787",
       "insee_two_series": "/insee/series/001694113+001694114?endPeriod=2015-10",
@@ -29,6 +29,13 @@
     "EUROSTAT": {
       "eurostat_dataset": "/eurostat/dataset/une_rt_m?FREQ=M&S_ADJ=SA&AGE=TOTAL&UNIT=PC_ACT&SEX=T&GEO=EA19%2BLT",
       "eurostat_413": "/eurostat/dataset/une_rt_m"
+    },
+    "FRED": {
+      "fred_series": "/fred/FRED_API_KEY/CUSR0000SETA01"
+    },
+    "BLS": {
+      "bls_series": "/bls/BLS_API_KEY/LAUCN040010000000005",
+      "bls_two_series": "/bls/BLS_API_KEY/LAUCN040010000000005+LAUCN040010000000006"
     },
     "OTHER": {
       "status": "/status",
