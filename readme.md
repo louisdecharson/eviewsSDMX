@@ -39,9 +39,16 @@ Code to render the response received in SDMX format as HTML code is stored in `/
 
 ### Run tests
 
-In order to run test, run the following:
+In order to run test, run the following command (note that you should save a BLS and FRED api key in a `.env` file):
 ```sh
 npm test
+```
+
+Example of `.env` file:
+
+```sh
+FRED_API_KEY="YOUR_FRED_KEY"
+BLS_API_KEY="YOUR_BLS_KEY"
 ```
 
 ## New Issues
