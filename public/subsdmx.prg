@@ -1,4 +1,4 @@
-' Copyright (C) 2016 Louis de Charsonville
+' Copyright (C) 2022 Louis de Charsonville
 
 ' This program is free software: you can redistribute it and/or modify
 ' it under the terms of the GNU Affero General Public License version 3 as
