@@ -392,14 +392,47 @@ export function makeTableFred(data, seriesName) {
 }
 
 export function makeTableBLS(series) {
-  const { data } = series;
-  const title = `SDMX in EViews / FRED / ${series.seriesID}`;
-  let body = `<h4> Bureau of Labor Statistics - ${series.seriesID}</h4>`;
-  const tableHeader = `<th>Dates</th><th>${series.seriesID}</th>`;
+  const seriesNames = series.map((x) => x.seriesID).join("+");
+  const title = `SDMX in EViews / BLS / ${seriesNames}`;
+  let body = `<h4> Bureau of Labor Statistics - ${seriesNames}</h4>`;
+  let tableHeader = "<th>Dates</th>";
   let tableBody = "";
-  data.forEach((it) => {
-    tableBody += `<tr>${htmlCell(it.year + it.period, false)}`;
-    tableBody += `${htmlCell(it.value)}</tr>`;
+  let dates = [];
+  const values = {};
+  series.forEach((it) => {
+    const { seriesID, data } = it;
+    values[seriesID] = {};
+    data.forEach((obs) => {
+      const date = obs.year + obs.period;
+      dates.push(date);
+      values[seriesID][date] = obs.value;
+    });
+  });
+  const listSeries = Object.keys(values);
+  // Put dates in chronological orders
+  if (dates.length > 1) {
+    const dates0 = parseInt(dates[0].match(/\d/g).join(""), 10);
+    const dates1 = parseInt(dates[1].match(/\d/g).join(""), 10);
+    if (dates0 > dates1) {
+      dates = dates.reverse();
+    }
+  }
+  // Table header
+  listSeries.forEach((seriesId) => {
+    tableHeader += `<th>${seriesId}</th>`;
+  });
+  // Table body
+  dates.forEach((date) => {
+    tableBody += `<tr>${htmlCell(date, false)}`;
+    listSeries.forEach((seriesId) => {
+      const seriesData = values[seriesId];
+      if (date in seriesData) {
+        tableBody += htmlCell(seriesData[date]);
+      } else {
+        tableBody += htmlCell();
+      }
+    });
+    tableBody += `</tr>`;
   });
   const table = htmlTable(tableHeader, tableBody);
   body += table;

@@ -4,7 +4,7 @@
   "exports": "./server.js",
   "author": "Louis de Charsonville <louisdecharson@posteo.net>",
   "license": "AGPL-3.0",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "dependencies": {
     "amqplib": "^0.8.0",
     "assert": "^1.4.1",
@@ -28,7 +28,7 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "mocha"
+    "test": "mocha --exit"
   },
   "repository": {
     "type": "git",
@@ -37,6 +37,7 @@
   "devDependencies": {
     "chai": "^4.0.2",
     "chai-http": "^3.0.0",
+    "dotenv": "^16.0.1",
     "eslint": "^8.21.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^8.5.0",
