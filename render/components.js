@@ -17,15 +17,15 @@ const APP_TITLE =
   '<h1>SDMX in EViews</h1><p><i>Import data in EViews</i></p><a class="btn btn-sm btn-primary" href="/">More details</a><hr/>';
 
 /**
- * Returns the html code for a cell
+ * Returns the html code for a table cell (td)
  * @param {string} content - content of the cell
  * @param {boolean} [center=true] - whether the content of the cell should be centered
+ * @param {string} [cssClass=""] - class for table cell
+ * @returns {string} html code for a table cell
  */
-export function htmlCell(content, center = true) {
-  if (center) {
-    return `<td style="text-align: center;">${content}</td>`;
-  }
-  return `<td>${content}</td>`;
+export function htmlCell(content, center = true, cssClass = "") {
+  const style = center ? ' style="text-align: center;"' : "";
+  return `<td class="${cssClass}"${style}>${content}</td>`;
 }
 
 /**
@@ -33,14 +33,20 @@ export function htmlCell(content, center = true) {
  * @param {string} tableHeader
  * @param {string} tableBody
  * @param {string} [secondHeader]
+ * @param {string} [cssClass=table]
  */
-export function htmlTable(tableHeader, tableBody, secondHeader = null) {
+export function htmlTable(
+  tableHeader,
+  tableBody,
+  secondHeader = null,
+  cssClass = "table"
+) {
   let header = `<tr>${tableHeader}</tr>`;
   if (secondHeader != null) {
     header += `<tr>${secondHeader}</tr>`;
   }
   const table = `
-<table class="table">
+<table class="${cssClass}">
   <thead>${header}</thead>
   <tbody class="list">${tableBody}</tbody>
 </table>`;
@@ -69,4 +75,32 @@ export function htmlPage(title, body, js = "", css = "") {
   ${js}${sdmxCSS}
   </body>
 </html>`;
+}
+
+export function error404() {
+  return `
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>SDMX in EViews - Error 404</title>
+    <style>
+      body {
+        background-color: black;
+        color: white;
+        text-align: center;
+        margin-top: 20%;
+        width: 100%;
+        font-family: Menlo;
+        text-align: center;
+      }
+      p {
+        font-size: 100px;
+    }
+    </style>
+  </head>
+  <body>
+    <p>404</p>
+  </body>
+</html>
+`;
 }

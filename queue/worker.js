@@ -18,10 +18,9 @@
 import * as amqp from "amqplib/callback_api.js";
 import Debug from "debug";
 import { parseString } from "xml2js";
-import * as fs from "fs";
-import * as buildHTML from "./buildHTML.js";
-import { handleRequest } from "./request.js";
-import { XML_PARSER_OPTIONS } from "./fetcher.js";
+import * as buildHTML from "../render/buildHTML.js";
+import { handleRequest } from "../fetchers/utils/request.js";
+import { XML_PARSER_OPTIONS } from "../fetchers/sdmx.js";
 
 const logger = Debug("fetcher");
 

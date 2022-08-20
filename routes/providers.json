@@ -87,19 +87,6 @@
         "native": "True",
         "resources": ["dataflow","dataset","series","list","codelist"]
     },
-    "WEUROSTAT": {
-        "name": "DB.nomics",
-        "protocol":"http",
-        "host":"api.legacy.nomics.world",
-        "path": "/api/v1/sdmx/",
-        "agencyID": "EUROSTAT",
-        "SDMX":"True",
-        "apiKey": "False",
-        "format":"format=compact_2_1",
-        "nodata":"True",
-        "native": "True",
-        "resources": ["dataflow","dataset","series","list","codelist"]
-    },
     "OECD": {
         "name": "OECD",
         "protocol":"https",
@@ -112,16 +99,6 @@
         "nodata": "",
         "native": "False",
         "resources": ["dataflow","dataset","series","list","codelist"]
-    },
-    "Quandl": {
-        "name": "Quandl",
-        "protocol":"https",
-        "host": "www.quandl.com",
-        "path": "",
-        "SDMX": "False",
-        "apiKey": "True",
-        "native": "False",
-        "resources": [""]
     },
     "Fred": {
         "name": "Fred",

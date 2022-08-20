@@ -619,7 +619,7 @@ export function getTemp(req, res) {
     // Being here means the file does not exist yet (or does
     // not exist anymore).
     // Send wait to the user
-    res.send(buildHTML.wait(id));
+    res.send(buildHTML.bigDatasetWait());
   } else {
     // else let Rabbit send us the route
     rabbit.sendTempFile(id, (route) => {

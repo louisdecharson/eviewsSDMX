@@ -50,29 +50,21 @@ function getValueForKeyMatchingPattern(dict, pattern) {
 export function dataFlow(data, service) {
   const title = "SDMX API for EViews / DATAFLOWS ";
   const jsForSearch = `${listJS}<script>var options = {valueNames: ['name', 'desc'], searchClass: 'form-control'}; var dataList = new List('myDataflows',options);</script>`;
-  const theader = "<th>Id</th><th>Description</th>";
-  let tbody = "";
+  const tableHeader = "<th>Id</th><th>Description</th>";
+  let tableBody = "";
   data.forEach((item) => {
-    tbody += "<tr>";
-    tbody +=
-      '<td class="name"><a href="/' +
-      item[4] +
-      "/dataflow/" +
-      item[0] +
-      '">' +
-      item[0] +
-      "</a>" +
-      "</td>";
-    tbody += `<td class="desc">${item[3]}</td></tr>`;
+    const [dataset, , , description, provider] = item;
+    const link = `<a href"/${provider}/dataflow/${dataset}">${dataset}</a>`;
+    tableBody += `<tr>${htmlCell(link, false, "name")}`;
+    tableBody += `${htmlCell(description, false, "desc")}</tr>`;
   });
+  const table = htmlTable(tableHeader, tableBody, "", "table w100");
   const body = `
     <h2>List of all the datasets of ${service.toUpperCase()}</h2>
     <div id="myDataflows">
       <input class="form-control" placeholder="Search"><br>
-      <table class="table table-sm table-hover">
-        <thead><tr>${theader}</tr></thead>
-        <tbody class="list">${tbody}</tbody>
-      </table></div>
+      ${table}
+    </div>
   `;
   return htmlPage(title, body, jsForSearch);
 }
@@ -262,7 +254,7 @@ export function detailDataset(
       tableBody += `<td class="name">${seriesDescription}</td>`;
       let seriesLastUpdate;
       if (series.LAST_UPDATE != null) {
-        seriesLastUpdate = series.LAST_UPDATE[0];
+        [seriesLastUpdate] = series.LAST_UPDATE;
       } else {
         seriesLastUpdate = "&nbsp;";
       }
@@ -415,126 +407,75 @@ export function makeTableBLS(series) {
 }
 
 export function OECDDimensions(dim, nameDataset) {
-  var header = "<title>SDMX API for EViews / " + nameDataset + "</title>",
-    body = "<h1>Dataset " + nameDataset + '</h1><hr class="m-y-2">';
-  (body += "<h3>Dimensions of the data </h3>"),
-    (body +=
-      "Dataset has " +
-      dim.length +
-      " dimensions (click on a dimension to see its available values):"),
-    (body += "<ul>");
-  dim.forEach(function (it, ind) {
-    body +=
-      "<li><a href=/oecd/codelist/" +
-      it.conceptRef +
-      "?Dataset=" +
-      nameDataset +
-      ">" +
-      it.conceptRef +
-      "</a></li>";
+  const title = `SDMX API for EViews / OECD / ${nameDataset}`;
+  let body = `<h1>Dataset ${nameDataset}</h1><hr>`;
+  body += "<h3>Dimensions of the data </h3>";
+  body += `<p>Dataset has ${dim.length} dimensions `;
+  body += "(click on a dimension to see its available values):<ul>";
+  dim.forEach((it) => {
+    body += `<li><a href=/oecd/codelist/${it.conceptRef}?Dataset=${nameDataset}>${it.conceptRef}</a></li>`;
   });
   body += "</ul>";
   body +=
     '<hr><div class="alert alert-primary" role="alert"><h4>Build a request</h4>';
   body +=
     '<p>Request for OECD data has the form: <code>/oecd/dataset_code/Dimensions_separated_by_dots</code>.<br/>Note that <ul><li>multiple dimensions can be selected by separated them by a "+".</li><li>Order of dimensions in the URL <strong>do matter</strong>.</li></ul> <br/><strong>Example</strong>: <br/><code>http://sdmx.herokuapp.com/oecd/QNA/AUS+AUT.B1_GE.VOBARSA.Q</code></p></div>';
-  var myHtml =
-    "<!DOCTYPE html>" +
-    "<html><head>" +
-    header +
-    "</head><body>" +
-    APP_TITLE +
-    body +
-    sdmxCSS +
-    "</body></html>";
-  return myHtml;
+  return htmlPage(title, body);
 }
 
-export function OECDCodeList(codes, codeList, nameDataset) {
-  var header = "<title>SDMX API for EViews / " + nameDataset + "</title>",
-    body =
-      "<h4>Available values for dimension " +
-      codeList +
-      " in dataset " +
-      nameDataset +
-      '</h4><hr class="m-y-2">',
-    tbody = "",
-    theader = "<th>Code</th><th>Description</th>",
-    jsforList =
-      "<script>var options = {valueNames: ['code', 'desc'], searchClass: 'form-control'}; var dataList = new List('myCodesList',options);</script>";
+export function OECDCodeList(codes, dimension, nameDataset) {
+  const title = `SDMX API for EViews / OECD / ${nameDataset} - {codeList}`;
+  let body = `<h4>Available values for dimension ${dimension} in dataset ${nameDataset}</h4><hr>`;
+  let tableBody = "";
+  const tableHeader = "<th>Code</th><th>Description</th>";
+  const jsforList =
+    "<script>var options = {valueNames: ['code', 'desc'], searchClass: 'form-control'}; var dataList = new List('myCodesList',options);</script>";
 
   body += '<div id="myCodesList">';
   body += '<input class="form-control" placeholder="Search"><br>';
-
-  codes.Code.forEach(function (i) {
-    tbody += '<tr><td class="code">' + i.value + "</td>";
-    tbody += '<td class="desc">' + i.Description[0]["_"] + "</td></tr>";
+  codes.Code.forEach((i) => {
+    tableBody += `<tr>${htmlCell(i.value, false, "code")}`;
+    tableBody += `${htmlCell(i.Description[0]["_"], false, "desc")}</tr>`;
   });
-  var myHtml =
-    "<!DOCTYPE html>" +
-    "<html><head>" +
-    header +
-    "</head><body>" +
-    APP_TITLE +
-    body +
-    '<table class="table table-hover table-sm">' +
-    "<thead>" +
-    "<tr>" +
-    theader +
-    "</tr></thead>" +
-    '<tbody class="list">' +
-    tbody +
-    "</tbody>" +
-    "</table></div>" +
-    listJS +
-    jsforList +
-    sdmxCSS +
-    "</body></html>";
-  return myHtml;
+  const table = htmlTable(tableHeader, tableBody);
+  body += table;
+  return htmlPage(title, body, jsforList);
 }
 
 // Function to send when a big dataset has been requested
 export function bigDataset(url) {
-  var msg =
-    '<div class="alert alert-primary" role="alert">Wait... You have asked to download a big dataset. Your dataset is going to be available for download in a few minutes';
-  msg += '<a href="/temp/' + url + '"> here</a>.</div>';
-  var alert =
-    '<div class="alert alert-danger" role="alert"><strong>Important to notice:</strong>This file will only be accessible once. Once downloaded, it will be deleted from our servers. Save it locally.</div>';
-  var myHtml =
-    "<!DOCTYPE html>" +
-    "<html><head><title>Big dataset</title></head><body>" +
-    APP_TITLE +
-    msg +
-    alert +
-    sdmxCSS +
-    "</body></html>";
-  return myHtml;
+  const body = `
+     <div class="alert alert-primary">Wait... You have asked to download a big dataset. Your dataset is going to be available for download in a few minutes <a href="/temp/${url}">here</a>.</div>
+    <div class="alert alert-danger" role="alert">
+    <strong>Important to notice:</strong>
+    This file will only be accessible once. Once downloaded, it will be deleted from our servers. Save it locally.
+    </div>
+`;
+  return htmlPage("Big dataset", body);
 }
 // Function to display an error when a big dataset request has failed
-export function bigDatasetError(e) {
-  var msg =
-    '<div class="alert alert-danger" role="alert">Your request has not been processed. <br/> Error:';
-  msg += e + "</div>";
-  var myHtml =
-    "<!DOCTYPE html>" +
-    "<html><head><title>Big dataset</title></head><body>" +
-    APP_TITLE +
-    msg +
-    sdmxCSS +
-    "</body></html>";
-  return myHtml;
+export function bigDatasetError(error) {
+  const title = "Big dataset - Error";
+  const body = `
+<div class="alert alert-danger">
+  Your request has not been processed.
+  <br/>
+  Error: ${error}
+</div>
+`;
+  return htmlPage(title, body);
 }
 
 // Function to send when the file is not yet available but requested by user.
-export function wait(url) {
-  var wait =
-    '<div class="alert alert-warning" role="alert"> <strong>The requested file is not available. </strong> If you have just made the request, come back in a few minutes.</div>';
-  var myHtml =
-    "<!DOCTYPE html>" +
-    "<html><head><title>Big dataset</title></head><body>" +
-    APP_TITLE +
-    wait +
-    sdmxCSS +
-    "</body></html>";
-  return myHtml;
+export function bigDatasetWait() {
+  const title = "Big dataset - Wait";
+  const body = `
+<div class="alert alert-warning">
+  <strong>
+    The requested file is not available.
+  </strong>
+  If you have just made the request, come back in a few minutes.
+</div>
+`;
+  return htmlPage(title, body);
 }

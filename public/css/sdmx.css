@@ -59,6 +59,11 @@ a.btn-primary:hover {
         border-top-color: #f1b0b7;
     }
 }
+.alert-primary {
+    color: #004085;
+    background-color: #cce5ff;
+    border-color: #b8daff;
+}
 .alert{
     position: relative;
     padding: .75rem 1.25rem;
@@ -203,4 +208,10 @@ hr {
     padding: 2%;
     border: 1px solid rgba(0,0,0,0.1);
     border-radius: 25px;
+}
+code {
+    font-family: var(--mono-font);
+    font-size: 87.5%;
+    color: #e83e8c;
+    word-break: break-word;
 }

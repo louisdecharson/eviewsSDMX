@@ -30,6 +30,7 @@ import * as explore from "./routes/explore.js";
 
 // RABBIT MQ
 import * as rabbit from "./queue/rabbit.js";
+import { error404 } from "./render/components.js";
 
 // Providers
 const require = createRequire(import.meta.url);
@@ -116,50 +117,45 @@ app.get("/cal", (req, res) => {
   res.send("NO LONGER SUPPORTED");
 });
 
-app.get("/status", function (req, res) {
+app.get("/status", (req, res) => {
   res.set("Content-Type", "text/plain");
-  res.send("OK");
+  res.status(200).send("OK");
 });
 
-// Error 404 and function isInArray
-var err404 =
-  '<html><head><title>SDMX in EViews - Error 404</title></head><body style="background-color:black; color:white; text-align:center; margin-top: 20%; width: 100%; font-family: Menlo; text-align:center;"><p style="font-size: 100px;">404</p><br/><p>The page you have requested does not exist.</p></body></html>';
-function isInArray(it, arr) {
-  return arr.indexOf(it) > -1;
-}
-
-app.get("/:provider", function (req, res) {
-  if (isInArray(req.params.provider.toUpperCase(), Object.keys(providers))) {
-    res.redirect("/" + req.params.provider + "/dataflow");
+app.get("/:provider", (req, res) => {
+  const listProviders = Object.keys(providers);
+  const { provider } = req.params;
+  if (listProviders.indexOf(provider.toUpperCase()) > -1) {
+    res.redirect(`/${provider}/dataflow`);
   } else {
-    res.status(404).send(err404);
+    res.status(404).send(error404());
   }
 });
 
 // 404
-app.get("*", function (req, res) {
-  res.status(404).send(err404);
+app.get("*", (req, res) => {
+  res.status(404).send(error404());
 });
 
 // TIMEOUT
 app.use(haltOnTimedout);
 
 // Rabbit MQ
-rabbit.connect(function (c) {
+rabbit.connect((c) => {
   try {
-    let conn = rabbit.get();
+    const conn = rabbit.get();
     if (conn) {
       rabbit.consumeReply(conn);
     } else {
       console.log("Connection to RabbitMQ not available.");
     }
-    app.listen(port, function () {
-      console.log("Our app is running on port " + port);
+    app.listen(port, () => {
+      console.log(`Our app is running on port ${port}`);
     });
   } catch (error) {
-    console.log("Connection to RabbitMQ not available. Error: " + error);
-    app.listen(port, function () {
-      console.log("Our app is running on port " + port);
+    console.log(`Connection to RabbitMQ not available. Error: ${error}`);
+    app.listen(port, () => {
+      console.log(`Our app is running on port ${port}`);
     });
   }
 });
