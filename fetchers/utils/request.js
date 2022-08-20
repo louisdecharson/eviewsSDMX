@@ -32,7 +32,7 @@ export async function handleRequest(
     timeout: {
       request: timeout,
     },
-    agent: agent,
+    agent,
   };
   try {
     const response = await got(url, options);

@@ -21,28 +21,38 @@ import Debug from "debug";
 import { createRequire } from "module";
 
 // Routes
-import * as fetcher from "./routes/fetcher.js";
-import * as quandl from "./routes/quandl.js";
-import * as bls from "./routes/bls.js";
-import * as fred from "./routes/fred.js";
-import * as buba from "./routes/buba.js";
-import * as oecd from "./routes/oecd.js";
+import * as sdmx from "./fetchers/sdmx.js";
+import * as bls from "./fetchers/bls.js";
+import * as fred from "./fetchers/fred.js";
+import * as buba from "./fetchers/buba.js";
+import * as oecd from "./fetchers/oecd.js";
 import * as explore from "./routes/explore.js";
 
-import { haltOnTimedout } from "./helpers.js";
-
 // RABBIT MQ
-import * as rabbit from "./rabbit.js";
+import * as rabbit from "./queue/rabbit.js";
 
 // Providers
 const require = createRequire(import.meta.url);
 const providers = require("./routes/providers.json");
+
 const __dirname = path.resolve();
 const logger = Debug("server");
 
 const app = express();
 const port = process.env.PORT || 8080;
+
 // TIMEOUT
+function haltOnTimedout(err, req, res, next) {
+  if (req.timedout === true) {
+    if (res.headersSent) {
+      next(err);
+    } else {
+      res.redirect("/timedout.html");
+    }
+  } else {
+    next();
+  }
+}
 app.use(timeout("29.9s", { respond: true }));
 
 logger("booting %s", "EViews - SDMX");
@@ -67,25 +77,28 @@ app.get("/oecd/:dataset/:series", oecd.getSeries);
 app.get("/oecd/dataflow", oecd.getAllDataFlow);
 
 // Timeseries from supported providers
-app.get("/:provider/dataflow", fetcher.getAllDataFlow);
-app.get("/:provider/dataflow/:dataset", fetcher.getDataFlow);
-app.get("/:provider/dataset/:dataset", fetcher.getDataSet);
-app.get("/:provider/bigdataset/:dataset", fetcher.getBigDataSet);
-app.get("/:provider/series/:series", fetcher.getSeries);
-app.get("/:provider/list/:dataset", fetcher.getList);
-app.get("/:provider/codelist/:codelist", fetcher.getCodeList);
+app.get("/:provider/dataflow", sdmx.getAllDataFlow);
+app.get("/:provider/dataflow/:dataset", sdmx.getDataFlow);
+app.get("/:provider/dataset/:dataset", sdmx.getDataSet);
+app.get("/:provider/bigdataset/:dataset", sdmx.getBigDataSet);
+app.get("/:provider/series/:series", sdmx.getSeries);
+app.get("/:provider/list/:dataset", sdmx.getList);
+app.get("/:provider/codelist/:codelist", sdmx.getCodeList);
 
 // Timeseries from sdmx url
-app.get("/req", fetcher.getDatafromURL);
-app.post("/requestbyURL", fetcher.redirectURL);
+app.get("/req", sdmx.getDatafromURL);
+app.post("/requestbyURL", sdmx.redirectURL);
 
 // Big datasets
-app.get("/temp/:id", fetcher.getTemp);
+app.get("/temp/:id", sdmx.getTemp);
 
 // OTHER NON-SDMX PROVIDER
 // -----------------------
 // Quandl
-app.get("/quandl/:apiKey/:dataset/:series", quandl.getSeries);
+app.get("/quandl/:anything", (req, res) => {
+  res.set("Content-Type", "text/plain");
+  res.status(501).send("NO LONGER SUPPORTED");
+});
 // BLS
 app.get("/bls/:apiKey/:series", bls.getSeries);
 // FRED
@@ -98,7 +111,7 @@ app.get("/providers", explore.getProviders);
 
 // Calendar
 // --------
-app.get("/cal", function (req, res) {
+app.get("/cal", (req, res) => {
   res.set("Content-Type", "text/plain");
   res.send("NO LONGER SUPPORTED");
 });

@@ -79,9 +79,14 @@ a.btn-primary:hover {
     border-radius: .25rem;
     transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
 }
-.table {
+.w100 {
     width: 100%;
     max-width: 100%;
+}
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,.075);
+}
+.table {
     margin-bottom: 1rem;
     background-color: transparent;
     border-collapse: collapse;

@@ -3,10 +3,10 @@ import { createRequire } from "module";
 import Debug from "debug";
 import { handleRequest } from "./request.js";
 import { parserError } from "./errors.js";
-import { stripPrefix } from "../helpers.js";
+import { stripPrefix } from "./helpers.js";
 
 const require = createRequire(import.meta.url);
-const providers = require("./providers.json");
+const providers = require("../../routes/providers.json");
 
 const logger = Debug("fetcher");
 
@@ -237,17 +237,17 @@ export class Provider {
     if (this.providerKey === "INSEE") {
       return `${this.protocol}://${this.host}/series/sdmx/data/SERIES_BDM/${series}${params}`;
     }
-    return `${this.protocol}://${this.host}${this.path}/data/${dataset}/${series}${params}`;
+    return `${this.protocol}://${this.host}${this.path}data/${dataset}/${series}${params}`;
   }
 
   getSeriesAndDataset(seriesRaw) {
     if (this.providerKey === "INSEE") {
-      return { series: seriesRaw, dataset: null };
+      return { series: seriesRaw, dataset: seriesRaw };
     }
-    const tmp = seriesRaw.split(".");
-    const dataset = tmp[0];
-    tmp.shit();
-    const series = tmp.join(".");
+    const seriesArray = seriesRaw.split(".");
+    const [dataset, ...dimensions] = seriesArray;
+    const series = dimensions.join(".");
+    logger(`Function getSeriesAndDataset. Output: ${series}, ${dataset}`);
     return { series, dataset };
   }
 

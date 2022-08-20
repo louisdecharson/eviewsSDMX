@@ -17,13 +17,12 @@ import { parseString } from "xml2js";
 import Debug from "debug";
 import * as shortid from "shortid";
 
-import * as buildHTML from "./buildHTML.js";
-import { parserError, unknownProviderError } from "./errors.js";
-
-import { Provider, Context } from "./provider.js";
-import { handleRequest } from "./request.js";
-import { stripPrefix } from "../helpers.js";
-import * as rabbit from "../rabbit.js";
+import * as buildHTML from "../render/buildHTML.js";
+import { parserError, unknownProviderError } from "./utils/errors.js";
+import { Provider, Context } from "./utils/provider.js";
+import { handleRequest } from "./utils/request.js";
+import { stripPrefix } from "./utils/helpers.js";
+import * as rabbit from "../queue/rabbit.js";
 
 const logger = Debug("fetcher");
 const appTimeout = 29500; // Timeout in ms for request to
@@ -132,7 +131,8 @@ export function getDataFlow(req, res) {
         res.send(err);
       } else {
         const url = providerInstance.getDataflowUrl(dataset);
-        const contentType = "application/vnd.sdmx.structure+xml; version=2.1";
+        const contentType =
+          "application/vnd.sdmx.structurespecificdata+xml;version=2.1";
         const context = new Context(provider, "dataflow");
         handleRequest(url, contentType, context, false, fetchTimeout).then(
           ({ error, content }) => {
@@ -241,7 +241,7 @@ function _getQueryParameters(rawParams) {
       params[p.toUpperCase()] = rawParams[p];
     }
   });
-  logger(`Function: _formatParameters. Return:${JSON.stringify(params)}`);
+  logger(`Function: _getQueryParameters. Return:${JSON.stringify(params)}`);
   return params;
 }
 
@@ -261,7 +261,7 @@ function _formatQueryParameters(parameters) {
     }
   });
   logger(
-    `Function: _getParams. Input: ${JSON.stringify(
+    `Function: _formatQueryParameters. Input: ${JSON.stringify(
       parameters
     )}. Return:${JSON.stringify(params)}`
   );
@@ -320,11 +320,13 @@ export function retrieveDataset(
             const timeseries = obj.StructureSpecificData.DataSet[0].Series;
             let table;
             if (listOnly) {
-              table = buildHTML.makeListSeries(
+              table = buildHTML.detailDataset(
                 provider,
                 timeseries,
                 dataset,
-                dimensions
+                dimensions,
+                null,
+                false
               );
             } else {
               table = buildHTML.makeTable(

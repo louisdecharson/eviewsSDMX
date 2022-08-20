@@ -1,2 +1,2 @@
 web: npm start
-worker: node routes/worker.js
+worker: node queue/worker.js

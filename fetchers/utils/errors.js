@@ -1,10 +1,10 @@
-import { encapsulate } from "./buildHTML.js";
+import { htmlPage } from "../../render/components.js";
 
 export function fetcherError(provider, code, data, url, message) {
   const title = "SDMX in EViews - Error";
   let body = '<div class="alert alert-danger" role="alert">';
   let errorCauses;
-  if ((code >= 300) & (code < 500)) {
+  if (code >= 300 && code < 500) {
     errorCauses = `
 <li>The data you are trying to download does not exist.</li>
 <li>The filters or dimensions you have entered are incorrect.</li>
@@ -24,7 +24,7 @@ but got the following error message from ${provider}'s servers: </br>
 <br/><hr/><h6>Possible causes:</h6>
 <ul>${errorCauses}</ul></div>
   `;
-  return encapsulate(title, body);
+  return htmlPage(title, body);
 }
 
 /**
@@ -44,7 +44,7 @@ but ${provider} servers were too long to respond and we had to stop the request.
 <hr/><h6>Possible causes:</h6> <ul>
 <li>${provider} servers are too busy. Try again later.</li></ul></div>
   `;
-  return encapsulate(title, body);
+  return htmlPage(title, body);
 }
 
 /**
@@ -64,7 +64,7 @@ decipher the answer. The error occured when retrieving ${data} at <a href="${url
 <li>Error might be on our side if our parser is not up-to-date. Raise an issue on
 <a href="https://github.com/dgei-sdmx/eviewsSDMX/issues">Github project page</a>.</li></ul></div>
   `;
-  return encapsulate(title, body);
+  return htmlPage(title, body);
 }
 
 /**
@@ -86,7 +86,7 @@ Request was tried with url <a href="${url}">${url}</a> while retrieving ${data}.
 Raise an issue on <a href="https://github.com/dgei-sdmx/eviewsSDMX/issues">
 Github project page</a>.</li></ul></div>
   `;
-  return encapsulate(title, body);
+  return htmlPage(title, body);
 }
 
 export function unknownProviderError(provider) {
@@ -96,5 +96,5 @@ export function unknownProviderError(provider) {
 <h4 class="alert-heading">Provider unknown error</h4><hr/>
 <p>Provider ${provider} is unknown.</p></div>
   `;
-  return encapsulate(title, body);
+  return htmlPage(title, body);
 }
