@@ -15,10 +15,34 @@ In order to run the code locally, you'll need:
 To install required dependencies, you can do:
 ```sh
 cd eviewsSDMX/
-npm install
+npm install --dev
 ```
 
+### Folder organization:
 
+The entrypoint of the app is `server.js`.
+
+The flow of the app is:
+1. A request is made
+2. The request is interpreted and the following parameters are retrieved:
+  - the provider
+  - additional parameters (resource to be retrieved, etc)
+3. A request is made to the data provider (or multiple if required)
+4. The response (in SDMX format) is parsed and rendered as an HTML page (with data in an HTML table)
+
+
+Fetchers to data providers are stored in `/fetchers/` folders:
+- The SDMX fetcher (for SDMX 2.1) is stored is `/fetchers/sdmx.js`.
+- Fetchers for other providers (FRED, Bundesbank, BLS, OECD, etc) are stored in separate files.
+
+Code to render the response received in SDMX format as HTML code is stored in `/render` folder.
+
+### Run tests
+
+In order to run test, run the following:
+```sh
+npm test
+```
 
 ## New Issues
  

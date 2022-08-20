@@ -54,7 +54,7 @@ export function dataFlow(data, service) {
   let tableBody = "";
   data.forEach((item) => {
     const [dataset, , , description, provider] = item;
-    const link = `<a href"/${provider}/dataflow/${dataset}">${dataset}</a>`;
+    const link = `<a href="/${provider}/dataflow/${dataset}">${dataset}</a>`;
     tableBody += `<tr>${htmlCell(link, false, "name")}`;
     tableBody += `${htmlCell(description, false, "desc")}</tr>`;
   });
