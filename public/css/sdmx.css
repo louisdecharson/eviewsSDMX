@@ -200,7 +200,6 @@ hr {
 .url {
     color: black;
 }
-
 .content {
     margin-top: 2%;
     margin-left: 5%;
@@ -214,4 +213,32 @@ code {
     font-size: 87.5%;
     color: #e83e8c;
     word-break: break-word;
+}
+.badge {
+    display: inline-block;
+    padding: .25em .4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    padding-right: .6em;
+    padding-left: .6em;
+    border-radius: 10rem;
+}
+.badge-primary {
+    color: #fff;
+    background-color: #007bff;
+}
+.badge-danger {
+    color: #fff;
+    background-color: #dc3545;
+}
+.badge-secondary {
+    color: #fff;
+    background-color: #868e96;
+}
+input:checked + label + div.content {
+    display: none;
 }

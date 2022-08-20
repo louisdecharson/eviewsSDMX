@@ -1,4 +1,4 @@
-// Copyright (C) 2016 Louis de Charsonville
+// Copyright (C) 2022 Louis de Charsonville
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License version 3 as
 // published by the Free Software Foundation.
@@ -26,7 +26,7 @@ import * as bls from "./fetchers/bls.js";
 import * as fred from "./fetchers/fred.js";
 import * as buba from "./fetchers/buba.js";
 import * as oecd from "./fetchers/oecd.js";
-import * as explore from "./routes/explore.js";
+import * as listProviders from "./routes/list_providers.js";
 
 // RABBIT MQ
 import * as rabbit from "./queue/rabbit.js";
@@ -108,7 +108,7 @@ app.get("/fred/:apiKey/:series", fred.getSeries);
 app.get("/buba/:series", buba.getSeries);
 
 // Other functions
-app.get("/providers", explore.getProviders);
+app.get("/providers", listProviders.getProviders);
 
 // Calendar
 // --------
@@ -165,5 +165,5 @@ process.on("uncaughtException", (err) => {
   console.log(`Caught exception: ${err}`);
 });
 
-// FOR TESTING
-export default { app };
+// For test suite (npm test)
+export default app;
