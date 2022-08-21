@@ -14,10 +14,9 @@
 
 // PACKAGES
 import got from "got";
-import request from "request";
 import Debug from "debug";
 import * as buildHTML from "../render/buildHTML.js";
-
+import { standardError } from "./utils/errors.js";
 const BLS_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/";
 
 const logger = Debug("bls");
@@ -38,22 +37,53 @@ async function fetchBLS(series, startYear, endYear, apiKey) {
       "user-agent": "nodeJS",
     },
   };
+  logger("getSeries BLS with path=%s and payload=%s", BLS_URL, payload);
   try {
-    logger("getSeries BLS with path=%s and payload=%s", BLS_URL, payload);
     const response = await got(BLS_URL, options);
-    if (response.statusCode >= 200 && response.statusCode) {
+    if (response.statusCode >= 200 && response.statusCode < 400) {
       try {
-        const parsedResults = JSON.parse(response.body).Results.series;
-        const html = buildHTML.makeTableBLS(parsedResults);
-        return Promise.resolve(html);
+        const parsedBody = JSON.parse(response.body);
+        if (
+          parsedBody.status !== "REQUEST_SUCCEEDED" ||
+          parsedBody.message.length > 0
+        ) {
+          const msg = `
+  <div>
+    <p>
+    The request to <code>${BLS_URL}</code> failed.
+    See below the status and response received from BLS's servers:
+    </p>
+    <ul>
+      <li>Status: <code>${parsedBody.status}</code>.</li>
+      <li>Message: ${parsedBody.message}.</li>
+    </ul>
+  </div>
+  `;
+          return Promise.reject(new Error(msg));
+        } else {
+          const parsedResults = parsedBody.Results.series;
+          const html = buildHTML.makeTableBLS(parsedResults);
+          return Promise.resolve(html);
+        }
       } catch (parserError) {
-        return "Parsing error";
+        return Promise.reject(
+          new Error(`
+  <p>The request to <code>${BLS_URL}</code> succeeded but we've failed to parse the return object.</p>
+  <div><strong>Error</strong><pre>${parserError.message}</pre></div>
+  `)
+        );
       }
     } else {
-      return response.statusCode;
+      return Promise.reject(
+        new Error(`
+  <p>The request to <code>${BLS_URL}</code> failed with status ${response.statusCode} - ${response.statusMessage}</p>`)
+      );
     }
   } catch (error) {
-    return error;
+    return Promise.reject(
+      new Error(`
+  <p>The request to <code>${BLS_URL}</code> failed with error: <pre>${error.message}</pre></p>`)
+    );
   }
 }
 
@@ -61,7 +91,11 @@ export function getSeries(req, res) {
   const series = req.params.series.split("+");
   const { startYear, endYear } = req.query;
   const { apiKey } = req.params;
-  fetchBLS(series, startYear, endYear, apiKey).then((html) => {
-    res.status(200).send(html);
-  });
+  fetchBLS(series, startYear, endYear, apiKey)
+    .then((html) => {
+      res.status(200).send(html);
+    })
+    .catch((error) => {
+      res.status(400).send(standardError(error.message));
+    });
 }
