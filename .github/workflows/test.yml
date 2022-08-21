@@ -24,7 +24,11 @@ jobs:
 
       # Pass secrets
       - name: "Write .env"
-        run: cat "FRED_API_KEY=${{secrets.FRED_API_KEY}}" > .env && cat "BLS_API_KEY=${{secrets.BLS_API_KEY}}" >> .env
-        
+        run: echo "FRED_API_KEY=$FRED_API_KEY" > .env && echo "BLS_API_KEY=$BLS_API_KEY" >> .env
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+
       # Run tests
-      - run: npm test
+      - name: "Run npm test"
+        run: npm test
