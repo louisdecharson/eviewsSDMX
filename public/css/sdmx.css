@@ -1,5 +1,111 @@
+:root {
+    --sans-font: -apple-system, BlinkMacSystemFont, helvetica, 'helvetica neue', roboto, 'segoe ui', arial, sans-serif;
+    --mono-font: "Roboto Mono", San Francisco Mono, Monaco,"Consolas","Lucida Console","DejaVu Sans Mono","Bitstream Vera Sans Mono",monospace;
+    --color-link: #007bff;
+    --color-link-hover: #0056b3;
+}
+* {
+    box-sizing: border-box;
+}
+html {
+    line-height: 1.15;
+}
 body {
+    font-family: var(--sans-font);
     margin: 2%;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+a {
+    color: var(--color-link);
+    text-decoration: none;
+    background-color: transparent;
+}
+a:hover {
+    color: var(--color-link-hover);
+    text-decoration: underline;
+}
+.btn {
+    padding: .25rem .5rem;
+    font-size: .875rem;
+    line-height: 1.5;
+    border-radius: .2rem;
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    border: 1px solid transparent;
+}
+.btn-primary {
+    color: #fff;
+    background-color: var(--color-link);
+    border-color: var(--color-link);
+}
+.btn-primary:hover {
+    color: #fff;
+    background-color: var(--color-link-hover);
+    border-color: var(--color-link-hover);
+}
+a.btn-primary:hover {
+    text-decoration: none;
+}
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    hr {
+        border-top-color: #f1b0b7;
+    }
+}
+.alert-primary {
+    color: #004085;
+    background-color: #cce5ff;
+    border-color: #b8daff;
+}
+.alert{
+    position: relative;
+    padding: .75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: .25rem;
+}
+.form-control {
+    display: block;
+    width: 100%;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+.w100 {
+    width: 100%;
+    max-width: 100%;
+}
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,.075);
+}
+.table {
+    margin-bottom: 1rem;
+    background-color: transparent;
+    border-collapse: collapse;
+}
+.table thead th {
+    padding: .3rem;
+    vertical-align: bottom;
+    border-bottom: 2px solid #dee2e6;
+    text-align: left;
+}
+.table th , .table td {
+    padding: .3rem;
+    vertical-align: top;
+    border-top: 1px solid #dee2e6;
 }
 td {
     padding-left: 10px;
@@ -10,9 +116,9 @@ span.badge {
 }
 
 ul.providers {
-  list-style: none;
-  margin-left: 0;
-  padding-left: 0;
+    list-style: none;
+    margin-left: 0;
+    padding-left: 0;
 }
 li.provider:before {
     content: "+";
@@ -37,6 +143,20 @@ li.provider {
     text-decoration: none;
 }
 
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+    margin-bottom: .5rem;
+    font-weight: 500;
+    line-height: 1.2;
+    color: inherit;
+}
+
+h1{
+    font-size: 2.5rem;
+}
+h2 {
+    font-size: 2rem;
+}
 h3 {
     text-align: center;
     font-size: 24px;
@@ -51,7 +171,16 @@ h4 {
 h5 {
     font-size: 18px;
 }
+h6 {
+    font-size: 1.3rem;
+}
 
+hr {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border: 0;
+    border-top: 1px solid rgba(0,0,0,.1);
+}
 
 .provider {
     margin-bottom: 3%;
@@ -71,7 +200,6 @@ h5 {
 .url {
     color: black;
 }
-
 .content {
     margin-top: 2%;
     margin-left: 5%;
@@ -79,4 +207,43 @@ h5 {
     padding: 2%;
     border: 1px solid rgba(0,0,0,0.1);
     border-radius: 25px;
+}
+code {
+    font-family: var(--mono-font);
+    font-size: 87.5%;
+    color: #e83e8c;
+    word-break: break-word;
+}
+pre {
+    font-family: var(--mono-font);
+    font-size: 87.5%;
+    background-color: rgba(0,0,0,.05);
+}
+.badge {
+    display: inline-block;
+    padding: .25em .4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    padding-right: .6em;
+    padding-left: .6em;
+    border-radius: 10rem;
+}
+.badge-primary {
+    color: #fff;
+    background-color: #007bff;
+}
+.badge-danger {
+    color: #fff;
+    background-color: #dc3545;
+}
+.badge-secondary {
+    color: #fff;
+    background-color: #868e96;
+}
+input:checked + label + div.content {
+    display: none;
 }

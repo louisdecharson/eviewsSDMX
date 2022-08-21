@@ -1,4 +1,4 @@
-// Copyright (C) 2016 Louis de Charsonville
+// Copyright (C) 2022 Louis de Charsonville
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License version 3 as
 // published by the Free Software Foundation.
@@ -11,160 +11,159 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 // EXTERNAL MODULES
-var express = require('express'),
-    path = require('path'),
-    bodyParser = require('body-parser'),
-    timeout = require('connect-timeout'),
-    favicon = require('serve-favicon'),
-    debug = require('debug')('server');
-// ROUTES 
-var fetcher = require('./routes/fetcher'),
-    quandl = require('./routes/quandl'),
-    bls = require('./routes/bls'),
-    fred = require('./routes/fred'),
-    buba = require('./routes/buba'),
-    oecd = require('./routes/oecd'),
-    explore = require('./routes/explore');
+import express from "express";
+import path from "path";
+import bodyParser from "body-parser";
+import timeout from "connect-timeout";
+import favicon from "serve-favicon";
+import Debug from "debug";
+import { createRequire } from "module";
+
+// Routes
+import * as sdmx from "./fetchers/sdmx.js";
+import * as bls from "./fetchers/bls.js";
+import * as fred from "./fetchers/fred.js";
+import * as buba from "./fetchers/buba.js";
+import * as oecd from "./fetchers/oecd.js";
+import * as listProviders from "./routes/list_providers.js";
 
 // RABBIT MQ
-var rabbit = require('./rabbit');
+import * as rabbit from "./queue/rabbit.js";
+import { error404 } from "./render/components.js";
 
 // Providers
-var providers = require('./routes/providers.json');
+const require = createRequire(import.meta.url);
+const providers = require("./routes/providers.json");
 
-var app = express();
-var port = process.env.PORT || 8080;
+const __dirname = path.resolve();
+const logger = Debug("server");
+
+const app = express();
+const port = process.env.PORT || 8080;
+
 // TIMEOUT
-app.use(timeout('29.9s',{"respond":true}));
+function haltOnTimedout(err, req, res, next) {
+  if (req.timedout === true) {
+    if (res.headersSent) {
+      next(err);
+    } else {
+      res.redirect("/timedout.html");
+    }
+  } else {
+    next();
+  }
+}
+app.use(timeout("29.9s", { respond: true }));
 
-debug('booting %s','EViews - SDMX');
+logger("booting %s", "EViews - SDMX");
 
-app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.json({ limit: "50mb" }));
 app.use(haltOnTimedout);
-app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(haltOnTimedout);
-app.use('/',express.static(__dirname + '/public/'));
+app.use("/", express.static(__dirname + "/public/"));
 app.use(haltOnTimedout);
 
 // Favicon
-app.use(favicon(path.join(__dirname,'public','favicon.ico')));
+app.use(favicon(path.join(__dirname, "public", "favicon.ico")));
 app.use(haltOnTimedout);
 
 // SDMX PROVIDER
 // -----------------------
 // OECD
-app.get('/oecd/dataflow/:dataset',oecd.getDataflow);
-app.get('/oecd/codelist/:codelist',oecd.getCodeList);
-app.get('/oecd/:dataset/:series',oecd.getSeries);
-app.get('/oecd/dataflow',oecd.getAllDataFlow);
+app.get("/oecd/dataflow/:dataset", oecd.getDataflow);
+app.get("/oecd/codelist/:codelist", oecd.getCodeList);
+app.get("/oecd/:dataset/:series", oecd.getSeries);
+app.get("/oecd/dataflow", oecd.getAllDataFlow);
 
 // Timeseries from supported providers
-app.get('/:provider/dataflow', fetcher.getAllDataFlow);
-app.get('/:provider/dataflow/:dataset', fetcher.getDataFlow);
-app.get('/:provider/dataset/:dataset',fetcher.getDataSet);
-app.get('/:provider/bigdataset/:dataset',fetcher.getBigDataSet);
-app.get('/:provider/series/:series',fetcher.getSeries);
-app.get('/:provider/list/:dataset',fetcher.getList);
-app.get('/:provider/codelist/:codelist',fetcher.getCodeList);
-
+app.get("/:provider/dataflow", sdmx.getAllDataFlow);
+app.get("/:provider/dataflow/:dataset", sdmx.getDataFlow);
+app.get("/:provider/dataset/:dataset", sdmx.getDataSet);
+app.get("/:provider/bigdataset/:dataset", sdmx.getBigDataSet);
+app.get("/:provider/series/:series", sdmx.getSeries);
+app.get("/:provider/list/:dataset", sdmx.getList);
+app.get("/:provider/codelist/:codelist", sdmx.getCodeList);
 
 // Timeseries from sdmx url
-app.get('/req',fetcher.getDatafromURL);
-app.post('/requestbyURL',fetcher.redirectURL);
+app.get("/req", sdmx.getDatafromURL);
+app.post("/requestbyURL", sdmx.redirectURL);
 
 // Big datasets
-app.get('/temp/:id',fetcher.getTemp);
-
+app.get("/temp/:id", sdmx.getTemp);
 
 // OTHER NON-SDMX PROVIDER
 // -----------------------
 // Quandl
-app.get('/quandl/:apiKey/:dataset/:series',quandl.getSeries);
+app.get("/quandl/:anything", (req, res) => {
+  res.set("Content-Type", "text/plain");
+  res.status(501).send("NO LONGER SUPPORTED");
+});
 // BLS
-app.get('/bls/:apiKey/:series',bls.getSeries);
+app.get("/bls/:apiKey/:series", bls.getSeries);
 // FRED
-app.get('/fred/:apiKey/:series',fred.getSeries);
+app.get("/fred/:apiKey/:series", fred.getSeries);
 // Bundesbank
-app.get('/buba/:series',buba.getSeries);
+app.get("/buba/:series", buba.getSeries);
 
 // Other functions
-app.get('/providers',explore.getProviders);
+app.get("/providers", listProviders.getProviders);
 
 // Calendar
 // --------
-app.get('/cal',function(req,res) {
-    res.set('Content-Type', 'text/plain');
-    res.send("NO LONGER SUPPORTED");
+app.get("/cal", (req, res) => {
+  res.set("Content-Type", "text/plain");
+  res.send("NO LONGER SUPPORTED");
 });
 
-app.get('/status',function(req,res){
-    res.set('Content-Type','text/plain');
-    res.send('OK');
+app.get("/status", (req, res) => {
+  res.set("Content-Type", "text/plain");
+  res.status(200).send("OK");
 });
 
-// Error 404 and function isInArray
-var err404 = '<html><head><title>SDMX in EViews - Error 404</title></head><body style="background-color:black; color:white; text-align:center; margin-top: 20%; width: 100%; font-family: Menlo; text-align:center;"><p style="font-size: 100px;">404</p><br/><p>The page you have requested does not exist.</p></body></html>';
-function isInArray(it,arr) {
-    return arr.indexOf(it) > -1;
-}
-
-app.get('/:provider',function(req,res){
-    if (isInArray(req.params.provider.toUpperCase(),Object.keys(providers))) {
-        res.redirect('/'+req.params.provider+'/dataflow');
-    } else {
-        res.status(404).send(err404);
-    }
+app.get("/:provider", (req, res) => {
+  const listProviders = Object.keys(providers);
+  const { provider } = req.params;
+  if (listProviders.indexOf(provider.toUpperCase()) > -1) {
+    res.redirect(`/${provider}/dataflow`);
+  } else {
+    res.status(404).send(error404());
+  }
 });
 
 // 404
-app.get('*', function(req, res){
-    res.status(404).send(err404);
+app.get("*", (req, res) => {
+  res.status(404).send(error404());
 });
 
 // TIMEOUT
 app.use(haltOnTimedout);
-function haltOnTimedout(err,req,res,next) {
-    if (req.timedout === true) {
-        if (res.headersSent) {
-            next(err);
-        } else {
-            res.redirect('/timedout.html');
-        }
-    } else {
-        next();
-    }
-};
-
-
 
 // Rabbit MQ
-rabbit.connect(function(c) {
-    try {
-        let conn = rabbit.get();
-        if (conn) {
-            rabbit.consumeReply(conn);
-        } else {
-            console.log("Connection to RabbitMQ not available.");
-        }
-        app.listen(port, function() {
-            console.log('Our app is running on port '+ port);
-        });
-    } catch (error) {
-        console.log("Connection to RabbitMQ not available. Error: " + error);
-        app.listen(port, function() {
-            console.log('Our app is running on port '+ port);
-        });
+rabbit.connect((c) => {
+  try {
+    const conn = rabbit.get();
+    if (conn) {
+      rabbit.consumeReply(conn);
+    } else {
+      console.log("Connection to RabbitMQ not available.");
     }
+    app.listen(port, () => {
+      console.log(`Our app is running on port ${port}`);
+    });
+  } catch (error) {
+    console.log(`Connection to RabbitMQ not available. Error: ${error}`);
+    app.listen(port, () => {
+      console.log(`Our app is running on port ${port}`);
+    });
+  }
 });
-
 
 // Very dangerous
-process.on('uncaughtException', (err) => {
-     console.log(`Caught exception: ${err}`);
+process.on("uncaughtException", (err) => {
+  console.log(`Caught exception: ${err}`);
 });
 
-
-// FOR TESTING
-module.exports = app;
+// For test suite (npm test)
+export default app;

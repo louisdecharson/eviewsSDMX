@@ -1,24 +1,45 @@
 {
-    "protocol": "http://",
-    "host": "sdmx.herokuapp.com",
-    "paths": {
-        "INSEE": {
-            "insee_dataflow": "/insee/dataflow",
-            "insee_dataset": "/insee/dataset/ERI-ACTIVITE-PARTIELLE?startPeriod=2015",
-            "insee_series": "/insee/series/001769787"
-        },
-        "ECB": {
-            "ecb_dataflow": "/ecb/dataflow",
-            "ecb_dataset": "/ecb/dataset/EON?ENIOA_ITEM=RATE",
-            "ecb_series": "/ecb/series/BKN.H.AT.A020.Z.ZZZZ.ZZ.S.Q"
-        },
-        "WIDUKIND": {
-            "widukind_dataflow": "/weurostat/dataflow",
-            "widukind_dataset": "/weurostat/dataset/prc_hicp_cow?FREQ=A"
-        },
-        "EUROSTAT": {
-            "eurostat_dataset": "/eurostat/dataset/une_rt_m?FREQ=M&S_ADJ=SA&AGE=TOTAL&UNIT=PC_ACT&SEX=T&GEO=EA19%2BLT",
-            "eurostat_413" : "/eurostat/dataset/une_rt_m"
-        }
+  "protocol": "http://",
+  "host": "sdmx.herokuapp.com",
+  "paths": {
+    "INSEE": {
+      "insee_dataflows": "/insee/dataflow",
+      "insee_dataflow": "/insee/dataflow/BALANCE-PAIEMENTS",
+      "insee_dataset": "/insee/dataset/ERI-ACTIVITE-PARTIELLE?startPeriod=2015",
+      "insee_series": "/insee/series/001769787",
+      "insee_two_series": "/insee/series/001694113+001694114?endPeriod=2015-10",
+      "insee_codelist": "/insee/codelist/CL_PERIODICITE?dsdId=BALANCE-PAIEMENTS",
+      "insee_list": "/insee/list/BALANCE-PAIEMENTS",
+      "insee_bigdataset": "/insee/bigdataset/BALANCE-PAIEMENTS?FREQ=M&COMPTE=DEBITS"
+    },
+    "BUBA": {
+      "buba_series": "/buba/BBK01.DQ7504"
+    },
+    "OECD": {
+      "oecd_dataflows": "/oecd/dataflow",
+      "oecd_dataflow": "/oecd/dataflow/TUD",
+      "oecd_codelist": "/oecd/codelist/LOCATION?Dataset=TUD",
+      "oecd_dataset": "/oecd/QNA/AUS+AUT.B1_GE.VOBARSA.Q"
+    },
+    "ECB": {
+      "ecb_dataflow": "/ecb/dataflow",
+      "ecb_dataset": "/ecb/dataset/EON?ENIOA_ITEM=RATE",
+      "ecb_series": "/ecb/series/BKN.H.AT.A020.Z.ZZZZ.ZZ.S.Q"
+    },
+    "EUROSTAT": {
+      "eurostat_dataset": "/eurostat/dataset/une_rt_m?FREQ=M&S_ADJ=SA&AGE=TOTAL&UNIT=PC_ACT&SEX=T&GEO=EA19%2BLT",
+      "eurostat_413": "/eurostat/dataset/une_rt_m"
+    },
+    "FRED": {
+      "fred_series": "/fred/FRED_API_KEY/CUSR0000SETA01"
+    },
+    "BLS": {
+      "bls_series": "/bls/BLS_API_KEY/LAUCN040010000000005",
+      "bls_two_series": "/bls/BLS_API_KEY/LAUCN040010000000005+LAUCN040010000000006"
+    },
+    "OTHER": {
+      "status": "/status",
+      "providers": "/providers"
     }
+  }
 }
