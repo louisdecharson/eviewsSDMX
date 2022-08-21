@@ -22,6 +22,12 @@ import { standardError } from "./utils/errors.js";
 const URL_BUBA = "https://api.statistiken.bundesbank.de/rest/download/";
 const URL_BUBA_DEFAULT_PARAMS = "?format=csv&lang=en";
 
+/**
+ * Retrieves series from BUBA Rest API.
+ * The function uses got to make a request, stream the result (a csv file) to a
+ * file write stream that writes it to disk and then use makeTableBuba to
+ * get it as a csv file.
+ */
 export function getSeries(req, res) {
   const urlSeries = req.params.series;
   const url = URL_BUBA + urlSeries.replace(".", "/") + URL_BUBA_DEFAULT_PARAMS;
