@@ -360,7 +360,7 @@ export function makeTableOECD(timeseries, seriesName, dataset) {
  * @param {object} data - object containing the data to be displayed
  * @param {callable} callback - callback function
  */
-export function makeTableBuba(data, callback) {
+export function makeTableBuba(data) {
   const seriesID = data[0].value;
   const title = `SDMX in EViews / Deutsche Bundesbank / ${seriesID}`;
   let tableBody = "";
@@ -375,7 +375,7 @@ export function makeTableBuba(data, callback) {
     }
   });
   const table = htmlTable(tableHeader, tableBody);
-  callback(htmlPage(title, table));
+  return htmlPage(title, table);
 }
 
 export function makeTableFred(data, seriesName) {
