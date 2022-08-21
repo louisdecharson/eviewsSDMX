@@ -13,10 +13,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // PACKAGES
-import request from "request";
+import got from "got";
 import * as fs from "fs";
 import * as csv from "fast-csv";
 import { makeTableBuba } from "../render/buildHTML.js";
+import { standardError } from "./utils/errors.js";
 
 const URL_BUBA = "https://api.statistiken.bundesbank.de/rest/download/";
 const URL_BUBA_DEFAULT_PARAMS = "?format=csv&lang=en";
@@ -26,32 +27,40 @@ export function getSeries(req, res) {
   const url = URL_BUBA + urlSeries.replace(".", "/") + URL_BUBA_DEFAULT_PARAMS;
   const dest = "./temp.csv";
   const fileWriteStream = fs.createWriteStream(dest);
-  request
-    .get(url)
-    .on("error", (err) => {
-      console.log(err);
-      res.send(err);
-      fileWriteStream.unlink(dest);
-    })
-    .pipe(
-      fileWriteStream.on("finish", () => {
-        fileWriteStream.close(() => {
-          const finalData = [];
-          csv
-            .parseFile(dest, {
-              ignoreEmpty: true,
-              headers: ["date", "value", "flags"],
-            })
-            .on("data", (data) => {
-              finalData.push(data);
-            })
-            .on("end", () => {
-              makeTableBuba(finalData, (html) => {
-                res.send(html);
-              });
-              fs.unlink(dest, () => {});
-            });
-        });
+  try {
+    got
+      .stream(url)
+      .on("error", (error) => {
+        const msg = `
+<div>Request to <code>${url}</code> failed with error <pre>${error.message}</pre>
+</div>
+`;
+        res.status(400).send(standardError(msg));
       })
-    );
+      .pipe(
+        fileWriteStream.on("finish", () => {
+          fileWriteStream.close(() => {
+            const finalData = [];
+            csv
+              .parseFile(dest, {
+                ignoreEmpty: true,
+                headers: ["date", "value", "flags"],
+              })
+              .on("data", (data) => {
+                finalData.push(data);
+              })
+              .on("end", () => {
+                fs.unlink(dest, () => {});
+                res.status(200).send(makeTableBuba(finalData));
+              });
+          });
+        })
+      );
+  } catch (error) {
+    const msg = `
+<div>Request to <code>${url}</code> failed with error <pre>${error.message}</pre>
+</div>
+`;
+    res.status(400).send(standardError(msg));
+  }
 }

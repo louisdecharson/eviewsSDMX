@@ -214,6 +214,11 @@ code {
     color: #e83e8c;
     word-break: break-word;
 }
+pre {
+    font-family: var(--mono-font);
+    font-size: 87.5%;
+    background-color: rgba(0,0,0,.05);
+}
 .badge {
     display: inline-block;
     padding: .25em .4em;

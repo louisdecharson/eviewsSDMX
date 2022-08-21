@@ -16,26 +16,38 @@
 import * as https from "https";
 import Debug from "debug";
 import { makeTableFred } from "../render/buildHTML.js";
+import { standardError } from "./utils/errors.js";
 
 const logger = Debug("fred");
 
+const FRED_API = "api.stlouisfed.org";
+
+function addFormattedHeaders(headers) {
+  return `
+<div>
+  <strong>Response headers</strong> (can help debugging):
+  <pre>${JSON.stringify(headers)}</pre>
+</div>
+`;
+}
+
 export function getSeries(req, res) {
   const { series, apiKey } = req.params;
-  const myPath =
+  const path =
     "/fred/series/observations?series_id=" +
     series +
     "&api_key=" +
     apiKey +
     "&file_type=json";
   const options = {
-    hostname: "api.stlouisfed.org",
+    hostname: FRED_API,
     port: 443,
-    path: myPath,
+    path,
     headers: {
       connection: "keep-alive",
     },
   };
-  logger("getSeries FRED with path=%s", options.path);
+  logger("getSeries FRED with path=%s", path);
   https.get(options, (result) => {
     if (result.statusCode >= 200 && result.statusCode < 400) {
       let xml = "";
@@ -48,21 +60,22 @@ export function getSeries(req, res) {
         res.send(makeTableFred(data, series));
       });
     } else {
-      let msg;
       if (result.statusCode === 429) {
-        msg = "Too many requests";
+        const msg = `<p>FRED servers responded to the request with an error 429,
+e.g. too many requests. You've probably made too many requests using the same API key.
+Wait before making a new request.</p>
+<p>Url used: <code>https://${FRED_API}${path}</code></p>
+${addFormattedHeaders(result.headers)}
+`;
+        res.send(standardError(msg));
       } else {
-        msg = "";
+        const msg = `<p>FRED servers responded to the request with an error
+${result.statusCode} - ${result.statusMessage}.</p>
+<p>Url used: <code>https://${FRED_API}${path}</code><p>
+${addFormattedHeaders(result.headers)}
+`;
+        res.send(standardError(msg));
       }
-      const e =
-        "Error: " +
-        result.statusCode +
-        " | " +
-        msg +
-        " | Headers " +
-        JSON.stringify(result.headers) +
-        " | ";
-      res.send(e);
     }
   });
 }

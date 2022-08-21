@@ -1,5 +1,15 @@
 import { htmlPage } from "../../render/components.js";
 
+export function standardError(msg) {
+  const title = "SDMX in EViews - Error";
+  const body = `
+<div class="alert alert-danger">
+  ${msg}
+</div>
+`;
+  return htmlPage(title, body);
+}
+
 export function fetcherError(provider, code, data, url, message) {
   const title = "SDMX in EViews - Error";
   let body = '<div class="alert alert-danger" role="alert">';

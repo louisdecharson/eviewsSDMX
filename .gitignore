@@ -15,6 +15,7 @@ timeout.js
 /public/robots.py
 /public/test/
 /routes/ERRORS
+/.log/*
 
 # OS generated files #
 ######################
