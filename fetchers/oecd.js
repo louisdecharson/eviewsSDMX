@@ -13,209 +13,216 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // PACKAGES
-import request from "request";
-import * as xml2js from "xml2js";
+import got from "got";
+import { parseString } from "xml2js";
 import Debug from "debug";
 import * as buildHTML from "../render/buildHTML.js";
+import { stripPrefix } from "./utils/helpers.js";
+import { parserError, fetcherError } from "./utils/errors.js";
 
 const logger = Debug("oecd");
 
-const urlOECD = "http://stats.oecd.org/restsdmx/sdmx.ashx/";
+const OECD_URL = "http://stats.oecd.org/restsdmx/sdmx.ashx/";
+const XML_PARSER_OPTIONS = {
+  tagNameProcessors: [stripPrefix],
+  mergeAttrs: true,
+};
 
-function stripPrefix(str) {
-  let prefixMatch;
-  prefixMatch = new RegExp(/(?!xmlns)^.*:/);
-  return str.replace(prefixMatch, "");
-}
-
-// FETCHER
 export function getSeries(req, res) {
-  var series = req.params.series,
-    dataset = req.params.dataset,
-    keys = Object.keys(req.query),
-    params = "?";
-  keys.forEach(function (it, ind, arr) {
-    params += it.toString() + "=" + req.query[it];
-    if (ind < arr.length - 1) {
-      params += "&";
-    }
-  });
-  var myURL = urlOECD + "GetData/" + dataset + "/" + series + params,
-    options = {
-      url: myURL,
-      method: "GET",
-      headers: {
-        connection: "keep-alive",
-      },
-    };
+  const { series, dataset } = req.params;
+  const params = Object.entries(req.query)
+    .map((x) => `${x[0]}=${x[1]}`)
+    .join("&");
+  const url = `${OECD_URL}GetData/${dataset}/${series}?${params}`;
+  const options = {
+    method: "GET",
+    headers: {
+      connection: "keep-alive",
+    },
+  };
   logger("getSeries OECD with path=%s", options.url);
-  request(options, function (e, r, b) {
-    if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
-      xml2js.parseString(
-        b,
-        { tagNameProcessors: [stripPrefix], mergeAttrs: true },
-        function (err, obj) {
-          if (err === null) {
-            try {
-              var data = obj.MessageGroup.DataSet[0],
-                dataset = data.KeyFamilyRef;
-              var vTS = data.Series;
-              if (!req.timedout) {
-                res.send(buildHTML.makeTableOECD(vTS, series, dataset));
-              }
-            } catch (error) {
-              logger(error);
-              var errorMessage = "Error parsing SDMX at: " + options.url;
-              res.status(500).send(errorMessage);
-            }
-          } else {
-            res.send(err);
+  got(url, options)
+    .then((response) => {
+      parseString(response.body, XML_PARSER_OPTIONS, (xmlParserErr, obj) => {
+        if (xmlParserErr === null) {
+          try {
+            const data = obj.MessageGroup.DataSet[0];
+            const family = data.KeyFamilyRef;
+            const timeseries = data.Series;
+            res.send(buildHTML.makeTableOECD(timeseries, series, family));
+          } catch (error) {
+            logger(error);
+            res.status(500).send(parserError("OECD", "series", url));
           }
+        } else {
+          logger(xmlParserErr);
+          res.status(500).send(parserError("OECD", "series", url));
         }
-      );
-    } else {
-      res.status(r.statusCode).send(r.statusMessage);
-      logger(e);
-    }
-  });
+      });
+    })
+    .catch((error) => {
+      logger(error);
+      const htmlErrorCode = error.message.match(/\d/g).join("");
+      res
+        .status(500)
+        .send(
+          fetcherError(
+            "OECD",
+            htmlErrorCode,
+            "series",
+            url,
+            `${error.message} - ${error.code}`
+          )
+        );
+    });
 }
 
 export function getAllDataFlow(req, res) {
-  var myURL = urlOECD + "GetDataStructure/all?format=SDMX-ML",
-    options = {
-      url: myURL,
-      method: "GET",
-      headers: {
-        connection: "keep-alive",
-      },
-    };
+  const url = `${OECD_URL}GetDataStructure/all?format=SDMX-ML`;
+  const options = {
+    method: "GET",
+    headers: {
+      connection: "keep-alive",
+    },
+  };
   logger("getAllDataflow OECD with path=%s", options.url);
-  request(options, function (e, r, b) {
-    if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
-      xml2js.parseString(
-        b,
-        { tagNameProcessors: [stripPrefix], mergeAttrs: true },
-        function (err, obj) {
-          if (err === null) {
-            var data = [];
-            try {
-              obj.Structure.KeyFamilies[0].KeyFamily.forEach(function (
-                it,
-                ind
-              ) {
-                data.push([it.id, it.id, it.agencyID, it.Name[0]["_"], "oecd"]);
-              });
-              if (!req.timedout) {
-                res.send(buildHTML.dataFlow(data, "oecd"));
-              }
-            } catch (error) {
-              logger(error);
-              var errorMessage = "Error parsing SDMX at: " + options.url;
-              res.status(500).send(errorMessage);
-            }
-          } else {
-            res.send(err);
+  got(url, options)
+    .then((response) => {
+      parseString(response.body, XML_PARSER_OPTIONS, (xmlParserErr, obj) => {
+        if (xmlParserErr === null) {
+          try {
+            const data = [];
+            const datasets = obj.Structure.KeyFamilies[0].KeyFamily;
+            datasets.forEach((x) => {
+              data.push([x.id, x.Name[0]["_"]]);
+            });
+            res.send(buildHTML.dataFlow(data, "oecd"));
+          } catch (error) {
+            logger(error);
+            res.status(500).send(parserError("OECD", "dataflows", url));
           }
+        } else {
+          logger(xmlParserErr);
+          res.status(500).send(parserError("OECD", "dataflows", url));
         }
-      );
-    } else {
-      res.status(r.statusCode).send(r.statusMessage);
-      logger(e);
-    }
-  });
+      });
+    })
+    .catch((error) => {
+      logger(error);
+      const htmlErrorCode = error.message.match(/\d/g).join("");
+      res
+        .status(500)
+        .send(
+          fetcherError(
+            "OECD",
+            htmlErrorCode,
+            "dataflows",
+            url,
+            `${error.message} - ${error.code}`
+          )
+        );
+    });
 }
 
 export function getDataflow(req, res) {
-  var dataset = req.params.dataset,
-    myURL = urlOECD + "GetDataStructure/" + dataset,
-    options = {
-      url: myURL,
-      method: "GET",
-      headers: {
-        connection: "keep-alive",
-      },
-    };
-  logger("getDataflow OECD with path=%s", options.url);
-  request(options, function (e, r, b) {
-    if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
-      xml2js.parseString(
-        b,
-        { tagNameProcessors: [stripPrefix], mergeAttrs: true },
-        function (err, obj) {
-          if (err === null) {
-            try {
-              // get Dimensions
-              var dim =
-                obj.Structure.KeyFamilies[0].KeyFamily[0].Components[0]
-                  .Dimension;
-              if (!req.timedout) {
-                res.send(buildHTML.OECDDimensions(dim, dataset));
-              }
-            } catch (error) {
-              logger(error);
-              var errorMessage = "Error parsing SDMX at: " + options.url;
-              res.status(500).send(errorMessage);
-            }
-          } else {
-            res.send(err);
+  const { dataset } = req.params;
+  const url = `${OECD_URL}GetDataStructure/${dataset}`;
+  const options = {
+    method: "GET",
+    headers: {
+      connection: "keep-alive",
+    },
+  };
+  logger("getDataflow OECD with path=%s", url);
+  got(url, options)
+    .then((response) => {
+      parseString(response.body, XML_PARSER_OPTIONS, (xmlParserErr, obj) => {
+        if (xmlParserErr === null) {
+          try {
+            const dim =
+              obj.Structure.KeyFamilies[0].KeyFamily[0].Components[0].Dimension;
+            res.send(buildHTML.OECDDimensions(dim, dataset));
+          } catch (error) {
+            logger(error);
+            res.status(500).send(parserError("OECD", "dataflow", url));
           }
+        } else {
+          logger(xmlParserErr);
+          res.status(500).send(parserError("OECD", "dataflow", url));
         }
-      );
-    } else {
-      res.status(r.statusCode).send(r.statusMessage);
-      logger(e);
-    }
-  });
+      });
+    })
+    .catch((error) => {
+      logger(error);
+      const htmlErrorCode = error.message.match(/\d/g).join("");
+      res
+        .status(500)
+        .send(
+          fetcherError(
+            "OECD",
+            htmlErrorCode,
+            "dataflow",
+            url,
+            `${error.message} - ${error.code}`
+          )
+        );
+    });
 }
 
 export function getCodeList(req, res) {
-  var codeList = req.params.codelist,
-    dataset = req.query.Dataset,
-    fullCodeList = "CL_" + dataset + "_" + codeList,
-    myURL = urlOECD + "GetDataStructure/" + dataset + "/all?format=SDMX-ML",
-    options = {
-      url: myURL,
-      method: "GET",
-      headers: {
-        connection: "keep-alive",
-      },
-    };
+  const { codelist: codelistRequested } = req.params;
+  const dataset = req.query.Dataset;
+  const codelistID = `CL_${dataset}_${codelistRequested}`;
+  const url = `${OECD_URL}GetDataStructure/${dataset}/all?format=SDMX-ML`;
+  const options = {
+    method: "GET",
+    headers: {
+      connection: "keep-alive",
+    },
+  };
   logger(
     "getCodeList OECD with path=%s,codelist=%s for dataset=%s",
-    options.url,
-    codeList,
+    url,
+    codelistRequested,
     dataset
   );
-  request(options, function (e, r, b) {
-    if (r.statusCode >= 200 && r.statusCode < 400 && !e) {
-      xml2js.parseString(
-        b,
-        { tagNameProcessors: [stripPrefix], mergeAttrs: true },
-        function (err, obj) {
-          if (err === null) {
-            try {
-              // get Dimensions
-              //var codelists = obj.Structure.CodeList;
-              obj.Structure.CodeLists[0].CodeList.forEach(function (it, ind) {
-                if (it.id[0] === fullCodeList) {
-                  if (!req.timedout) {
-                    res.send(buildHTML.OECDCodeList(it, codeList, dataset));
-                  }
-                }
-              });
-            } catch (error) {
-              logger(error);
-              var errorMessage = "Error parsing SDMX at: " + options.url;
-              res.status(500).send(errorMessage);
+  got(url, options)
+    .then((response) => {
+      parseString(response.body, XML_PARSER_OPTIONS, (xmlParserErr, obj) => {
+        if (xmlParserErr === null) {
+          try {
+            const codelists = obj.Structure.CodeLists[0].CodeList;
+            for (const codelist of codelists) {
+              if (codelist.id[0] === codelistID) {
+                res.send(
+                  buildHTML.OECDCodeList(codelist, codelistRequested, dataset)
+                );
+                break;
+              }
             }
-          } else {
-            res.send(err);
+          } catch (error) {
+            logger(error);
+            res.status(500).send(parserError("OECD", "codelist", url));
           }
+        } else {
+          logger(xmlParserErr);
+          res.status(500).send(parserError("OECD", "codelist", url));
         }
-      );
-    } else {
-      res.status(r.statusCode).send(r.statusMessage);
-      logger(e);
-    }
-  });
+      });
+    })
+    .catch((error) => {
+      logger(error);
+      const htmlErrorCode = error.message.match(/\d/g).join("");
+      res
+        .status(500)
+        .send(
+          fetcherError(
+            "OECD",
+            htmlErrorCode,
+            "codelist",
+            url,
+            `${error.message} - ${error.code}`
+          )
+        );
+    });
 }

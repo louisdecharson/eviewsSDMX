@@ -18,7 +18,7 @@ export function fetcherError(provider, code, data, url, message) {
     errorCauses = `
 <li>The data you are trying to download does not exist.</li>
 <li>The filters or dimensions you have entered are incorrect.</li>
-<li>${url} has changed and data is no longer accessible at this address.</li>
+<li><code>${url}</code> has changed and data is no longer accessible at this address.</li>
       `;
   } else {
     errorCauses = `

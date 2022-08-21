@@ -47,20 +47,26 @@ function getValueForKeyMatchingPattern(dict, pattern) {
   return null;
 }
 
-export function dataFlow(data, service) {
+export function dataFlow(data, provider) {
   const title = "SDMX API for EViews / DATAFLOWS ";
-  const jsForSearch = `${listJS}<script>var options = {valueNames: ['name', 'desc'], searchClass: 'form-control'}; var dataList = new List('myDataflows',options);</script>`;
+  const jsForSearch = `
+${listJS}
+<script>
+  const options = {valueNames: ['name', 'desc'], searchClass: 'form-control'};
+  const dataList = new List('myDataflows',options);
+</script>
+`;
   const tableHeader = "<th>Id</th><th>Description</th>";
   let tableBody = "";
   data.forEach((item) => {
-    const [dataset, , , description, provider] = item;
+    const [dataset, description] = item;
     const link = `<a href="/${provider}/dataflow/${dataset}">${dataset}</a>`;
     tableBody += `<tr>${htmlCell(link, false, "name")}`;
     tableBody += `${htmlCell(description, false, "desc")}</tr>`;
   });
   const table = htmlTable(tableHeader, tableBody, "", "table w100");
   const body = `
-    <h2>List of all the datasets of ${service.toUpperCase()}</h2>
+    <h2>List of all the datasets of ${provider.toUpperCase()}</h2>
     <div id="myDataflows">
       <input class="form-control" placeholder="Search"><br>
       ${table}
@@ -207,8 +213,13 @@ export function detailDataset(
   const title = `SDMX API for EViews / ${dataset}`;
   const css =
     "<style display:none>body {padding-left: 10px; padding-right:10px;}</style>";
-  const jsforList =
-    "<script>var options = {valueNames: ['name', 'id'], searchClass: 'form-control'}; var dataList = new List('myTS',options);</script>";
+  const jsforSearch = `
+${listJS}
+<script>
+  const options = {valueNames: ['name', 'id'], searchClass: 'form-control'};
+  const dataList = new List('myTS',options);
+</script>
+`;
 
   let body = `<h2>Dataset ${dataset}</h2><hr>`;
   // Add a button
@@ -266,7 +277,7 @@ export function detailDataset(
   }
   const table = `<thead><tr>${theader}</tr></thead><tbody class="list">${tableBody}</tbody>`;
   body += error + searchBar + tableDef + table;
-  return htmlPage(title, body, jsforList, css);
+  return htmlPage(title, body, jsforSearch, css);
 }
 
 export function codeList(codes, dimTitleRaw) {
@@ -461,9 +472,13 @@ export function OECDCodeList(codes, dimension, nameDataset) {
   let body = `<h4>Available values for dimension ${dimension} in dataset ${nameDataset}</h4><hr>`;
   let tableBody = "";
   const tableHeader = "<th>Code</th><th>Description</th>";
-  const jsforList =
-    "<script>var options = {valueNames: ['code', 'desc'], searchClass: 'form-control'}; var dataList = new List('myCodesList',options);</script>";
-
+  const jsforSearch = `
+${listJS}
+<script>
+  const options = {valueNames: ['code', 'desc'], searchClass: 'form-control'};
+  const dataList = new List('myCodesList',options);
+</script>
+`;
   body += '<div id="myCodesList">';
   body += '<input class="form-control" placeholder="Search"><br>';
   codes.Code.forEach((i) => {
@@ -472,7 +487,7 @@ export function OECDCodeList(codes, dimension, nameDataset) {
   });
   const table = htmlTable(tableHeader, tableBody);
   body += table;
-  return htmlPage(title, body, jsforList);
+  return htmlPage(title, body, jsforSearch);
 }
 
 // Function to send when a big dataset has been requested

@@ -36,7 +36,7 @@ export async function handleRequest(
   };
   try {
     const response = await got(url, options);
-    if (response.statusCode >= 200 && response.statusCode) {
+    if (response.statusCode >= 200 && response.statusCode < 400) {
       return { error: null, content: response.body };
     }
     logger(`Request error. code: ${response.statusCode}. url: ${url}`);

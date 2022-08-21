@@ -70,8 +70,8 @@ export function getAllDataFlow(req, res) {
               datasets.forEach((it) => {
                 const datasetId = it.id;
                 let datasetName = it.Name;
-                const dsdId = it.Structure[0].Ref[0].id;
-                const agency = it.Structure[0].Ref[0].agencyID;
+                // const dsdId = it.Structure[0].Ref[0].id;
+                // const agency = it.Structure[0].Ref[0].agencyID;
                 if (datasetName.length > 1) {
                   datasetName.forEach((item, index) => {
                     switch (item["xml:lang"][0]) {
@@ -88,7 +88,7 @@ export function getAllDataFlow(req, res) {
                 } else {
                   datasetName = it.Name[0]["_"];
                 }
-                data.push([datasetId, dsdId, agency, datasetName, provider]);
+                data.push([datasetId, datasetName]);
               });
               res.send(buildHTML.dataFlow(data, provider));
             } catch (parserErr) {
