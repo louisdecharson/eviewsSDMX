@@ -312,7 +312,7 @@ export function retrieveDataset(
 ) {
   handleRequest(url, contentType, context).then(({ error, content }) => {
     if (error) {
-      res.send(error);
+      res.status(500).send(error);
     } else {
       parseString(content, XML_PARSER_OPTIONS, (xmlParserErr, obj) => {
         if (xmlParserErr === null) {
@@ -372,7 +372,7 @@ function handleDatasetRequest(req, res, listOnly = false, bigDataset = false) {
     res.send(unknownProviderError(provider));
   } else {
     const dataset =
-      provider !== "EUROSTAT"
+      provider.toUpperCase() !== "EUROSTAT"
         ? req.params.dataset.toUpperCase()
         : req.params.dataset;
     providerInstance.getDimension(null, null, dataset, (err, dim) => {
