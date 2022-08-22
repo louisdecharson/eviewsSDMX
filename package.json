@@ -4,7 +4,7 @@
   "exports": "./server.js",
   "author": "Louis de Charsonville <louisdecharson@posteo.net>",
   "license": "AGPL-3.0",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "dependencies": {
     "amqplib": "^0.10.2",
     "body-parser": "^1.17.1",
