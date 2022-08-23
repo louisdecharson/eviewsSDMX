@@ -28,7 +28,7 @@
     },
     "EUROSTAT": {
       "eurostat_dataset": "/eurostat/dataset/une_rt_m?FREQ=M&S_ADJ=SA&AGE=TOTAL&UNIT=PC_ACT&SEX=T&GEO=EA19%2BLT",
-      "eurostat_413": "/eurostat/dataset/une_rt_m"
+      "eurostat_series": "/eurostat/series/namq_10_gdp.Q.CLV15_MEUR.SCA.P51G.EA19?startPeriod=2001&endPeriod=2022"
     },
     "FRED": {
       "fred_series": "/fred/FRED_API_KEY/CUSR0000SETA01"

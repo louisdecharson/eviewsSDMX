@@ -18,7 +18,11 @@ import Debug from "debug";
 import * as shortid from "shortid";
 
 import * as buildHTML from "../render/buildHTML.js";
-import { parserError, unknownProviderError } from "./utils/errors.js";
+import {
+  parserError,
+  fetcherError,
+  unknownProviderError,
+} from "./utils/errors.js";
 import { Provider, Context } from "./utils/provider.js";
 import { handleRequest } from "./utils/request.js";
 import { stripPrefix } from "./utils/helpers.js";
@@ -338,10 +342,21 @@ export function retrieveDataset(
             res.send(table);
           } catch (parserErr) {
             try {
-              const footer =
-                obj.StructureSpecificData.Footer[0].Message[0].code[0];
-              if (footer === "413") {
-                res.redirect("./413.html");
+              // Eurostat is sending the error in the footer.
+              const footer = obj.StructureSpecificData.Footer[0].Message[0];
+              const footerErrorCode = footer.code[0];
+              if (footerErrorCode < 200 || footerErrorCode >= 400) {
+                res
+                  .status(500)
+                  .send(
+                    fetcherError(
+                      provider,
+                      footerErrorCode,
+                      "dataset",
+                      url,
+                      JSON.stringify(footer.Text[0])
+                    )
+                  );
               } else {
                 res.status(500).send(parserError(provider, "dataset", url));
               }
@@ -444,9 +459,26 @@ export function getSeries(req, res) {
           if (xmlParserErr === null) {
             try {
               const timeseries = obj.StructureSpecificData.DataSet[0].Series;
-              res.send(buildHTML.makeTable(timeseries, dataset, []));
+              res.send(
+                buildHTML.makeTable(timeseries, `${dataset}.${series}`, [])
+              );
             } catch (parserErr) {
-              res.status(500).send(parserError(provider, "series", url));
+              try {
+                const footer = obj.StructureSpecificData.Footer[0].Message[0];
+                res
+                  .status(500)
+                  .send(
+                    fetcherError(
+                      provider,
+                      footer.code[0],
+                      "series",
+                      url,
+                      JSON.stringify(footer.Text[0])
+                    )
+                  );
+              } catch (_) {
+                res.status(500).send(parserError(provider, "series", url));
+              }
             }
           } else {
             res.status(500).send(parserError(provider, "dataset", url));
@@ -475,8 +507,8 @@ export function getCodeList(req, res) {
           if (xmlParserErr === null) {
             try {
               const data = obj.Structure.Structures[0].Codelists[0].Codelist;
-              let codes = "";
-              if (data.length === 1) {
+              let codes;
+              if (data.length > 1) {
                 Object.keys(data).every((d) => {
                   if (data[d].id[0] === codelist) {
                     codes = data[d];
