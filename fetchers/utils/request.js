@@ -33,6 +33,9 @@ export async function handleRequest(
       request: timeout,
     },
     agent,
+    https: {
+      rejectUnauthorized: false,
+    },
   };
   try {
     const response = await got(url, options);
