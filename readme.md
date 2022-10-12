@@ -2,8 +2,9 @@
 
 ## Purpose
 This web-app translates SDMX data into a standard HTML table readable by [EViews](http://www.eviews.com/home.html).
-It serves as a middlepoint:
-- web requests to the app are turned into SDMX request to the provider (e.g. INSEE)
+
+It acts as a middleware between EViews and SDMX providers API:
+- web requests to the app are turned into SDMX requests to the provider (e.g. INSEE)
 - response returned by the provider is parsed and translated to HTML table
 
 This is helpful as EViews software can easily make GET requests to a web-application and read HTML table.
