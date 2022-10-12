@@ -2,9 +2,13 @@
 
 ## Purpose
 This web-app translates SDMX data into a standard HTML table readable by [EViews](http://www.eviews.com/home.html).
+It serves as a middlepoint:
+- web requests to the app are turned into SDMX request to the provider (e.g. INSEE)
+- response returned by the provider is parsed and translated to HTML table
 
-*More info on the [website](http://sdmx.herokuapp.com)*.
+This is helpful as EViews software can easily make GET requests to a web-application and read HTML table.
 
+*More info on the on how to make request on the [website](http://sdmx.herokuapp.com)*.
 
 ## Contribution 
 
@@ -23,11 +27,11 @@ npm install --dev
 The entrypoint of the app is `server.js`.
 
 The flow of the app is:
-1. A request is made
-2. The request is interpreted and the following parameters are retrieved:
-  - the provider
-  - additional parameters (resource to be retrieved, etc)
-3. A request is made to the data provider (or multiple if required)
+1. A request is made (by a user) to the web application `http://sdmx.herokuapp.com`
+2. The request is interpreted depending on the route and resources asked and the following parameters are retrieved:
+  - the provider, e.g. INSEE, OECD, etc
+  - additional parameters (resource to be retrieved, etc), e.g. whether a series or a dataset is requested, which resource_id, etc.
+3. A request is made to the corresponding data provider (one request or multiple requests if required)
 4. The response (in SDMX format) is parsed and rendered as an HTML page (with data in an HTML table)
 
 
